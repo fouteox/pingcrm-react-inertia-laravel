@@ -6,7 +6,7 @@ const Dashboard = () => {
         <>
             <Head title="Dashboard" />
             <h1 className="mb-8 text-3xl font-bold">Dashboard</h1>
-            <p className="mb-12 leading-normal">
+            <p className="mb-6 leading-normal">
                 Hey there! Welcome to Ping CRM, a demo app designed to help
                 illustrate how
                 <a
@@ -21,6 +21,40 @@ const Dashboard = () => {
                     href="https://reactjs.org/"
                 >
                     React
+                </a>
+                .
+            </p>
+            <p className="leading-normal">
+                Original
+                <a
+                    className="mx-1 text-indigo-600 underline hover:text-orange-500"
+                    href="https://pingcrm-react.herokuapp.com/"
+                >
+                    application
+                </a>
+                with Laravel and React by
+                <a
+                    className="ml-1 text-indigo-600 underline hover:text-orange-500"
+                    href="https://github.com/Landish"
+                >
+                    @landish
+                </a>
+                .
+            </p>
+            <p className="mb-12 leading-normal">
+                Original
+                <a
+                    className="mx-1 text-indigo-600 underline hover:text-orange-500"
+                    href="https://demo.inertiajs.com/"
+                >
+                    application
+                </a>
+                with Laravel and VueJS by
+                <a
+                    className="ml-1 text-indigo-600 underline hover:text-orange-500"
+                    href="https://github.com/reinink"
+                >
+                    @reinink
                 </a>
                 .
             </p>
