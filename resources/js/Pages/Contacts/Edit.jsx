@@ -1,17 +1,30 @@
+import { useState } from "react";
 import { Inertia } from "@inertiajs/inertia";
 import { InertiaLink, usePage, useForm, Head } from "@inertiajs/inertia-react";
 import Layout from "@/Shared/Layout";
 import DeleteButton from "@/Shared/DeleteButton";
 import LoadingButton from "@/Shared/LoadingButton";
+import SecondaryButton from "@/Components/SecondaryButton";
+import DangerButton from "@/Shared/DangerButton";
 import TextInput from "@/Shared/TextInput";
 import SelectInput from "@/Shared/SelectInput";
 import TrashedMessage from "@/Shared/TrashedMessage";
 import InputLabel from "@/Shared/InputLabel";
 import InputError from "@/Shared/InputError";
+import Modal from "@/Shared/Modal";
 
 const Edit = () => {
+    const [confirmingContactDeletion, setConfirmingContactDeletion] =
+        useState(false);
     const { contact, organizations } = usePage().props;
-    const { data, setData, errors, put, processing } = useForm({
+    const {
+        data,
+        setData,
+        errors,
+        put,
+        processing,
+        delete: destroy,
+    } = useForm({
         first_name: contact.first_name || "",
         last_name: contact.last_name || "",
         organization_id: contact.organization_id || "",
@@ -29,11 +42,19 @@ const Edit = () => {
         put(route("contacts.update", contact.id));
     }
 
-    function destroy() {
-        if (confirm("Are you sure you want to delete this contact?")) {
-            Inertia.delete(route("contacts.destroy", contact.id));
-        }
-    }
+    const confirmContactDeletion = () => {
+        setConfirmingContactDeletion(true);
+    };
+
+    const deleteContact = (e) => {
+        e.preventDefault();
+        closeModal();
+        destroy(route("contacts.destroy", contact.id));
+    };
+
+    const closeModal = () => {
+        setConfirmingContactDeletion(false);
+    };
 
     function restore() {
         if (confirm("Are you sure you want to restore this contact?")) {
@@ -194,9 +215,39 @@ const Edit = () => {
                     </div>
                     <div className="flex items-center px-8 py-4 bg-gray-100 border-t border-gray-200">
                         {!contact.deleted_at && (
-                            <DeleteButton onDelete={destroy}>
-                                Delete Contact
-                            </DeleteButton>
+                            <>
+                                <DeleteButton onDelete={confirmContactDeletion}>
+                                    Delete Contact
+                                </DeleteButton>
+                                <Modal
+                                    show={confirmingContactDeletion}
+                                    onClose={closeModal}
+                                >
+                                    <div className="p-6">
+                                        <h2 className="text-lg font-medium text-gray-900">
+                                            Are you sure you want to delete this
+                                            contact?
+                                        </h2>
+
+                                        <div className="mt-6 flex justify-end">
+                                            <SecondaryButton
+                                                onClick={closeModal}
+                                            >
+                                                Cancel
+                                            </SecondaryButton>
+
+                                            <DangerButton
+                                                className="ml-3"
+                                                processing={processing}
+                                                type="button"
+                                                onClick={deleteContact}
+                                            >
+                                                Delete Contact
+                                            </DangerButton>
+                                        </div>
+                                    </div>
+                                </Modal>
+                            </>
                         )}
                         <LoadingButton
                             loading={processing}
