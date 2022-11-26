@@ -15,8 +15,8 @@ import Icon from "@/Shared/Icon";
 import Modal from "@/Shared/Modal";
 
 const Edit = () => {
-    const [confirmingOrganizationDeletion, setConfirmingOrganizationDeletion] =
-        useState(false);
+    const [openDialog, setOpenDialog] = useState(null);
+
     const { organization } = usePage().props;
     const {
         data,
@@ -50,18 +50,14 @@ const Edit = () => {
         put(route("organizations.update", organization.id));
     }
 
-    const confirmOrganizationDeletion = () => {
-        setConfirmingOrganizationDeletion(true);
-    };
+    function closeModals() {
+        setOpenDialog(null);
+    }
 
     const deleteOrganization = (e) => {
         e.preventDefault();
-        closeModal();
+        closeModals();
         destroy(route("organizations.destroy", organization.id));
-    };
-
-    const closeModal = () => {
-        setConfirmingOrganizationDeletion(false);
     };
 
     function restore() {
@@ -192,14 +188,16 @@ const Edit = () => {
                         {!organization.deleted_at && (
                             <>
                                 <DeleteButton
-                                    onDelete={confirmOrganizationDeletion}
+                                    onClick={() =>
+                                        setOpenDialog("confirm-delete")
+                                    }
                                 >
                                     Delete Organization
                                 </DeleteButton>
 
                                 <Modal
-                                    show={confirmingOrganizationDeletion}
-                                    onClose={closeModal}
+                                    open={openDialog === "confirm-delete"}
+                                    onClose={closeModals}
                                 >
                                     <div className="p-6">
                                         <h2 className="text-lg font-medium text-gray-900">
@@ -209,7 +207,7 @@ const Edit = () => {
 
                                         <div className="mt-6 flex justify-end">
                                             <SecondaryButton
-                                                onClick={closeModal}
+                                                onClick={closeModals}
                                             >
                                                 Cancel
                                             </SecondaryButton>

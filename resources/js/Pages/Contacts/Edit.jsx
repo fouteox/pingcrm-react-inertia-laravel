@@ -14,8 +14,7 @@ import InputError from "@/Shared/InputError";
 import Modal from "@/Shared/Modal";
 
 const Edit = () => {
-    const [confirmingContactDeletion, setConfirmingContactDeletion] =
-        useState(false);
+    const [openDialog, setOpenDialog] = useState(null);
     const { contact, organizations } = usePage().props;
     const {
         data,
@@ -42,18 +41,14 @@ const Edit = () => {
         put(route("contacts.update", contact.id));
     }
 
-    const confirmContactDeletion = () => {
-        setConfirmingContactDeletion(true);
-    };
+    function closeModals() {
+        setOpenDialog(null);
+    }
 
     const deleteContact = (e) => {
         e.preventDefault();
-        closeModal();
+        closeModals();
         destroy(route("contacts.destroy", contact.id));
-    };
-
-    const closeModal = () => {
-        setConfirmingContactDeletion(false);
     };
 
     function restore() {
@@ -216,12 +211,17 @@ const Edit = () => {
                     <div className="flex items-center px-8 py-4 bg-gray-100 border-t border-gray-200">
                         {!contact.deleted_at && (
                             <>
-                                <DeleteButton onDelete={confirmContactDeletion}>
+                                <DeleteButton
+                                    onClick={() =>
+                                        setOpenDialog("confirm-delete")
+                                    }
+                                >
                                     Delete Contact
                                 </DeleteButton>
+
                                 <Modal
-                                    show={confirmingContactDeletion}
-                                    onClose={closeModal}
+                                    open={openDialog === "confirm-delete"}
+                                    onClose={closeModals}
                                 >
                                     <div className="p-6">
                                         <h2 className="text-lg font-medium text-gray-900">
@@ -231,7 +231,7 @@ const Edit = () => {
 
                                         <div className="mt-6 flex justify-end">
                                             <SecondaryButton
-                                                onClick={closeModal}
+                                                onClick={closeModals}
                                             >
                                                 Cancel
                                             </SecondaryButton>

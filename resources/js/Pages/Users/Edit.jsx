@@ -1,18 +1,30 @@
+import { useState } from "react";
 import { Inertia } from "@inertiajs/inertia";
 import { Link, usePage, useForm, Head } from "@inertiajs/inertia-react";
 import Layout from "@/Shared/Layout";
 import DeleteButton from "@/Shared/DeleteButton";
 import LoadingButton from "@/Shared/LoadingButton";
+import SecondaryButton from "@/Components/SecondaryButton";
+import DangerButton from "@/Shared/DangerButton";
 import TextInput from "@/Shared/TextInput";
 import SelectInput from "@/Shared/SelectInput";
 import FileInput from "@/Shared/FileInput";
 import TrashedMessage from "@/Shared/TrashedMessage";
 import InputLabel from "@/Shared/InputLabel";
 import InputError from "@/Shared/InputError";
+import Modal from "@/Shared/Modal";
 
 const Edit = () => {
+    const [openDialog, setOpenDialog] = useState(null);
     const { user } = usePage().props;
-    const { data, setData, errors, post, processing } = useForm({
+    const {
+        data,
+        setData,
+        errors,
+        post,
+        processing,
+        delete: destroy,
+    } = useForm({
         first_name: user.first_name || "",
         last_name: user.last_name || "",
         email: user.email || "",
@@ -32,11 +44,15 @@ const Edit = () => {
         post(route("users.update", user.id));
     }
 
-    function destroy() {
-        if (confirm("Are you sure you want to delete this user?")) {
-            Inertia.delete(route("users.destroy", user.id));
-        }
+    function closeModals() {
+        setOpenDialog(null);
     }
+
+    const deleteUser = (e) => {
+        e.preventDefault();
+        closeModals();
+        destroy(route("users.destroy", user.id));
+    };
 
     function restore() {
         if (confirm("Are you sure you want to restore this user?")) {
@@ -149,9 +165,43 @@ const Edit = () => {
                     </div>
                     <div className="flex items-center px-8 py-4 bg-gray-100 border-t border-gray-200">
                         {!user.deleted_at && (
-                            <DeleteButton onDelete={destroy}>
-                                Delete User
-                            </DeleteButton>
+                            <>
+                                <DeleteButton
+                                    onClick={() =>
+                                        setOpenDialog("confirm-delete")
+                                    }
+                                >
+                                    Delete User
+                                </DeleteButton>
+                                <Modal
+                                    open={openDialog === "confirm-delete"}
+                                    onClose={closeModals}
+                                >
+                                    <div className="p-6">
+                                        <h2 className="text-lg font-medium text-gray-900">
+                                            Are you sure you want to delete this
+                                            user?
+                                        </h2>
+
+                                        <div className="mt-6 flex justify-end">
+                                            <SecondaryButton
+                                                onClick={closeModals}
+                                            >
+                                                Cancel
+                                            </SecondaryButton>
+
+                                            <DangerButton
+                                                className="ml-3"
+                                                processing={processing}
+                                                type="button"
+                                                onClick={deleteUser}
+                                            >
+                                                Delete User
+                                            </DangerButton>
+                                        </div>
+                                    </div>
+                                </Modal>
+                            </>
                         )}
                         <LoadingButton
                             loading={processing}
