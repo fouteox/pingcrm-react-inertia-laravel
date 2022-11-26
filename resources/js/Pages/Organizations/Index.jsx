@@ -10,7 +10,7 @@ const Index = () => {
     const { data, links } = organizations;
 
     return (
-        <div>
+        <>
             <Head title="Organizations" />
             <h1 className="mb-8 text-3xl font-bold">Organizations</h1>
             <div className="flex items-center justify-between mb-6">
@@ -112,7 +112,7 @@ const Index = () => {
                 </table>
             </div>
             <Pagination links={links} />
-        </div>
+        </>
     );
 };
 

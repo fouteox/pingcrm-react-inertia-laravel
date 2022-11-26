@@ -1,4 +1,4 @@
-import { Link, usePage } from "@inertiajs/inertia-react";
+import { Link, usePage, Head } from "@inertiajs/inertia-react";
 import Layout from "@/Shared/Layout";
 import Icon from "@/Shared/Icon";
 import SearchFilter from "@/Shared/SearchFilter";
@@ -7,7 +7,8 @@ import AnchorLink from "@/Shared/AnchorLink";
 const Index = () => {
     const { users } = usePage().props;
     return (
-        <div>
+        <>
+            <Head title="Users" />
             <h1 className="mb-8 text-3xl font-bold">Users</h1>
             <div className="flex items-center justify-between mb-6">
                 <SearchFilter />
@@ -103,7 +104,7 @@ const Index = () => {
                     </tbody>
                 </table>
             </div>
-        </div>
+        </>
     );
 };
 

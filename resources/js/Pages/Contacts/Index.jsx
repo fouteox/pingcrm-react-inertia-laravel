@@ -1,4 +1,4 @@
-import { Link, usePage } from "@inertiajs/inertia-react";
+import { Link, usePage, Head } from "@inertiajs/inertia-react";
 import Layout from "@/Shared/Layout";
 import Icon from "@/Shared/Icon";
 import Pagination from "@/Shared/Pagination";
@@ -9,7 +9,8 @@ const Index = () => {
     const { contacts } = usePage().props;
     const { data, links } = contacts;
     return (
-        <div>
+        <>
+            <Head title="Contacts" />
             <h1 className="mb-8 text-3xl font-bold">Contacts</h1>
             <div className="flex items-center justify-between mb-6">
                 <SearchFilter />
@@ -117,7 +118,7 @@ const Index = () => {
                 </table>
             </div>
             <Pagination links={links} />
-        </div>
+        </>
     );
 };
 

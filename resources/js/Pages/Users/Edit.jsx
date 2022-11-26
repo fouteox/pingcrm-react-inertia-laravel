@@ -45,7 +45,7 @@ const Edit = () => {
     }
 
     return (
-        <div>
+        <>
             <Head title={`${data.first_name} ${data.last_name}`} />
             <div className="flex justify-start max-w-lg mb-8">
                 <h1 className="text-3xl font-bold">
@@ -163,7 +163,7 @@ const Edit = () => {
                     </div>
                 </form>
             </div>
-        </div>
+        </>
     );
 };
 

@@ -1,4 +1,4 @@
-import { Link, useForm } from "@inertiajs/inertia-react";
+import { Link, useForm, Head } from "@inertiajs/inertia-react";
 import Layout from "@/Shared/Layout";
 import LoadingButton from "@/Shared/LoadingButton";
 import TextInput from "@/Shared/TextInput";
@@ -24,7 +24,8 @@ const Create = () => {
     }
 
     return (
-        <div>
+        <>
+            <Head title="Create Organization" />
             <h1 className="mb-8 text-3xl font-bold">
                 <Link
                     href={route("organizations")}
@@ -145,7 +146,7 @@ const Create = () => {
                     </div>
                 </form>
             </div>
-        </div>
+        </>
     );
 };
 
