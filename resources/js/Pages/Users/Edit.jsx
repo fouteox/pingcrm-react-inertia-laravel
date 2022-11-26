@@ -204,7 +204,7 @@ const Edit = () => {
                             </>
                         )}
                         <LoadingButton
-                            loading={processing}
+                            processing={processing}
                             type="submit"
                             className="ml-auto btn-indigo"
                         >
