@@ -192,10 +192,7 @@ const Edit = () => {
                                     show={confirmingOrganizationDeletion}
                                     onClose={closeModal}
                                 >
-                                    <form
-                                        onSubmit={deleteOrganization}
-                                        className="p-6"
-                                    >
+                                    <div className="p-6">
                                         <h2 className="text-lg font-medium text-gray-900">
                                             Are you sure you want to delete this
                                             organization?
@@ -211,11 +208,13 @@ const Edit = () => {
                                             <DangerButton
                                                 className="ml-3"
                                                 processing={processing}
+                                                type="button"
+                                                onClick={deleteOrganization}
                                             >
                                                 Delete Organization
                                             </DangerButton>
                                         </div>
-                                    </form>
+                                    </div>
                                 </Modal>
                             </>
                         )}
