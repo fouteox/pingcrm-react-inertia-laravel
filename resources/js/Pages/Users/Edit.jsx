@@ -50,7 +50,7 @@ const Edit = () => {
             <div className="flex justify-start max-w-lg mb-8">
                 <h1 className="text-3xl font-bold">
                     <Link
-                        href={route("users")}
+                        href={route("users.index")}
                         className="text-indigo-600 hover:text-indigo-700"
                     >
                         Users

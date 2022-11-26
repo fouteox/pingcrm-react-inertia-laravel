@@ -28,7 +28,7 @@ const Create = () => {
             <Head title="Create Organization" />
             <h1 className="mb-8 text-3xl font-bold">
                 <Link
-                    href={route("organizations")}
+                    href={route("organizations.index")}
                     className="text-indigo-600 hover:text-indigo-700"
                 >
                     Organizations

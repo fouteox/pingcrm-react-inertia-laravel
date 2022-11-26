@@ -34,7 +34,7 @@ export default () => {
                             My Profile
                         </Link>
                         <Link
-                            href={route("users")}
+                            href={route("users.index")}
                             className="block px-6 py-2 hover:bg-indigo-600 hover:text-white"
                             onClick={() => setMenuOpened(false)}
                         >

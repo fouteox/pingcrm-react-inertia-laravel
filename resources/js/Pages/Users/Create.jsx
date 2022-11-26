@@ -28,7 +28,7 @@ const Create = () => {
             <div>
                 <h1 className="mb-8 text-3xl font-bold">
                     <Link
-                        href={route("users")}
+                        href={route("users.index")}
                         className="text-indigo-600 hover:text-indigo-700"
                     >
                         Users

@@ -67,7 +67,7 @@ const Edit = () => {
             <Head title={`${data.first_name} ${data.last_name}`} />
             <h1 className="mb-8 text-3xl font-bold">
                 <InertiaLink
-                    href={route("contacts")}
+                    href={route("contacts.index")}
                     className="text-indigo-600 hover:text-indigo-700"
                 >
                     Contacts

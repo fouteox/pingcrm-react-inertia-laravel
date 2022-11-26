@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Inertia } from "@inertiajs/inertia";
 import { Link, usePage, useForm, Head } from "@inertiajs/inertia-react";
 import Layout from "@/Shared/Layout";
@@ -36,6 +36,15 @@ const Edit = () => {
         postal_code: organization.postal_code || "",
     });
 
+    // useEffect(() => {
+    //     const inter = setInterval(() => {
+    //         console.log("refresh");
+    //         Inertia.reload();
+    //     }, 5000);
+
+    //     return () => clearTimeout(inter);
+    // }, []);
+
     function handleSubmit(e) {
         e.preventDefault();
         put(route("organizations.update", organization.id));
@@ -66,7 +75,7 @@ const Edit = () => {
             <Head title={data.name} />
             <h1 className="mb-8 text-3xl font-bold">
                 <Link
-                    href={route("organizations")}
+                    href={route("organizations.index")}
                     className="text-indigo-600 hover:text-indigo-700"
                 >
                     Organizations
