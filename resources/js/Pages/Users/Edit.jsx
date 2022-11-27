@@ -24,6 +24,7 @@ const Edit = () => {
         post,
         processing,
         delete: destroy,
+        put,
     } = useForm({
         first_name: user.first_name || "",
         last_name: user.last_name || "",
@@ -50,10 +51,52 @@ const Edit = () => {
         destroy(route("users.destroy", user.id));
     };
 
-    function restore() {
-        if (confirm("Are you sure you want to restore this user?")) {
-            Inertia.put(route("users.restore", user.id));
-        }
+    const restoreUser = (e) => {
+        e.preventDefault();
+        toggle();
+        put(route("users.restore", user.id));
+    };
+
+    function modalContent() {
+        const bodyModal = user.deleted_at
+            ? "Are you sure you want to restore this user?"
+            : "Are you sure you want to delete this user?";
+        const actionModal = user.deleted_at ? restoreUser : deleteUser;
+        return (
+            <>
+                {user.deleted_at ? (
+                    <TrashedMessage onRestore={toggle}>
+                        This user has been deleted.
+                    </TrashedMessage>
+                ) : (
+                    <DeleteButton onClick={toggle}>Delete User</DeleteButton>
+                )}
+                <Modal isShowing={isShowing} hide={toggle}>
+                    <div className="p-6">
+                        <h2 className="text-lg font-medium text-gray-900">
+                            {bodyModal}
+                        </h2>
+
+                        <div className="mt-6 flex justify-end">
+                            <SecondaryButton onClick={toggle}>
+                                Cancel
+                            </SecondaryButton>
+
+                            <DangerButton
+                                className="ml-3"
+                                processing={processing}
+                                type="button"
+                                onClick={actionModal}
+                            >
+                                {user.deleted_at
+                                    ? "Restore User"
+                                    : "Delete User"}
+                            </DangerButton>
+                        </div>
+                    </div>
+                </Modal>
+            </>
+        );
     }
 
     return (
@@ -77,11 +120,7 @@ const Edit = () => {
                     />
                 )}
             </div>
-            {user.deleted_at && (
-                <TrashedMessage onRestore={restore}>
-                    This user has been deleted.
-                </TrashedMessage>
-            )}
+            {user.deleted_at && modalContent()}
             <div className="max-w-3xl overflow-hidden bg-white rounded shadow">
                 <form onSubmit={handleSubmit}>
                     <div className="flex flex-wrap p-8 -mb-8 -mr-6">
@@ -160,36 +199,7 @@ const Edit = () => {
                         />
                     </div>
                     <div className="flex items-center px-8 py-4 bg-gray-100 border-t border-gray-200">
-                        {!user.deleted_at && (
-                            <>
-                                <DeleteButton onClick={toggle}>
-                                    Delete User
-                                </DeleteButton>
-                                <Modal isShowing={isShowing} hide={toggle}>
-                                    <div className="p-6">
-                                        <h2 className="text-lg font-medium text-gray-900">
-                                            Are you sure you want to delete this
-                                            user?
-                                        </h2>
-
-                                        <div className="mt-6 flex justify-end">
-                                            <SecondaryButton onClick={toggle}>
-                                                Cancel
-                                            </SecondaryButton>
-
-                                            <DangerButton
-                                                className="ml-3"
-                                                processing={processing}
-                                                type="button"
-                                                onClick={deleteUser}
-                                            >
-                                                Delete User
-                                            </DangerButton>
-                                        </div>
-                                    </div>
-                                </Modal>
-                            </>
-                        )}
+                        {!user.deleted_at && modalContent()}
                         <LoadingButton
                             processing={processing}
                             type="submit"

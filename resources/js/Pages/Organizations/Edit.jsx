@@ -57,10 +57,56 @@ const Edit = () => {
         destroy(route("organizations.destroy", organization.id));
     };
 
-    function restore() {
-        if (confirm("Are you sure you want to restore this organization?")) {
-            Inertia.put(route("organizations.restore", organization.id));
-        }
+    const restoreOrganization = (e) => {
+        e.preventDefault();
+        toggle();
+        put(route("organizations.restore", organization.id));
+    };
+
+    function modalContent() {
+        const bodyModal = organization.deleted_at
+            ? "Are you sure you want to restore this organization?"
+            : "Are you sure you want to delete this organization?";
+        const actionModal = organization.deleted_at
+            ? restoreOrganization
+            : deleteOrganization;
+        return (
+            <>
+                {organization.deleted_at ? (
+                    <TrashedMessage onRestore={toggle}>
+                        This organization has been deleted.
+                    </TrashedMessage>
+                ) : (
+                    <DeleteButton onClick={toggle}>
+                        Delete Organization
+                    </DeleteButton>
+                )}
+                <Modal isShowing={isShowing} hide={toggle}>
+                    <div className="p-6">
+                        <h2 className="text-lg font-medium text-gray-900">
+                            {bodyModal}
+                        </h2>
+
+                        <div className="mt-6 flex justify-end">
+                            <SecondaryButton onClick={toggle}>
+                                Cancel
+                            </SecondaryButton>
+
+                            <DangerButton
+                                className="ml-3"
+                                processing={processing}
+                                type="button"
+                                onClick={actionModal}
+                            >
+                                {organization.deleted_at
+                                    ? "Restore Organization"
+                                    : "Delete Organization"}
+                            </DangerButton>
+                        </div>
+                    </div>
+                </Modal>
+            </>
+        );
     }
 
     return (
@@ -76,11 +122,7 @@ const Edit = () => {
                 <span className="mx-2 font-medium text-indigo-600">/</span>
                 {data.name}
             </h1>
-            {organization.deleted_at && (
-                <TrashedMessage onRestore={restore}>
-                    This organization has been deleted.
-                </TrashedMessage>
-            )}
+            {organization.deleted_at && modalContent()}
             <div className="max-w-3xl overflow-hidden bg-white rounded shadow">
                 <form onSubmit={handleSubmit}>
                     <div className="flex flex-wrap p-8 -mb-8 -mr-6">
@@ -182,37 +224,7 @@ const Edit = () => {
                         </div>
                     </div>
                     <div className="flex items-center px-8 py-4 bg-gray-100 border-t border-gray-200">
-                        {!organization.deleted_at && (
-                            <>
-                                <DeleteButton onClick={toggle}>
-                                    Delete Organization
-                                </DeleteButton>
-
-                                <Modal isShowing={isShowing} hide={toggle}>
-                                    <div className="p-6">
-                                        <h2 className="text-lg font-medium text-gray-900">
-                                            Are you sure you want to delete this
-                                            organization?
-                                        </h2>
-
-                                        <div className="mt-6 flex justify-end">
-                                            <SecondaryButton onClick={toggle}>
-                                                Cancel
-                                            </SecondaryButton>
-
-                                            <DangerButton
-                                                className="ml-3"
-                                                processing={processing}
-                                                type="button"
-                                                onClick={deleteOrganization}
-                                            >
-                                                Delete Organization
-                                            </DangerButton>
-                                        </div>
-                                    </div>
-                                </Modal>
-                            </>
-                        )}
+                        {!organization.deleted_at && modalContent()}
                         <LoadingButton
                             processing={processing}
                             type="submit"

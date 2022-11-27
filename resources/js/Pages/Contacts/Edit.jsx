@@ -47,10 +47,52 @@ const Edit = () => {
         destroy(route("contacts.destroy", contact.id));
     };
 
-    function restore() {
-        if (confirm("Are you sure you want to restore this contact?")) {
-            Inertia.put(route("contacts.restore", contact.id));
-        }
+    const restoreContact = (e) => {
+        e.preventDefault();
+        toggle();
+        put(route("contacts.restore", contact.id));
+    };
+
+    function modalContent() {
+        const bodyModal = contact.deleted_at
+            ? "Are you sure you want to restore this contact?"
+            : "Are you sure you want to delete this contact?";
+        const actionModal = contact.deleted_at ? restoreContact : deleteContact;
+        return (
+            <>
+                {contact.deleted_at ? (
+                    <TrashedMessage onRestore={toggle}>
+                        This contact has been deleted.
+                    </TrashedMessage>
+                ) : (
+                    <DeleteButton onClick={toggle}>Delete Contact</DeleteButton>
+                )}
+                <Modal isShowing={isShowing} hide={toggle}>
+                    <div className="p-6">
+                        <h2 className="text-lg font-medium text-gray-900">
+                            {bodyModal}
+                        </h2>
+
+                        <div className="mt-6 flex justify-end">
+                            <SecondaryButton onClick={toggle}>
+                                Cancel
+                            </SecondaryButton>
+
+                            <DangerButton
+                                className="ml-3"
+                                processing={processing}
+                                type="button"
+                                onClick={actionModal}
+                            >
+                                {contact.deleted_at
+                                    ? "Restore Contact"
+                                    : "Delete Contact"}
+                            </DangerButton>
+                        </div>
+                    </div>
+                </Modal>
+            </>
+        );
     }
 
     return (
@@ -66,11 +108,7 @@ const Edit = () => {
                 <span className="mx-2 font-medium text-indigo-600">/</span>
                 {data.first_name} {data.last_name}
             </h1>
-            {contact.deleted_at && (
-                <TrashedMessage onRestore={restore}>
-                    This contact has been deleted.
-                </TrashedMessage>
-            )}
+            {contact.deleted_at && modalContent()}
             <div className="max-w-3xl overflow-hidden bg-white rounded shadow">
                 <form onSubmit={handleSubmit}>
                     <div className="flex flex-wrap p-8 -mb-8 -mr-6">
@@ -205,39 +243,7 @@ const Edit = () => {
                         </div>
                     </div>
                     <div className="flex items-center px-8 py-4 bg-gray-100 border-t border-gray-200">
-                        {!contact.deleted_at && (
-                            <>
-                                <DeleteButton onClick={toggle}>
-                                    Delete Contact
-                                </DeleteButton>
-
-                                <Modal isShowing={isShowing} hide={toggle}>
-                                    <div className="p-6">
-                                        <h2 className="text-lg font-medium text-gray-900">
-                                            Are you sure you want to delete this
-                                            contact?
-                                        </h2>
-
-                                        <div className="mt-6 flex justify-end">
-                                            <SecondaryButton
-                                                onClick={toggle}
-                                            >
-                                                Cancel
-                                            </SecondaryButton>
-
-                                            <DangerButton
-                                                className="ml-3"
-                                                processing={processing}
-                                                type="button"
-                                                onClick={deleteContact}
-                                            >
-                                                Delete Contact
-                                            </DangerButton>
-                                        </div>
-                                    </div>
-                                </Modal>
-                            </>
-                        )}
+                        {!contact.deleted_at && modalContent()}
                         <LoadingButton
                             processing={processing}
                             type="submit"
