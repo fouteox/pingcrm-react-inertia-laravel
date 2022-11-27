@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { Inertia } from "@inertiajs/inertia";
 import { Link, usePage, useForm, Head } from "@inertiajs/inertia-react";
 import Layout from "@/Shared/Layout";
@@ -13,9 +13,10 @@ import SelectInput from "@/Shared/SelectInput";
 import TrashedMessage from "@/Shared/TrashedMessage";
 import Icon from "@/Shared/Icon";
 import Modal from "@/Shared/Modal";
+import useModal from "@/Hooks/useModal";
 
 const Edit = () => {
-    const [openDialog, setOpenDialog] = useState(null);
+    const { isShowing, toggle } = useModal();
 
     const { organization } = usePage().props;
     const {
@@ -50,13 +51,9 @@ const Edit = () => {
         put(route("organizations.update", organization.id));
     }
 
-    function closeModals() {
-        setOpenDialog(null);
-    }
-
     const deleteOrganization = (e) => {
         e.preventDefault();
-        closeModals();
+        toggle();
         destroy(route("organizations.destroy", organization.id));
     };
 
@@ -187,18 +184,11 @@ const Edit = () => {
                     <div className="flex items-center px-8 py-4 bg-gray-100 border-t border-gray-200">
                         {!organization.deleted_at && (
                             <>
-                                <DeleteButton
-                                    onClick={() =>
-                                        setOpenDialog("confirm-delete")
-                                    }
-                                >
+                                <DeleteButton onClick={toggle}>
                                     Delete Organization
                                 </DeleteButton>
 
-                                <Modal
-                                    open={openDialog === "confirm-delete"}
-                                    onClose={closeModals}
-                                >
+                                <Modal isShowing={isShowing} hide={toggle}>
                                     <div className="p-6">
                                         <h2 className="text-lg font-medium text-gray-900">
                                             Are you sure you want to delete this
@@ -206,9 +196,7 @@ const Edit = () => {
                                         </h2>
 
                                         <div className="mt-6 flex justify-end">
-                                            <SecondaryButton
-                                                onClick={closeModals}
-                                            >
+                                            <SecondaryButton onClick={toggle}>
                                                 Cancel
                                             </SecondaryButton>
 
