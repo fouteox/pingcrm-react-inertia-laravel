@@ -27,7 +27,7 @@ const PageLink = ({ active, label, url }) => {
 // and dots, if exists (...)
 const PageInactive = ({ label }) => {
     const className = clsx(
-        "mr-1 mb-1 px-4 py-3 text-sm border rounded border-solid border-gray-300 text-gray"
+        "mr-1 mb-1 px-4 py-3 text-sm border rounded border-solid border-gray-300 text-gray-400"
     );
     return (
         <div
