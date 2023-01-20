@@ -3,7 +3,7 @@ import InputError from "@/Shared/InputError";
 import InputLabel from "@/Shared/InputLabel";
 import LoadingButton from "@/Shared/LoadingButton";
 import TextInput from "@/Shared/TextInput";
-import { Head, useForm } from "@inertiajs/inertia-react";
+import { Head, useForm } from "@inertiajs/react";
 import Logo from "@/Shared/Logo";
 
 export default function Login() {

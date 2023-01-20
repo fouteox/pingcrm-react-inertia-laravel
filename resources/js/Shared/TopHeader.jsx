@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link } from "@inertiajs/inertia-react";
+import { Link } from "@inertiajs/react";
 import Logo from "@/Shared/Logo";
 import MainMenu from "@/Shared/MainMenu";
 

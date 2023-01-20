@@ -1,4 +1,4 @@
-import { Link, usePage, Head } from "@inertiajs/inertia-react";
+import { Link, usePage, Head } from "@inertiajs/react";
 import Layout from "@/Shared/Layout";
 import Icon from "@/Shared/Icon";
 import Pagination from "@/Shared/Pagination";

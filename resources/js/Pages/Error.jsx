@@ -1,4 +1,4 @@
-import { Head } from "@inertiajs/inertia-react";
+import { Head } from "@inertiajs/react";
 
 export default function ErrorPage({ status }) {
     const title = {

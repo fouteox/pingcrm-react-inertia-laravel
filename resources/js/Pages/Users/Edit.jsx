@@ -1,5 +1,4 @@
-import { Inertia } from "@inertiajs/inertia";
-import { Link, usePage, useForm, Head } from "@inertiajs/inertia-react";
+import { Link, usePage, useForm, Head } from "@inertiajs/react";
 import Layout from "@/Shared/Layout";
 import DeleteButton from "@/Shared/DeleteButton";
 import LoadingButton from "@/Shared/LoadingButton";

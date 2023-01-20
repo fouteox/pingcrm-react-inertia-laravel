@@ -1,4 +1,4 @@
-import { Link } from "@inertiajs/inertia-react";
+import { Link } from "@inertiajs/react";
 import clsx from "clsx";
 
 export default ({ href, type = "button", style, className, children }) => {

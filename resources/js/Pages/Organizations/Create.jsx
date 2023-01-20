@@ -1,4 +1,4 @@
-import { Link, useForm, Head } from "@inertiajs/inertia-react";
+import { Link, useForm, Head } from "@inertiajs/react";
 import Layout from "@/Shared/Layout";
 import LoadingButton from "@/Shared/LoadingButton";
 import TextInput from "@/Shared/TextInput";

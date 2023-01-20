@@ -1,5 +1,5 @@
 import Layout from "@/Shared/Layout";
-import { Head } from "@inertiajs/inertia-react";
+import { Head } from "@inertiajs/react";
 
 const Index = () => {
     return (

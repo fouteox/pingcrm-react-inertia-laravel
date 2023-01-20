@@ -1,5 +1,4 @@
-import { Inertia } from "@inertiajs/inertia";
-import { InertiaLink, usePage, useForm, Head } from "@inertiajs/inertia-react";
+import { Link, usePage, useForm, Head } from "@inertiajs/react";
 import Layout from "@/Shared/Layout";
 import DeleteButton from "@/Shared/DeleteButton";
 import LoadingButton from "@/Shared/LoadingButton";
@@ -99,12 +98,12 @@ const Edit = () => {
         <>
             <Head title={`${data.first_name} ${data.last_name}`} />
             <h1 className="mb-8 text-3xl font-bold">
-                <InertiaLink
+                <Link
                     href={route("contacts.index")}
                     className="text-indigo-600 hover:text-indigo-700"
                 >
                     Contacts
-                </InertiaLink>
+                </Link>
                 <span className="mx-2 font-medium text-indigo-600">/</span>
                 {data.first_name} {data.last_name}
             </h1>
