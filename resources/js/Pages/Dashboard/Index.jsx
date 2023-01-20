@@ -15,12 +15,19 @@ const Dashboard = () => {
                 >
                     Inertia.js
                 </a>
-                works with
+                v1.0 works with
                 <a
                     className="ml-1 text-indigo-600 underline hover:text-orange-500"
                     href="https://reactjs.org/"
                 >
                     React
+                </a>
+                . You can find the source code on
+                <a
+                    className="ml-1 text-indigo-600 underline hover:text-orange-500"
+                    href="https://github.com/fouteox/pingcrm-react"
+                >
+                    GitHub
                 </a>
                 .
             </p>
