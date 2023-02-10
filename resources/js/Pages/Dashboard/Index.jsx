@@ -31,6 +31,11 @@ const Dashboard = () => {
                 </a>
                 .
             </p>
+
+            <p className="mb-6 leading-normal">
+                This application runs on a raspberry.
+            </p>
+
             <p className="leading-normal">
                 Original
                 <a

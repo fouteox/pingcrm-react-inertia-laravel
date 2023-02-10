@@ -1,0 +1,41 @@
+import:
+  - recipe/laravel.php
+  - contrib/php-fpm.php
+  - contrib/npm.php
+  - deploy/laravel-recipe.php
+
+config:
+  application: "pingcrm-react.com"
+  repository: "git@github.com:fouteox/pingcrm-react.git"
+  php_fpm_version: "8.2"
+
+hosts:
+  prod:
+    remote_user: "{{remote_user}}"
+    hostname: "{{hostname}}"
+    deploy_path: "~/{{application}}"
+    port: "{{port}}"
+
+tasks:
+  deploy:
+    - deploy:env
+    - deploy:prepare
+    - deploy:vendors
+    - artisan:storage:link
+    - artisan:view:clear
+    - artisan:view:cache
+    - artisan:config:clear
+    - artisan:config:cache
+    - artisan:route:clear
+    - artisan:route:cache
+    - artisan:migrate:fresh
+    - artisan:db:seed
+    - npm:install
+    - npm:run:build
+    - deploy:publish
+    - php-fpm:reload
+  npm:run:build:
+    - run: "cd {{release_or_current_path}} && npm run build"
+
+after:
+  deploy:failed: deploy:unlock
