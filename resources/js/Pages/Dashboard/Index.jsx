@@ -33,7 +33,7 @@ const Dashboard = () => {
             </p>
 
             <p className="mb-6 leading-normal">
-                This application runs on a raspberry.
+                This application runs on a Raspberry Pi 3B with 1GB of RAM.
             </p>
 
             <p className="leading-normal">

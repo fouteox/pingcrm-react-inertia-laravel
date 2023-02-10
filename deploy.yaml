@@ -33,7 +33,6 @@ tasks:
     - npm:install
     - npm:run:build
     - deploy:publish
-    - php-fpm:reload
   npm:run:build:
     - run: "cd {{release_or_current_path}} && npm run build"
 
