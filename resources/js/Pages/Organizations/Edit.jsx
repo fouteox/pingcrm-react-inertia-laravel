@@ -12,10 +12,8 @@ import SelectInput from "@/Shared/SelectInput";
 import TrashedMessage from "@/Shared/TrashedMessage";
 import Icon from "@/Shared/Icon";
 import Modal from "@/Shared/Modal";
-import useModal from "@/Hooks/useModal";
 
 const Edit = () => {
-    const { isShowing, toggle } = useModal();
     const [showModal, setShowModal] = useState(false);
 
     const { organization } = usePage().props;
@@ -39,13 +37,13 @@ const Edit = () => {
 
     function handleSubmit(e) {
         e.preventDefault();
+
         put(route("organizations.update", organization.id));
     }
 
     const deleteOrganization = (e) => {
         e.preventDefault();
-        toggle();
-        setShowModal(true);
+
         destroy(route("organizations.destroy", organization.id), {
             onFinish: () => setShowModal(false),
         });
@@ -53,8 +51,7 @@ const Edit = () => {
 
     const restoreOrganization = (e) => {
         e.preventDefault();
-        toggle();
-        setShowModal(true);
+
         put(route("organizations.restore", organization.id), {
             onFinish: () => setShowModal(false),
         });
@@ -70,25 +67,24 @@ const Edit = () => {
         return (
             <>
                 {organization.deleted_at ? (
-                    <TrashedMessage onRestore={toggle}>
+                    <TrashedMessage onRestore={() => setShowModal(true)}>
                         This organization has been deleted.
                     </TrashedMessage>
                 ) : (
-                    <DeleteButton onClick={toggle}>
+                    <DeleteButton onClick={() => setShowModal(true)}>
                         Delete Organization
                     </DeleteButton>
                 )}
-                <Modal
-                    isShowing={isShowing || (processing && showModal)}
-                    hide={toggle}
-                >
+                <Modal show={showModal} onClose={() => setShowModal(false)}>
                     <div className="p-6">
                         <h2 className="text-lg font-medium text-gray-900">
                             {bodyModal}
                         </h2>
 
                         <div className="mt-6 flex justify-end">
-                            <SecondaryButton onClick={toggle}>
+                            <SecondaryButton
+                                onClick={() => setShowModal(false)}
+                            >
                                 Cancel
                             </SecondaryButton>
 

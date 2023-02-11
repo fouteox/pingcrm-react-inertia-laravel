@@ -12,10 +12,8 @@ import TrashedMessage from "@/Shared/TrashedMessage";
 import InputLabel from "@/Shared/InputLabel";
 import InputError from "@/Shared/InputError";
 import Modal from "@/Shared/Modal";
-import useModal from "@/Hooks/useModal";
 
 const Edit = () => {
-    const { isShowing, toggle } = useModal();
     const [showModal, setShowModal] = useState(false);
 
     const { user } = usePage().props;
@@ -34,23 +32,18 @@ const Edit = () => {
         password: user.password || "",
         owner: user.owner ? "1" : "0" || "0",
         photo: "",
-
-        // NOTE: When working with Laravel PUT/PATCH requests and FormData
-        // you SHOULD send POST request and fake the PUT request like this.
         _method: "PUT",
     });
 
     function handleSubmit(e) {
         e.preventDefault();
 
-        // NOTE: We are using POST method here, not PUT/PACH. See comment above.
         post(route("users.update", user.id));
     }
 
     const deleteUser = (e) => {
         e.preventDefault();
-        toggle();
-        setShowModal(true);
+
         destroy(route("users.destroy", user.id), {
             onFinish: () => setShowModal(false),
         });
@@ -58,8 +51,7 @@ const Edit = () => {
 
     const restoreUser = (e) => {
         e.preventDefault();
-        toggle();
-        setShowModal(true);
+
         put(route("users.restore", user.id), {
             onFinish: () => setShowModal(false),
         });
@@ -73,20 +65,24 @@ const Edit = () => {
         return (
             <>
                 {user.deleted_at ? (
-                    <TrashedMessage onRestore={toggle}>
+                    <TrashedMessage onRestore={() => setShowModal(true)}>
                         This user has been deleted.
                     </TrashedMessage>
                 ) : (
-                    <DeleteButton onClick={toggle}>Delete User</DeleteButton>
+                    <DeleteButton onClick={() => setShowModal(true)}>
+                        Delete User
+                    </DeleteButton>
                 )}
-                <Modal isShowing={isShowing} hide={toggle}>
+                <Modal show={showModal} onClose={() => setShowModal(false)}>
                     <div className="p-6">
                         <h2 className="text-lg font-medium text-gray-900">
                             {bodyModal}
                         </h2>
 
                         <div className="mt-6 flex justify-end">
-                            <SecondaryButton onClick={toggle}>
+                            <SecondaryButton
+                                onClick={() => setShowModal(false)}
+                            >
                                 Cancel
                             </SecondaryButton>
 
