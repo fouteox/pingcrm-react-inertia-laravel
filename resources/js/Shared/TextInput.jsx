@@ -10,6 +10,7 @@ export default forwardRef(function TextInput(
         required,
         isFocused,
         handleChange,
+        maxLength = null,
     },
     ref
 ) {
@@ -27,6 +28,7 @@ export default forwardRef(function TextInput(
             name={name}
             id={name}
             value={value}
+            maxLength={maxLength}
             className={
                 `p-2 leading-normal block w-full border border-gray-200 text-gray-700 bg-white font-sans rounded text-left appearance-none relative focus:ring-indigo-400/50 focus:ring ` +
                 className

@@ -136,6 +136,7 @@ const Edit = () => {
                             <TextInput
                                 name="first_name"
                                 value={data.first_name}
+                                maxLength={25}
                                 handleChange={(e) =>
                                     setData("first_name", e.target.value)
                                 }
@@ -150,6 +151,7 @@ const Edit = () => {
                             <TextInput
                                 name="last_name"
                                 value={data.last_name}
+                                maxLength={25}
                                 handleChange={(e) =>
                                     setData("last_name", e.target.value)
                                 }
@@ -162,6 +164,7 @@ const Edit = () => {
                                 name="email"
                                 type="email"
                                 value={data.email}
+                                maxLength={50}
                                 handleChange={(e) =>
                                     setData("email", e.target.value)
                                 }
