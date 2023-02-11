@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, usePage, useForm, Head } from "@inertiajs/react";
 import Layout from "@/Shared/Layout";
 import DeleteButton from "@/Shared/DeleteButton";
@@ -15,6 +16,7 @@ import useModal from "@/Hooks/useModal";
 
 const Edit = () => {
     const { isShowing, toggle } = useModal();
+    const [showModal, setShowModal] = useState(false);
 
     const { organization } = usePage().props;
     const {
@@ -35,15 +37,6 @@ const Edit = () => {
         postal_code: organization.postal_code || "",
     });
 
-    // useEffect(() => {
-    //     const inter = setInterval(() => {
-    //         console.log("refresh");
-    //         Inertia.reload();
-    //     }, 5000);
-
-    //     return () => clearTimeout(inter);
-    // }, []);
-
     function handleSubmit(e) {
         e.preventDefault();
         put(route("organizations.update", organization.id));
@@ -52,13 +45,19 @@ const Edit = () => {
     const deleteOrganization = (e) => {
         e.preventDefault();
         toggle();
-        destroy(route("organizations.destroy", organization.id));
+        setShowModal(true);
+        destroy(route("organizations.destroy", organization.id), {
+            onFinish: () => setShowModal(false),
+        });
     };
 
     const restoreOrganization = (e) => {
         e.preventDefault();
         toggle();
-        put(route("organizations.restore", organization.id));
+        setShowModal(true);
+        put(route("organizations.restore", organization.id), {
+            onFinish: () => setShowModal(false),
+        });
     };
 
     function modalContent() {
@@ -79,7 +78,10 @@ const Edit = () => {
                         Delete Organization
                     </DeleteButton>
                 )}
-                <Modal isShowing={isShowing} hide={toggle}>
+                <Modal
+                    isShowing={isShowing || (processing && showModal)}
+                    hide={toggle}
+                >
                     <div className="p-6">
                         <h2 className="text-lg font-medium text-gray-900">
                             {bodyModal}

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Link, usePage, useForm, Head } from "@inertiajs/react";
 import Layout from "@/Shared/Layout";
 import DeleteButton from "@/Shared/DeleteButton";
@@ -15,6 +16,8 @@ import useModal from "@/Hooks/useModal";
 
 const Edit = () => {
     const { isShowing, toggle } = useModal();
+    const [showModal, setShowModal] = useState(false);
+
     const { user } = usePage().props;
     const {
         data,
@@ -47,13 +50,19 @@ const Edit = () => {
     const deleteUser = (e) => {
         e.preventDefault();
         toggle();
-        destroy(route("users.destroy", user.id));
+        setShowModal(true);
+        destroy(route("users.destroy", user.id), {
+            onFinish: () => setShowModal(false),
+        });
     };
 
     const restoreUser = (e) => {
         e.preventDefault();
         toggle();
-        put(route("users.restore", user.id));
+        setShowModal(true);
+        put(route("users.restore", user.id), {
+            onFinish: () => setShowModal(false),
+        });
     };
 
     function modalContent() {
