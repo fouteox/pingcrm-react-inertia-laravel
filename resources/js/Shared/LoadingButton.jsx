@@ -4,6 +4,7 @@ export default function LoadingButton({
     processing,
     children,
     onClick,
+    disabled = false,
 }) {
     return (
         <button
@@ -11,10 +12,10 @@ export default function LoadingButton({
             onClick={onClick}
             className={
                 `px-6 py-3 rounded bg-indigo-600 text-white text-sm leading-4 font-bold whitespace-nowrap hover:bg-orange-400 focus:bg-orange-400 transition ease-in-out duration-150 ${
-                    processing && "opacity-25"
+                    (processing || disabled) && "opacity-25"
                 } ` + className
             }
-            disabled={processing}
+            disabled={processing || disabled}
         >
             {processing && (
                 <svg

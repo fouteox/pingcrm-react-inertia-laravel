@@ -35,6 +35,8 @@ const Edit = () => {
         _method: "PUT",
     });
 
+    console.log(user.deleted_at);
+
     function handleSubmit(e) {
         e.preventDefault();
 
@@ -124,7 +126,15 @@ const Edit = () => {
                     />
                 )}
             </div>
-            {user.deleted_at && modalContent()}
+            {!user.can_delete ? (
+                <div className="max-w-3xl mb-6 p-4 bg-yellow-400 rounded border border-yellow-500">
+                    <div className="text-yellow-800">
+                        Updating the demo user is not allowed.
+                    </div>
+                </div>
+            ) : (
+                user.deleted_at && modalContent()
+            )}
             <div className="max-w-3xl overflow-hidden bg-white rounded shadow">
                 <form onSubmit={handleSubmit}>
                     <div className="flex flex-wrap p-8 -mb-8 -mr-6">
@@ -207,9 +217,10 @@ const Edit = () => {
                         />
                     </div>
                     <div className="flex items-center px-8 py-4 bg-gray-100 border-t border-gray-200">
-                        {!user.deleted_at && modalContent()}
+                        {!user.deleted_at && user.can_delete && modalContent()}
                         <LoadingButton
                             processing={processing}
+                            disabled={!user.can_delete}
                             type="submit"
                             className="ml-auto btn-indigo"
                         >
