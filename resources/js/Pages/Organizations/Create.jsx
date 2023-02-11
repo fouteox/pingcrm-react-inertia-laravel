@@ -43,6 +43,7 @@ const Create = () => {
                             <TextInput
                                 name="name"
                                 value={data.name}
+                                maxLength={100}
                                 handleChange={(e) =>
                                     setData("name", e.target.value)
                                 }
@@ -56,40 +57,48 @@ const Create = () => {
                                 name="email"
                                 type="email"
                                 value={data.email}
+                                maxLength={50}
                                 handleChange={(e) =>
                                     setData("email", e.target.value)
                                 }
                             />
+                            <InputError message={errors.email} />
                         </div>
                         <div className="w-full pb-7 pr-6 lg:w-1/2">
                             <InputLabel forInput="phone" value="Phone:" />
                             <TextInput
                                 name="phone"
                                 value={data.phone}
+                                maxLength={50}
                                 handleChange={(e) =>
                                     setData("phone", e.target.value)
                                 }
                             />
+                            <InputError message={errors.phone} />
                         </div>
                         <div className="w-full pb-7 pr-6 lg:w-1/2">
                             <InputLabel forInput="adsress" value="Address:" />
                             <TextInput
                                 name="address"
                                 value={data.address}
+                                maxLength={150}
                                 handleChange={(e) =>
                                     setData("address", e.target.value)
                                 }
                             />
+                            <InputError message={errors.address} />
                         </div>
                         <div className="w-full pb-7 pr-6 lg:w-1/2">
                             <InputLabel forInput="city" value="City:" />
                             <TextInput
                                 name="city"
                                 value={data.city}
+                                maxLength={50}
                                 handleChange={(e) =>
                                     setData("city", e.target.value)
                                 }
                             />
+                            <InputError message={errors.city} />
                         </div>
                         <div className="w-full pb-7 pr-6 lg:w-1/2">
                             <InputLabel
@@ -99,10 +108,12 @@ const Create = () => {
                             <TextInput
                                 name="region"
                                 value={data.region}
+                                maxLength={50}
                                 handleChange={(e) =>
                                     setData("region", e.target.value)
                                 }
                             />
+                            <InputError message={errors.region} />
                         </div>
                         <div className="w-full pb-7 pr-6 lg:w-1/2">
                             <InputLabel forInput="country" value="Country:" />
@@ -124,15 +135,14 @@ const Create = () => {
                                 value="Postal code:"
                             />
                             <TextInput
-                                label="Postal Code"
                                 name="postal_code"
-                                type="text"
-                                errors={errors.postal_code}
                                 value={data.postal_code}
+                                maxLength={25}
                                 handleChange={(e) =>
                                     setData("postal_code", e.target.value)
                                 }
                             />
+                            <InputError message={errors.postal_code} />
                         </div>
                     </div>
                     <div className="flex items-center justify-end px-8 py-4 bg-gray-100 border-t border-gray-200">

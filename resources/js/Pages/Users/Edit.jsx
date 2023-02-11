@@ -181,6 +181,7 @@ const Edit = () => {
                                     setData("password", e.target.value)
                                 }
                             />
+                            <InputError message={errors.password} />
                         </div>
                         <div className="w-full pb-7 pr-6 lg:w-1/2">
                             <InputLabel forInput="owner" value="Owner:" />
