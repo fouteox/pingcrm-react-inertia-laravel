@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
-use App\Models\User;
 use App\Models\Account;
 use App\Models\Contact;
 use App\Models\Organization;
+use App\Models\User;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -19,7 +19,7 @@ class DatabaseSeeder extends Seeder
     public function run()
     {
         $account = Account::create(['name' => 'Acme Corporation']);
-        
+
         User::factory()->create([
             'account_id' => $account->id,
             'first_name' => 'John',

@@ -35,7 +35,7 @@ class HourlyClear extends Command
         Storage::deleteDirectory('.glide-cache');
         Artisan::call('migrate:fresh --force --seed');
         Artisan::call('up');
-        
+
         return Command::SUCCESS;
     }
 }
