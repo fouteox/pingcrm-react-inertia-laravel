@@ -28,10 +28,12 @@ tasks:
     - artisan:config:cache
     - artisan:route:clear
     - artisan:route:cache
-    - artisan:migrate:fresh
-    - artisan:db:seed
     - npm:install
     - npm:run:build
+    - artisan:down
+    - artisan:migrate:fresh
+    - artisan:db:seed
+    - artisan:up
     - deploy:publish
   npm:run:build:
     - run: "cd {{release_or_current_path}} && npm run build"
