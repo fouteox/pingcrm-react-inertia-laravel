@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\OrganizationsRequest;
 use App\Models\Organization;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
@@ -34,20 +35,9 @@ class OrganizationsController extends Controller
         return Inertia::render('Organizations/Create');
     }
 
-    public function store()
+    public function store(OrganizationsRequest $request)
     {
-        Auth::user()->account->organizations()->create(
-            Request::validate([
-                'name' => ['required', 'max:100'],
-                'email' => ['nullable', 'max:50', 'email'],
-                'phone' => ['nullable', 'max:50'],
-                'address' => ['nullable', 'max:150'],
-                'city' => ['nullable', 'max:50'],
-                'region' => ['nullable', 'max:50'],
-                'country' => ['nullable', 'max:2'],
-                'postal_code' => ['nullable', 'max:25'],
-            ])
-        );
+        Auth::user()->account->organizations()->create($request->validate());
 
         return Redirect::route('organizations.index')->with('success', 'Organization created.');
     }
@@ -71,20 +61,9 @@ class OrganizationsController extends Controller
         ]);
     }
 
-    public function update(Organization $organization)
+    public function update(Organization $organization, OrganizationsRequest $request)
     {
-        $organization->update(
-            Request::validate([
-                'name' => ['required', 'max:100'],
-                'email' => ['nullable', 'max:50', 'email'],
-                'phone' => ['nullable', 'max:50'],
-                'address' => ['nullable', 'max:150'],
-                'city' => ['nullable', 'max:50'],
-                'region' => ['nullable', 'max:50'],
-                'country' => ['nullable', 'max:2'],
-                'postal_code' => ['nullable', 'max:25'],
-            ])
-        );
+        $organization->update($request->validate());
 
         return Redirect::back()->with('success', 'Organization updated.');
     }
