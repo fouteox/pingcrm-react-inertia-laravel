@@ -20,7 +20,7 @@
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.7",
-        "deployer/deployer": "^7.1",
+        "deployer/deployer": "^7.2",
         "laravel/breeze": "^1.15",
         "laravel/pint": "^1.0",
         "laravel/sail": "^1.18",
