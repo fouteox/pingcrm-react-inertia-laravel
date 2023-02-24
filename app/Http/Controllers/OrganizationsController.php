@@ -38,7 +38,7 @@ class OrganizationsController extends Controller
 
     public function store(OrganizationsRequest $request): RedirectResponse
     {
-        Auth::user()->account->organizations()->create($request->validate());
+        Auth::user()->account->organizations()->create($request->validated());
 
         return Redirect::route('organizations.index')->with('success', 'Organization created.');
     }
@@ -64,7 +64,7 @@ class OrganizationsController extends Controller
 
     public function update(Organization $organization, OrganizationsRequest $request): RedirectResponse
     {
-        $organization->update($request->validate());
+        $organization->update($request->validated());
 
         return Redirect::back()->with('success', 'Organization updated.');
     }

@@ -9,7 +9,6 @@ module.exports = {
         "./resources/views/**/*.blade.php",
         "./resources/js/**/*.jsx",
     ],
-    darkMode: false, // or 'media' or 'class'
     theme: {
         colors: {
             transparent: "transparent",
