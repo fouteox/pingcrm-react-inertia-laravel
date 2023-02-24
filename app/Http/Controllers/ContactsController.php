@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Contact;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Request;
@@ -44,7 +45,7 @@ class ContactsController extends Controller
         ]);
     }
 
-    public function store()
+    public function store(): RedirectResponse
     {
         Auth::user()->account->contacts()->create(
             Request::validate([
@@ -91,7 +92,7 @@ class ContactsController extends Controller
         ]);
     }
 
-    public function update(Contact $contact)
+    public function update(Contact $contact): RedirectResponse
     {
         $contact->update(
             Request::validate([
@@ -114,14 +115,14 @@ class ContactsController extends Controller
         return Redirect::back()->with('success', 'Contact updated.');
     }
 
-    public function destroy(Contact $contact)
+    public function destroy(Contact $contact): RedirectResponse
     {
         $contact->delete();
 
         return Redirect::back()->with('success', 'Contact deleted.');
     }
 
-    public function restore(Contact $contact)
+    public function restore(Contact $contact): RedirectResponse
     {
         $contact->restore();
 
