@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Http\RedirectResponse;
 use App\Http\Requests\OrganizationsRequest;
 use App\Models\Organization;
 use Illuminate\Support\Facades\Auth;
@@ -35,7 +36,7 @@ class OrganizationsController extends Controller
         return Inertia::render('Organizations/Create');
     }
 
-    public function store(OrganizationsRequest $request)
+    public function store(OrganizationsRequest $request): RedirectResponse
     {
         Auth::user()->account->organizations()->create($request->validate());
 
@@ -61,21 +62,21 @@ class OrganizationsController extends Controller
         ]);
     }
 
-    public function update(Organization $organization, OrganizationsRequest $request)
+    public function update(Organization $organization, OrganizationsRequest $request): RedirectResponse
     {
         $organization->update($request->validate());
 
         return Redirect::back()->with('success', 'Organization updated.');
     }
 
-    public function destroy(Organization $organization)
+    public function destroy(Organization $organization): RedirectResponse
     {
         $organization->delete();
 
         return Redirect::back()->with('success', 'Organization deleted.');
     }
 
-    public function restore(Organization $organization)
+    public function restore(Organization $organization): RedirectResponse
     {
         $organization->restore();
 
