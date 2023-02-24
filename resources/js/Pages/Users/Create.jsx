@@ -5,7 +5,7 @@ import TextInput from "@/Shared/TextInput";
 import SelectInput from "@/Shared/SelectInput";
 import FileInput from "@/Shared/FileInput";
 import InputLabel from "@/Shared/InputLabel";
-import InputError from "@/Shared/InputError";
+import InputError from "@/Shared//InputError";
 
 const Create = () => {
     const { data, setData, errors, post, processing } = useForm({

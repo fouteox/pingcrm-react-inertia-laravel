@@ -1,5 +1,5 @@
 import Checkbox from "@/Shared/Checkbox";
-import InputError from "@/Shared/InputError";
+import InputError from "@/Shared//InputError";
 import InputLabel from "@/Shared/InputLabel";
 import LoadingButton from "@/Shared/LoadingButton";
 import TextInput from "@/Shared/TextInput";

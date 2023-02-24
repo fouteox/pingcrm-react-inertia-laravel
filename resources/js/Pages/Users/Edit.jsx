@@ -10,8 +10,9 @@ import SelectInput from "@/Shared/SelectInput";
 import FileInput from "@/Shared/FileInput";
 import TrashedMessage from "@/Shared/TrashedMessage";
 import InputLabel from "@/Shared/InputLabel";
-import InputError from "@/Shared/InputError";
+import InputError from "@/Shared//InputError";
 import Modal from "@/Shared/Modal";
+import { Field } from "@/Components/Form/Field";
 
 const Edit = () => {
     const [showModal, setShowModal] = useState(false);
@@ -138,11 +139,11 @@ const Edit = () => {
             <div className="max-w-3xl overflow-hidden bg-white rounded shadow">
                 <form onSubmit={handleSubmit}>
                     <div className="flex flex-wrap p-8 -mb-8 -mr-6">
-                        <div className="w-full pb-7 pr-6 lg:w-1/2">
-                            <InputLabel
-                                forInput="first_name"
-                                value="First name:"
-                            />
+                        <Field
+                            label="first_name"
+                            value="First name:"
+                            errors={errors.first_name}
+                        >
                             <TextInput
                                 name="first_name"
                                 value={data.first_name}
@@ -151,13 +152,13 @@ const Edit = () => {
                                     setData("first_name", e.target.value)
                                 }
                             />
-                            <InputError message={errors.first_name} />
-                        </div>
-                        <div className="w-full pb-7 pr-6 lg:w-1/2">
-                            <InputLabel
-                                forInput="last_name"
-                                value="Last name:"
-                            />
+                        </Field>
+
+                        <Field
+                            label="last_name"
+                            value="Last name:"
+                            errors={errors.last_name}
+                        >
                             <TextInput
                                 name="last_name"
                                 value={data.last_name}
@@ -166,10 +167,13 @@ const Edit = () => {
                                     setData("last_name", e.target.value)
                                 }
                             />
-                            <InputError message={errors.last_name} />
-                        </div>
-                        <div className="w-full pb-7 pr-6 lg:w-1/2">
-                            <InputLabel forInput="email" value="Email:" />
+                        </Field>
+
+                        <Field
+                            label="email"
+                            value="Email:"
+                            errors={errors.email}
+                        >
                             <TextInput
                                 name="email"
                                 type="email"
@@ -179,10 +183,13 @@ const Edit = () => {
                                     setData("email", e.target.value)
                                 }
                             />
-                            <InputError message={errors.email} />
-                        </div>
-                        <div className="w-full pb-7 pr-6 lg:w-1/2">
-                            <InputLabel forInput="password" value="Password:" />
+                        </Field>
+
+                        <Field
+                            label="password"
+                            value="Password:"
+                            errors={errors.password}
+                        >
                             <TextInput
                                 name="password"
                                 type="password"
@@ -191,10 +198,13 @@ const Edit = () => {
                                     setData("password", e.target.value)
                                 }
                             />
-                            <InputError message={errors.password} />
-                        </div>
-                        <div className="w-full pb-7 pr-6 lg:w-1/2">
-                            <InputLabel forInput="owner" value="Owner:" />
+                        </Field>
+
+                        <Field
+                            label="owner"
+                            value="Owner:"
+                            errors={errors.owner}
+                        >
                             <SelectInput
                                 name="owner"
                                 value={data.owner}
@@ -205,7 +215,8 @@ const Edit = () => {
                                 <option value="1">Yes</option>
                                 <option value="0">No</option>
                             </SelectInput>
-                        </div>
+                        </Field>
+
                         <FileInput
                             className="w-full pb-8 pr-6 lg:w-1/2"
                             label="Photo"

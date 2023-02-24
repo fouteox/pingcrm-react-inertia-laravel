@@ -9,8 +9,9 @@ import TextInput from "@/Shared/TextInput";
 import SelectInput from "@/Shared/SelectInput";
 import TrashedMessage from "@/Shared/TrashedMessage";
 import InputLabel from "@/Shared/InputLabel";
-import InputError from "@/Shared/InputError";
+import InputError from "@/Shared//InputError";
 import Modal from "@/Shared/Modal";
+import { Field } from "@/Components/Form/Field";
 
 const Edit = () => {
     const [showModal, setShowModal] = useState(false);
@@ -121,11 +122,11 @@ const Edit = () => {
             <div className="max-w-3xl overflow-hidden bg-white rounded shadow">
                 <form onSubmit={handleSubmit}>
                     <div className="flex flex-wrap p-8 -mb-8 -mr-6">
-                        <div className="w-full pb-7 pr-6 lg:w-1/2">
-                            <InputLabel
-                                forInput="first_name"
-                                value="First name:"
-                            />
+                        <Field
+                            label="first_name"
+                            value="First name:"
+                            errors={errors.first_name}
+                        >
                             <TextInput
                                 name="first_name"
                                 value={data.first_name}
@@ -134,13 +135,13 @@ const Edit = () => {
                                     setData("first_name", e.target.value)
                                 }
                             />
-                            <InputError message={errors.first_name} />
-                        </div>
-                        <div className="w-full pb-7 pr-6 lg:w-1/2">
-                            <InputLabel
-                                forInput="last_name"
-                                value="Last name:"
-                            />
+                        </Field>
+
+                        <Field
+                            label="last_name"
+                            value="Last name:"
+                            errors={errors.last_name}
+                        >
                             <TextInput
                                 name="last_name"
                                 value={data.last_name}
@@ -149,13 +150,13 @@ const Edit = () => {
                                     setData("last_name", e.target.value)
                                 }
                             />
-                            <InputError message={errors.last_name} />
-                        </div>
-                        <div className="w-full pb-7 pr-6 lg:w-1/2">
-                            <InputLabel
-                                forInput="organization_id"
-                                value="Organization:"
-                            />
+                        </Field>
+
+                        <Field
+                            label="organization_id"
+                            value="Organization:"
+                            errors={errors.organization_id}
+                        >
                             <SelectInput
                                 name="organization_id"
                                 value={data.organization_id}
@@ -170,9 +171,13 @@ const Edit = () => {
                                     </option>
                                 ))}
                             </SelectInput>
-                        </div>
-                        <div className="w-full pb-7 pr-6 lg:w-1/2">
-                            <InputLabel forInput="email" value="Email:" />
+                        </Field>
+
+                        <Field
+                            label="email"
+                            value="Email:"
+                            errors={errors.email}
+                        >
                             <TextInput
                                 name="email"
                                 type="email"
@@ -182,10 +187,13 @@ const Edit = () => {
                                     setData("email", e.target.value)
                                 }
                             />
-                            <InputError message={errors.email} />
-                        </div>
-                        <div className="w-full pb-7 pr-6 lg:w-1/2">
-                            <InputLabel forInput="phone" value="Phone:" />
+                        </Field>
+
+                        <Field
+                            label="phone"
+                            value="Phone:"
+                            errors={errors.phone}
+                        >
                             <TextInput
                                 name="phone"
                                 value={data.phone}
@@ -194,10 +202,13 @@ const Edit = () => {
                                     setData("phone", e.target.value)
                                 }
                             />
-                            <InputError message={errors.phone} />
-                        </div>
-                        <div className="w-full pb-7 pr-6 lg:w-1/2">
-                            <InputLabel forInput="address" value="Address:" />
+                        </Field>
+
+                        <Field
+                            label="address"
+                            value="Address:"
+                            errors={errors.address}
+                        >
                             <TextInput
                                 name="address"
                                 value={data.address}
@@ -206,10 +217,9 @@ const Edit = () => {
                                     setData("address", e.target.value)
                                 }
                             />
-                            <InputError message={errors.address} />
-                        </div>
-                        <div className="w-full pb-7 pr-6 lg:w-1/2">
-                            <InputLabel forInput="city" value="City:" />
+                        </Field>
+
+                        <Field label="city" value="City:" errors={errors.city}>
                             <TextInput
                                 name="city"
                                 value={data.city}
@@ -218,13 +228,13 @@ const Edit = () => {
                                     setData("city", e.target.value)
                                 }
                             />
-                            <InputError message={errors.city} />
-                        </div>
-                        <div className="w-full pb-7 pr-6 lg:w-1/2">
-                            <InputLabel
-                                forInput="region"
-                                value="Province/State:"
-                            />
+                        </Field>
+
+                        <Field
+                            label="region"
+                            value="Province/State:"
+                            errors={errors.region}
+                        >
                             <TextInput
                                 name="region"
                                 value={data.region}
@@ -233,10 +243,13 @@ const Edit = () => {
                                     setData("region", e.target.value)
                                 }
                             />
-                            <InputError message={errors.region} />
-                        </div>
-                        <div className="w-full pb-7 pr-6 lg:w-1/2">
-                            <InputLabel forInput="country" value="Country:" />
+                        </Field>
+
+                        <Field
+                            label="country"
+                            value="Country:"
+                            errors={errors.country}
+                        >
                             <SelectInput
                                 name="country"
                                 value={data.country}
@@ -248,12 +261,13 @@ const Edit = () => {
                                 <option value="CA">Canada</option>
                                 <option value="US">United States</option>
                             </SelectInput>
-                        </div>
-                        <div className="w-full pb-7 pr-6 lg:w-1/2">
-                            <InputLabel
-                                forInput="postal_code"
-                                value="Postal Code:"
-                            />
+                        </Field>
+
+                        <Field
+                            label="postal_code"
+                            value="Postal Code:"
+                            errors={errors.postal_code}
+                        >
                             <TextInput
                                 name="postal_code"
                                 value={data.postal_code}
@@ -262,8 +276,7 @@ const Edit = () => {
                                     setData("postal_code", e.target.value)
                                 }
                             />
-                            <InputError message={errors.postal_code} />
-                        </div>
+                        </Field>
                     </div>
                     <div className="flex items-center px-8 py-4 bg-gray-100 border-t border-gray-200">
                         {!contact.deleted_at && modalContent()}
