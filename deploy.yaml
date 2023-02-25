@@ -8,6 +8,7 @@ config:
   application: "pingcrm-react.com"
   repository: "git@github.com:fouteox/pingcrm-react.git"
   php_fpm_version: "8.2"
+  sudo_password: "{{password}}"
 
 hosts:
   prod:
