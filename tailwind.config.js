@@ -1,8 +1,8 @@
-const colors = require("tailwindcss/colors");
-const defaultTheme = require("tailwindcss/defaultTheme");
+import colors from "tailwindcss/colors";
+import forms from '@tailwindcss/forms';
 
 /** @type {import('tailwindcss').Config} */
-module.exports = {
+export default {
     content: [
         "./vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php",
         "./storage/framework/views/*.php",
@@ -36,5 +36,5 @@ module.exports = {
             fill: ["focus", "group-hover"],
         },
     },
-    plugins: [require("@tailwindcss/forms")],
+    plugins: [forms],
 };
