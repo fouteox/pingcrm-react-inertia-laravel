@@ -9,13 +9,11 @@ config:
   repository: "git@github.com:fouteox/pingcrm-react.git"
   php_fpm_version: "8.2"
   sudo_password: "{{password}}"
+  deploy_path: "~/{{application}}"
 
 hosts:
   prod:
-    remote_user: "{{remote_user}}"
-    hostname: "{{hostname}}"
-    deploy_path: "~/{{application}}"
-    port: "{{port}}"
+    hostname: "{{application}}"
 
 tasks:
   deploy:
