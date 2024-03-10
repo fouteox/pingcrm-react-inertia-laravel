@@ -1,0 +1,14 @@
+# Production environment override
+services:
+  php:
+    build:
+      context: .
+      target: frankenphp_prod
+    labels:
+      - traefik.enable=true
+      - traefik.http.routers.laravel.rule=Host(`${SERVER_NAME}`)
+      - traefik.http.routers.laravel.entrypoints=websecure
+      - traefik.http.routers.laravel.tls=true
+
+  node:
+    command: npm ci && npm run build
