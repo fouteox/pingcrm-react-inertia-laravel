@@ -35,6 +35,7 @@ RUN set -eux; \
         opcache \
         zip \
         pdo_mysql \
+        gd \
 	;
 
 COPY --link frankenphp/conf.d/app.ini $PHP_INI_DIR/conf.d/
