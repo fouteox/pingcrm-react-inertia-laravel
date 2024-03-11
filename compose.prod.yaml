@@ -4,6 +4,8 @@ services:
     build:
       context: .
       target: frankenphp_prod
+    environment:
+      APP_ENV: prod
     labels:
       - traefik.enable=true
       - traefik.http.routers.laravel.rule=Host(`${SERVER_NAME}`)
