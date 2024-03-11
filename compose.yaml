@@ -9,7 +9,7 @@ services:
       # The two next lines can be removed after initial installation
       STABILITY: ${STABILITY:-stable}
       DB_DATABASE: ${DB_DATABASE:-pingcrm_react}
-      DB_USERNAME: ${DB_USERNAME:-pingcrm_react}
+      DB_USERNAME: ${DB_USERNAME:-pingcrm}
       DB_PASSWORD: ${DB_PASSWORD:-supersecret}
     volumes:
       - caddy_data:/data
@@ -28,7 +28,7 @@ services:
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
-      test: mysqladmin ping -h 127.0.0.1 -u $${DB_USERNAME:-pingcrm_react} --password=$${DB_PASSWORD:-supersecret}
+      test: mysqladmin ping -h 127.0.0.1 -u $${DB_USERNAME:-pingcrm} --password=$${DB_PASSWORD:-supersecret}
       start_period: 5s
       interval: 5s
       timeout: 5s

@@ -42,6 +42,8 @@ services:
 
   node:
     image: node:20
+    volumes:
+      - ./:/app
     working_dir: /app
     ports:
       - target: 5173
