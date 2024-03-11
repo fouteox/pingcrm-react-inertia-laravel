@@ -8,11 +8,6 @@ services:
       TRUSTED_HOSTS: ^${SERVER_NAME:-example\.com|localhost}|php$$
       # The two next lines can be removed after initial installation
       STABILITY: ${STABILITY:-stable}
-      DB_HOST: mysql
-      DB_PORT: 3306
-      DB_DATABASE: ${MYSQL_DATABASE:-app}
-      DB_USERNAME: ${MYSQL_USER:-app}
-      DB_PASSWORD: ${MYSQL_PASSWORD:-!ChangeMe!}
     volumes:
       - caddy_data:/data
       - caddy_config:/config
@@ -23,14 +18,14 @@ services:
     image: mysql:8
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-!ChangeMe!}
-      MYSQL_DATABASE: ${MYSQL_DATABASE:-app}
-      MYSQL_USER: ${MYSQL_USER:-app}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-!ChangeMe!}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-supersecret}
+      MYSQL_DATABASE: ${DB_DATABASE:-pingcrm_react}
+      MYSQL_USER: ${DB_USERNAME:-pingcrm}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-supersecret}
     volumes:
       - mysql_data:/var/lib/mysql
     healthcheck:
-      test: mysqladmin ping -h 127.0.0.1 -u $${MYSQL_USER:-app} --password=$${MYSQL_PASSWORD:-!ChangeMe!}
+      test: mysqladmin ping -h 127.0.0.1 -u $${DB_USERNAME:-pingcrm_react} --password=$${DB_PASSWORD:-supersecret}
       start_period: 5s
       interval: 5s
       timeout: 5s

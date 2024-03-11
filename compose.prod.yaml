@@ -8,7 +8,7 @@ services:
       APP_ENV: prod
     labels:
       - traefik.enable=true
-      - traefik.http.routers.laravel.rule=Host(`${SERVER_NAME}`)
+      - traefik.http.routers.laravel.rule=Host(`${DOMAIN_NAME}`)
       - traefik.http.routers.laravel.entrypoints=websecure
       - traefik.http.routers.laravel.tls=true
 

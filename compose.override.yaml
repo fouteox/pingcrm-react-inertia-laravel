@@ -37,13 +37,13 @@ services:
   mysql:
     ports:
       - target: 3306
-        published: ${MYSQL_PORT:-3306}
+        published: 3306
         protocol: tcp
 
   node:
     ports:
       - target: 5173
-        published: ${PWA_PORT:-5173}
+        published: 5173
         protocol: tcp
     volumes:
       - ./:/app
