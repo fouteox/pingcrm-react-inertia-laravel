@@ -34,6 +34,8 @@ services:
   node:
     image: node:20
     working_dir: /app
+    volumes:
+      - ./:/app
 
 volumes:
   caddy_data:
