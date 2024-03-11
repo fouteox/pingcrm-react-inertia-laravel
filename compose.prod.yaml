@@ -13,4 +13,4 @@ services:
       - traefik.http.routers.pingcrm.tls=true
 
   node:
-    command: npm ci && npm run build
+    command: npm install && npm run build
