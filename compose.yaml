@@ -14,6 +14,7 @@ services:
     volumes:
       - caddy_data:/data
       - caddy_config:/config
+      - user_picture:/app/storage/app/users
     depends_on:
       mysql: { condition: service_healthy }
 
