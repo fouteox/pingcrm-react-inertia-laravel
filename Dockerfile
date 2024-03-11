@@ -37,6 +37,7 @@ RUN set -eux; \
         zip \
         pdo_mysql \
         gd \
+        exif \
 	;
 
 COPY --link frankenphp/conf.d/app.ini $PHP_INI_DIR/conf.d/
