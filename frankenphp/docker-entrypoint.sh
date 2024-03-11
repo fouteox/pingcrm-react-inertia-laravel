@@ -30,8 +30,7 @@ if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ]; then
         cp .env.example .env
         php artisan key:generate
         php artisan storage:link
-        php artisan migrate --force
-        php artisan db:seed --force
+        php artisan migrate:fresh --seed --force
     fi
 fi
 
