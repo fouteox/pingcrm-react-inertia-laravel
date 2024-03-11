@@ -4,6 +4,8 @@ services:
     build:
       context: .
       target: frankenphp_prod
+    environment:
+      APP_ENV: test
     labels:
       - traefik.enable=true
       - traefik.http.routers.pingcrm.rule=Host(`${DOMAIN_NAME}`)
