@@ -8,9 +8,9 @@ services:
       APP_ENV: prod
     labels:
       - traefik.enable=true
-      - traefik.http.routers.laravel.rule=Host(`${DOMAIN_NAME}`)
-      - traefik.http.routers.laravel.entrypoints=websecure
-      - traefik.http.routers.laravel.tls=true
+      - traefik.http.routers.pingcrm.rule=Host(`${DOMAIN_NAME}`)
+      - traefik.http.routers.pingcrm.entrypoints=websecure
+      - traefik.http.routers.pingcrm.tls=true
 
   node:
     command: npm ci && npm run build
