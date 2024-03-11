@@ -36,8 +36,6 @@ const Edit = () => {
         _method: "PUT",
     });
 
-    console.log(user.deleted_at);
-
     function handleSubmit(e) {
         e.preventDefault();
 
