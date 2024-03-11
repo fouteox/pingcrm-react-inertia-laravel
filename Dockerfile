@@ -20,6 +20,8 @@ RUN apt-get update && apt-get install --no-install-recommends -y \
 	file \
 	gettext \
 	git \
+    nodejs \
+    npm \
 	&& rm -rf /var/lib/apt/lists/*
 
 # https://getcomposer.org/doc/03-cli.md#composer-allow-superuser
@@ -33,8 +35,6 @@ RUN set -eux; \
         opcache \
         zip \
         pdo_mysql \
-        nodejs \
-        npm \
 	;
 
 COPY --link frankenphp/conf.d/app.ini $PHP_INI_DIR/conf.d/
@@ -67,12 +67,12 @@ CMD [ "frankenphp", "run", "--config", "/etc/caddy/Caddyfile", "--watch" ]
 FROM frankenphp_base AS frankenphp_prod
 
 ENV APP_ENV=prod
-ENV FRANKENPHP_CONFIG="import worker.Caddyfile"
+#ENV FRANKENPHP_CONFIG="import worker.Caddyfile"
 
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 
 COPY --link frankenphp/conf.d/app.prod.ini $PHP_INI_DIR/conf.d/
-COPY --link frankenphp/worker.Caddyfile /etc/caddy/worker.Caddyfile
+#COPY --link frankenphp/worker.Caddyfile /etc/caddy/worker.Caddyfile
 
 # prevent the reinstallation of vendors at every changes in the source code
 COPY --link composer.* ./
@@ -80,11 +80,12 @@ RUN set -eux; \
 	composer install --no-cache --prefer-dist --no-dev --no-autoloader --no-scripts --no-progress
 
 COPY --link package.* ./
-RUN npm install && npm run build
+RUN npm install
 
 # copy sources
 COPY --link . ./
 RUN rm -Rf frankenphp/
+RUN npm run build
 
 RUN set -eux; \
     mkdir -p storage/framework/ storage/framework/sessions storage/framework/views storage/framework/cache storage/framework/testing storage/logs bootstrap/cache; \
