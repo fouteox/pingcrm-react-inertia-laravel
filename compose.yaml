@@ -8,6 +8,9 @@ services:
       TRUSTED_HOSTS: ^${SERVER_NAME:-example\.com|localhost}|php$$
       # The two next lines can be removed after initial installation
       STABILITY: ${STABILITY:-stable}
+      DB_DATABASE: ${MYSQL_DATABASE:-app}
+      DB_USERNAME: ${MYSQL_USER:-app}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-!ChangeMe!}
     volumes:
       - caddy_data:/data
       - caddy_config:/config
