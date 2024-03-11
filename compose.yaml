@@ -18,7 +18,6 @@ services:
     image: mysql:8
     restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-supersecret}
       MYSQL_DATABASE: ${DB_DATABASE:-pingcrm_react}
       MYSQL_USER: ${DB_USERNAME:-pingcrm}
       MYSQL_PASSWORD: ${DB_PASSWORD:-supersecret}
