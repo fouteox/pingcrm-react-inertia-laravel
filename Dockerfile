@@ -79,6 +79,7 @@ COPY --link composer.* ./
 RUN set -eux; \
 	composer install --no-cache --prefer-dist --no-dev --no-autoloader --no-scripts --no-progress
 
+COPY --link package.* ./
 RUN npm install && npm run build
 
 # copy sources
