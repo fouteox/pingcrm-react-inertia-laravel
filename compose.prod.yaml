@@ -11,6 +11,3 @@ services:
       - traefik.http.routers.pingcrm.rule=Host(`${DOMAIN_NAME}`)
       - traefik.http.routers.pingcrm.entrypoints=websecure
       - traefik.http.routers.pingcrm.tls=true
-
-  node:
-    command: bash -c "npm install && npm run build"

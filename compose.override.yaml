@@ -41,6 +41,8 @@ services:
         protocol: tcp
 
   node:
+    image: node:20
+    working_dir: /app
     ports:
       - target: 5173
         published: 5173

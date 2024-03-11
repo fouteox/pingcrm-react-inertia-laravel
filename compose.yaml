@@ -31,12 +31,6 @@ services:
       timeout: 5s
       retries: 55
 
-  node:
-    image: node:20
-    working_dir: /app
-    volumes:
-      - ./:/app
-
 volumes:
   caddy_data:
   caddy_config:

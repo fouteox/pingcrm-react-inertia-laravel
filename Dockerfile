@@ -33,6 +33,8 @@ RUN set -eux; \
         opcache \
         zip \
         pdo_mysql \
+        nodejs \
+        npm \
 	;
 
 COPY --link frankenphp/conf.d/app.ini $PHP_INI_DIR/conf.d/
@@ -76,6 +78,8 @@ COPY --link frankenphp/worker.Caddyfile /etc/caddy/worker.Caddyfile
 COPY --link composer.* ./
 RUN set -eux; \
 	composer install --no-cache --prefer-dist --no-dev --no-autoloader --no-scripts --no-progress
+
+RUN npm install && npm run build
 
 # copy sources
 COPY --link . ./
