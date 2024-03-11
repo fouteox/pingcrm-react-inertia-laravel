@@ -39,3 +39,4 @@ volumes:
   caddy_data:
   caddy_config:
   mysql_data:
+  user_picture:
