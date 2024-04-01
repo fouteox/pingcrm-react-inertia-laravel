@@ -34,6 +34,15 @@ services:
       timeout: 5s
       retries: 55
 
+  cron:
+    build:
+        context: .
+        dockerfile: cron.dockerfile
+    volumes:
+      - ./:/app
+    depends_on:
+        - mysql
+
 volumes:
   caddy_data:
   caddy_config:
