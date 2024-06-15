@@ -28,12 +28,16 @@ if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'artisan' ]; then
         setfacl -R -m u:www-data:rwX -m u:"$(whoami)":rwX bootstrap/cache
         setfacl -dR -m u:www-data:rwX -m u:"$(whoami)":rwX bootstrap/cache
 
-	    if [ ! -f .env ]; then
-            cp /app/.env.prod /app/.env
-            composer run-script post-create-project-cmd
-            php artisan db:seed --force
+        DB_DATABASE=$(grep -E '^DB_DATABASE=' .env | cut -d '=' -f 2)
+        if [ -n "$DB_DATABASE" ] && [ ! -f "$DB_DATABASE" ]; then
+            echo "Creating SQLite database file at $DB_DATABASE"
+            mkdir -p "$(dirname "$DB_DATABASE")"
+            touch "$DB_DATABASE"
         fi
-        php artisan optimize;
+
+        if [ -f .env ]; then
+            php artisan optimize;
+        fi
     fi
 
     service cron start
