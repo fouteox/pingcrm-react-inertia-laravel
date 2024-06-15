@@ -27,11 +27,6 @@ if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'artisan' ]; then
         setfacl -dR -m u:www-data:rwX -m u:"$(whoami)":rwX storage
         setfacl -R -m u:www-data:rwX -m u:"$(whoami)":rwX bootstrap/cache
         setfacl -dR -m u:www-data:rwX -m u:"$(whoami)":rwX bootstrap/cache
-
-	    if [ ! -f .env ]; then
-            cp /app/.env.prod /app/.env
-            php artisan key:generate --force
-        fi
     fi
 
     service cron start
