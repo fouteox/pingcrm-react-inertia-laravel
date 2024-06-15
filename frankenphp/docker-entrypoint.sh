@@ -34,8 +34,6 @@ if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'artisan' ]; then
         fi
     fi
 
-    setup_env_file
-
     service cron start
 fi
 
