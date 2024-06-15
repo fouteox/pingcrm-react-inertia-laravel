@@ -4,8 +4,8 @@ services:
     build:
       context: .
       target: frankenphp_prod
-    environment:
-      APP_ENV: demo
+    env_file:
+      - .env.prod
     volumes:
       - storage_data:/app/storage
       - cache_data:/app/bootstrap/cache

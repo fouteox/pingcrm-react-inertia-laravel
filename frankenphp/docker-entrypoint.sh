@@ -32,7 +32,7 @@ if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'artisan' ]; then
         composer run-script post-create-project-cmd
     fi
 
-    if [ "$APP_ENV" = 'demo' ]; then
+    if [ "$APP_ENV_SERVER" = 'production' ]; then
         setfacl -R -m u:www-data:rwX -m u:"$(whoami)":rwX storage
         setfacl -dR -m u:www-data:rwX -m u:"$(whoami)":rwX storage
         setfacl -R -m u:www-data:rwX -m u:"$(whoami)":rwX bootstrap/cache
