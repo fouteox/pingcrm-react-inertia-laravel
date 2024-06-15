@@ -28,14 +28,13 @@ if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'artisan' ]; then
         setfacl -R -m u:www-data:rwX -m u:"$(whoami)":rwX bootstrap/cache
         setfacl -dR -m u:www-data:rwX -m u:"$(whoami)":rwX bootstrap/cache
 
-        DB_DATABASE=$(grep -E '^DB_DATABASE=' .env | cut -d '=' -f 2)
-        if [ -n "$DB_DATABASE" ] && [ ! -f "$DB_DATABASE" ]; then
-            echo "Creating SQLite database file at $DB_DATABASE"
-            mkdir -p "$(dirname "$DB_DATABASE")"
-            touch "$DB_DATABASE"
-        fi
-
         if [ -f .env ]; then
+            DB_DATABASE=$(grep -E '^DB_DATABASE=' .env | cut -d '=' -f 2)
+            if [ -n "$DB_DATABASE" ] && [ ! -f "$DB_DATABASE" ]; then
+                echo "Creating SQLite database file at $DB_DATABASE"
+                mkdir -p "$(dirname "$DB_DATABASE")"
+                touch "$DB_DATABASE"
+            fi
             php artisan optimize;
         fi
     fi
