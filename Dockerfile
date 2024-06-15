@@ -134,7 +134,4 @@ RUN set -eux; \
     --no-ansi \
     --no-dev; \
     composer clear-cache; \
-    cp .env.prod .env; \
-    php artisan key:generate --force; \
-    php artisan storage:link; \
-    php artisan optimize; sync;
+    php artisan storage:link; sync;
