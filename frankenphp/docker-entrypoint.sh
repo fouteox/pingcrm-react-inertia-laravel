@@ -33,6 +33,7 @@ if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'artisan' ]; then
             composer run-script post-create-project-cmd
             php artisan db:seed --force
         fi
+        php artisan optimize;
     fi
 
     service cron start
