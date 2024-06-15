@@ -25,7 +25,7 @@ class HourlyClear extends Command
     /**
      * Execute the console command.
      */
-    public function handle(): int
+    public function handle(): void
     {
         Artisan::call('down');
 
@@ -33,7 +33,5 @@ class HourlyClear extends Command
         Storage::deleteDirectory('.glide-cache');
         Artisan::call('migrate:fresh --force --seed');
         Artisan::call('up');
-
-        return Command::SUCCESS;
     }
 }

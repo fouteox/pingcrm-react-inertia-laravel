@@ -7,43 +7,12 @@ services:
       TRUSTED_PROXIES: ${TRUSTED_PROXIES:-127.0.0.0/8,10.0.0.0/8,172.16.0.0/12,192.168.0.0/16}
       TRUSTED_HOSTS: ^${SERVER_NAME:-example\.com|localhost}|php$$
       # The two next lines can be removed after initial installation
+      LARAVEL_VERSION: ${LARAVEL_VERSION:-}
       STABILITY: ${STABILITY:-stable}
-      DB_DATABASE: ${DB_DATABASE:-pingcrm_react}
-      DB_USERNAME: ${DB_USERNAME:-pingcrm}
-      DB_PASSWORD: ${DB_PASSWORD:-supersecret}
     volumes:
       - caddy_data:/data
       - caddy_config:/config
-    depends_on:
-      mysql: { condition: service_healthy }
-
-  mysql:
-    image: mysql:8
-    restart: unless-stopped
-    environment:
-      MYSQL_RANDOM_ROOT_PASSWORD: true
-      MYSQL_DATABASE: ${DB_DATABASE:-pingcrm_react}
-      MYSQL_USER: ${DB_USERNAME:-pingcrm}
-      MYSQL_PASSWORD: ${DB_PASSWORD:-supersecret}
-    volumes:
-      - mysql_data:/var/lib/mysql
-    healthcheck:
-      test: mysqladmin ping -h 127.0.0.1 -u $${DB_USERNAME:-pingcrm} --password=$${DB_PASSWORD:-supersecret}
-      start_period: 5s
-      interval: 5s
-      timeout: 5s
-      retries: 55
-
-  cron:
-    build:
-        context: .
-        dockerfile: cron.dockerfile
-    volumes:
-      - ./:/app
-    depends_on:
-        - mysql
 
 volumes:
   caddy_data:
   caddy_config:
-  mysql_data:

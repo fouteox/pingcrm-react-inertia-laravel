@@ -28,7 +28,8 @@ class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
-        return array_merge(parent::share($request), [
+        return [
+            ...parent::share($request),
             'auth' => function () use ($request) {
                 return [
                     'user' => $request->user() ? [
@@ -44,17 +45,12 @@ class HandleInertiaRequests extends Middleware
                     ] : null,
                 ];
             },
-            'ziggy' => function () use ($request) {
-                return array_merge((new Ziggy)->toArray(), [
-                    'location' => $request->url(),
-                ]);
-            },
             'flash' => function () use ($request) {
                 return [
                     'success' => $request->session()->get('success'),
                     'error' => $request->session()->get('error'),
                 ];
             },
-        ]);
+        ];
     }
 }
