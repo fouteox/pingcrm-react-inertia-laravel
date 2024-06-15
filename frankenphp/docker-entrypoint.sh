@@ -34,6 +34,8 @@ if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'artisan' ]; then
                 echo "Creating SQLite database file at $DB_DATABASE"
                 mkdir -p "$(dirname "$DB_DATABASE")"
                 touch "$DB_DATABASE"
+                php artisan migrate --graceful --ansi
+                php artisan db:seed --force
             fi
             php artisan optimize;
         fi
