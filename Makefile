@@ -12,7 +12,7 @@ LARAVEL  = $(PHP) artisan
 
 # Misc
 .DEFAULT_GOAL = help
-.PHONY        : help build up start down logs sh composer vendor npm dev a cc test
+.PHONY        : help build up start down logs sh dep composer vendor npm dev a cc test
 
 ## —— 🎵 🐳 The Laravel Docker Makefile 🐳 🎵 ——————————————————————————————————
 help: ## Outputs this help screen
@@ -35,6 +35,9 @@ logs: ## Show live logs
 
 sh: ## Connect to the FrankenPHP container
 	@$(PHP_CONT) sh
+
+dep: ## Deploy the application
+	DOMAIN_NAME=pingcrm-react.com SERVER_NAME=:80 IMAGES_PREFIX=pingcrm ./deploy.sh
 
 test: ## Start tests with phpunit, pass the parameter "c=" to add options to phpunit, example: make test c="--group e2e --stop-on-failure"
 	@$(eval c ?=)

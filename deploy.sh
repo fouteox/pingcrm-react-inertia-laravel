@@ -2,10 +2,6 @@
 
 set -e
 
-# Variables d'environnement pour Docker Compose
-SERVER_NAME=${SERVER_NAME:-:80}
-IMAGES_PREFIX=${IMAGES_PREFIX:-app-php}
-
 # Lancer Docker Compose
 echo "Starting Docker Compose..."
 docker compose -f compose.yaml -f compose.prod.yaml up -d --build --wait
