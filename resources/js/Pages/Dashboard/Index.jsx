@@ -36,16 +36,16 @@ const Dashboard = () => {
                 Original
                 <a
                     className="mx-1 text-indigo-600 underline hover:text-orange-500"
-                    href="https://pingcrm-react.herokuapp.com/"
+                    href="https://github.com/liorocks/pingcrm-react"
                 >
                     application
                 </a>
                 with Laravel and React by
                 <a
                     className="ml-1 text-indigo-600 underline hover:text-orange-500"
-                    href="https://github.com/Landish"
+                    href="https://github.com/liorocks"
                 >
-                    @landish
+                    @liorocks
                 </a>
                 .
             </p>
