@@ -25,7 +25,7 @@ const Dashboard = () => {
                 . You can find the source code on
                 <a
                     className="ml-1 text-indigo-600 underline hover:text-orange-500"
-                    href="https://github.com/fouteox/pingcrm-react"
+                    href="https://github.com/fouteox/pingcrm-react-inertia-laravel"
                 >
                     GitHub
                 </a>
