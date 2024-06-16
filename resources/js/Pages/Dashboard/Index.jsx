@@ -18,7 +18,7 @@ const Dashboard = () => {
                 v1.0 works with
                 <a
                     className="ml-1 text-indigo-600 underline hover:text-orange-500"
-                    href="https://reactjs.org/"
+                    href="https://react.dev/"
                 >
                     React
                 </a>
