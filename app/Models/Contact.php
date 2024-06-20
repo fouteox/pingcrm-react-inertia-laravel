@@ -11,8 +11,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Contact extends Model
 {
-    use HasFactory;
-    use SoftDeletes;
+    use HasFactory, SoftDeletes;
 
     /**
      * Retrieve the model for a bound value.
@@ -52,10 +51,9 @@ class Contact extends Model
     private function applySearchFilter(Builder $query, string $search): void
     {
         $query->where(function ($query) use ($search) {
-            $query->whereAny(['first_name', 'last_name', 'email'], 'LIKE', '%'.$search.'%')
-                ->orWhereHas('organization', function ($query) use ($search) {
-                    $query->where('name', 'like', '%'.$search.'%');
-                });
+            $query
+                ->whereAny(['first_name', 'last_name', 'email'], 'LIKE', '%'.$search.'%')
+                ->orWhereRelation('organization', 'name', 'like', '%'.$search.'%');
         });
     }
 
