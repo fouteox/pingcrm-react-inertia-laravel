@@ -3,9 +3,16 @@ import Layout from "@/Shared/Layout";
 import Icon from "@/Shared/Icon";
 import SearchFilter from "@/Shared/SearchFilter";
 import AnchorLink from "@/Shared/AnchorLink";
+import Pagination from "@/Shared/Pagination.jsx";
 
 const Index = () => {
     const { users } = usePage().props;
+
+    const {
+        data,
+        meta: { links }
+    } = users;
+
     return (
         <>
             <Head title="Users" />
@@ -33,7 +40,7 @@ const Index = () => {
                         </tr>
                     </thead>
                     <tbody>
-                        {users.map(
+                        {data.map(
                             ({ id, name, photo, email, owner, deleted_at }) => {
                                 return (
                                     <tr
@@ -47,6 +54,7 @@ const Index = () => {
                                             >
                                                 {photo && (
                                                     <img
+                                                        alt="User photo"
                                                         src={photo}
                                                         className="block w-5 h-5 mr-2 -my-2 rounded-full"
                                                     />
@@ -104,6 +112,7 @@ const Index = () => {
                     </tbody>
                 </table>
             </div>
+            <Pagination links={links} />
         </>
     );
 };

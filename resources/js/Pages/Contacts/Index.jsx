@@ -7,7 +7,8 @@ import AnchorLink from "@/Shared/AnchorLink";
 
 const Index = () => {
     const { contacts } = usePage().props;
-    const { data, links } = contacts;
+    const { data, meta: { links } } = contacts;
+
     return (
         <>
             <Head title="Contacts" />

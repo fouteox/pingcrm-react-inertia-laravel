@@ -7,7 +7,7 @@ import AnchorLink from "@/Shared/AnchorLink";
 
 const Index = () => {
     const { organizations } = usePage().props;
-    const { data, links } = organizations;
+    const { data, meta: { links } } = organizations;
 
     return (
         <>

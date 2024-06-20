@@ -1,8 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { router, usePage } from '@inertiajs/react'
-import { usePrevious } from "react-use";
 import SelectInput from "@/Shared/SelectInput";
-import pickBy from "lodash/pickBy";
 
 export default () => {
     const { filters } = usePage().props;
@@ -14,37 +12,46 @@ export default () => {
         trashed: filters.trashed || "",
     });
 
-    const prevValues = usePrevious(values);
-
     function reset() {
         setValues({
             role: "",
             search: "",
             trashed: "",
         });
+
+        router.get(route(route().current()), {
+            replace: true,
+            preserveState: true,
+        });
     }
 
-    useEffect(() => {
-        // https://reactjs.org/docs/hooks-faq.html#how-to-get-the-previous-props-or-state
-        if (prevValues) {
-            const query = Object.keys(pickBy(values)).length
-                ? pickBy(values)
-                : { remember: "forget" };
-                router.get(route(route().current()), query, {
-                replace: true,
-                preserveState: true,
-            });
+    function pickBy(object) {
+        const obj = {};
+        for (const key in object) {
+            if (object[key]) {
+                obj[key] = object[key];
+            }
         }
-    }, [values]);
+        return obj;
+    }
 
     function handleChange(e) {
         const key = e.target.name;
         const value = e.target.value;
 
-        setValues((values) => ({
+        const newValues = {
             ...values,
             [key]: value,
-        }));
+        };
+
+        setValues(newValues);
+
+        const query = pickBy(newValues);
+
+        router.get(route(route().current()), query, {
+            replace: true,
+            preserveState: true,
+        });
 
         if (opened) setOpened(false);
     }
