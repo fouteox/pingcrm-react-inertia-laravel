@@ -13,6 +13,12 @@ export default () => {
     });
 
     function reset() {
+        const areValuesEmpty = !values.role && !values.search && !values.trashed;
+
+        if (areValuesEmpty) {
+            return;
+        }
+
         setValues({
             role: "",
             search: "",
