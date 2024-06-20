@@ -12,7 +12,7 @@ LARAVEL  = $(PHP) artisan
 
 # Misc
 .DEFAULT_GOAL = help
-.PHONY        : help build up start down logs sh dep composer vendor npm dev a cc test
+.PHONY        : help build up start down logs sh lint dep composer vendor npm dev a seed cc
 
 ## —— 🎵 🐳 The Laravel Docker Makefile 🐳 🎵 ——————————————————————————————————
 help: ## Outputs this help screen
@@ -36,12 +36,11 @@ logs: ## Show live logs
 sh: ## Connect to the FrankenPHP container
 	@$(PHP_CONT) sh
 
+lint: ## Execute linters
+	@$(COMPOSER) lint
+
 dep: ## Deploy the application
 	DOMAIN_NAME=pingcrm-react.com SERVER_NAME=:80 IMAGES_PREFIX=pingcrm ./deploy.sh
-
-test: ## Start tests with phpunit, pass the parameter "c=" to add options to phpunit, example: make test c="--group e2e --stop-on-failure"
-	@$(eval c ?=)
-	@$(DOCKER_COMP) exec -e APP_ENV=test php bin/phpunit $(c)
 
 ## —— Composer 🧙 ——————————————————————————————————————————————————————————————
 composer: ## Run composer, pass the parameter "c=" to run a given command, example: make composer c='req laravel/breeze --dev'
@@ -64,6 +63,9 @@ dev: ## Run npm run dev
 a: ## List all Laravel commands or pass the parameter "c=" to run a given command, example: make a c=about
 	@$(eval c ?=)
 	@$(LARAVEL) $(c)
+
+seed: ## Seed the database
+	@$(LARAVEL) migrate:fresh --seed
 
 cc: c=cache:clear ## Clear the cache
 cc: a
