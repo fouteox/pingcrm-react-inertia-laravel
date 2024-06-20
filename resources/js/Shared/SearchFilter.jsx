@@ -19,7 +19,7 @@ export default () => {
             trashed: "",
         });
 
-        router.get(route(route().current()), {
+        router.get(route(route().current()), {}, {
             replace: true,
             preserveState: true,
         });
