@@ -3,12 +3,13 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Illuminate\Support\Facades\Hash;
-use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
@@ -36,68 +37,82 @@ class User extends Authenticatable
     ];
 
     /**
-     * The attributes that should be cast.
+     * Get the attributes that should be cast.
      *
-     * @var array<string, string>
+     * @return array<string, string>
      */
-    protected $casts = [
-        'email_verified_at' => 'datetime',
-    ];
+    protected function casts(): array
+    {
+        return [
+            'email_verified_at' => 'datetime',
+            'password' => 'hashed',
+        ];
+    }
 
-    public function resolveRouteBinding($value, $field = null)
+    /**
+     * Retrieve the model for a bound value.
+     *
+     * @param  mixed  $value
+     * @param  string|null  $field
+     */
+    public function resolveRouteBinding($value, $field = null): ?Model
     {
         return $this->where($field ?? 'id', $value)->withTrashed()->firstOrFail();
     }
 
-    public function account()
+    public function account(): BelongsTo
     {
         return $this->belongsTo(Account::class);
     }
 
-    public function getNameAttribute()
+    public function name(): Attribute
     {
-        return $this->first_name.' '.$this->last_name;
+        return Attribute::make(
+            get: fn (): string => $this->first_name.' '.$this->last_name,
+        );
     }
 
-    public function setPasswordAttribute($password)
-    {
-        $this->attributes['password'] = Hash::needsRehash($password) ? Hash::make($password) : $password;
-    }
-
-    public function isDemoUser()
+    public function isDemoUser(): bool
     {
         return $this->email === 'johndoe@example.com';
     }
 
-    public function scopeOrderByName($query)
+    public function scopeOrderByName($query): void
     {
         $query->orderBy('last_name')->orderBy('first_name');
     }
 
-    public function scopeWhereRole($query, $role)
+    public function scopeWhereRole($query, $role): void
     {
-        switch ($role) {
-            case 'user': return $query->where('owner', false);
-            case 'owner': return $query->where('owner', true);
-        }
+        $query->where('owner', match ($role) {
+            'user' => false,
+            'owner' => true,
+        });
     }
 
-    public function scopeFilter($query, array $filters)
+    public function scopeFilter($query, array $filters): void
     {
-        $query->when($filters['search'] ?? null, function ($query, $search) {
-            $query->where(function ($query) use ($search) {
-                $query->where('first_name', 'like', '%'.$search.'%')
-                    ->orWhere('last_name', 'like', '%'.$search.'%')
-                    ->orWhere('email', 'like', '%'.$search.'%');
-            });
-        })->when($filters['role'] ?? null, function ($query, $role) {
-            $query->whereRole($role);
-        })->when($filters['trashed'] ?? null, function ($query, $trashed) {
-            if ($trashed === 'with') {
-                $query->withTrashed();
-            } elseif ($trashed === 'only') {
-                $query->onlyTrashed();
-            }
+        $query
+            ->when($filters['search'] ?? null, fn ($query, $search) => $this->applySearchFilter($query, $search))
+            ->when($filters['role'] ?? null, fn ($query, $role) => $query->whereRole($role))
+            ->when($filters['trashed'] ?? null, fn ($query, $trashed) => $this->applyTrashedFilter($query, $trashed));
+    }
+
+    private function applySearchFilter($query, $search): void
+    {
+        $query->where(function ($query) use ($search) {
+            $query->where('first_name', 'like', '%'.$search.'%')
+                ->orWhere('last_name', 'like', '%'.$search.'%')
+                ->orWhere('email', 'like', '%'.$search.'%');
         });
+    }
+
+    private function applyTrashedFilter($query, $trashed): void
+    {
+        if ($trashed === 'with') {
+            $query->withTrashed();
+        } elseif ($trashed === 'only') {
+            $query->onlyTrashed();
+        }
     }
 }

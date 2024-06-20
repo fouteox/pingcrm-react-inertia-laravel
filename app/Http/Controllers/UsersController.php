@@ -17,10 +17,10 @@ class UsersController extends Controller
     public function index()
     {
         return Inertia::render('Users/Index', [
-            'filters' => Request::all('search', 'role', 'trashed'),
+            'filters' => Request::all(['search', 'role', 'trashed']),
             'users' => Auth::user()->account->users()
                 ->orderByName()
-                ->filter(Request::only('search', 'role', 'trashed'))
+                ->filter(Request::only(['search', 'role', 'trashed']))
                 ->get()
                 ->transform(fn ($user) => [
                     'id' => $user->id,
@@ -92,7 +92,7 @@ class UsersController extends Controller
             'photo' => ['nullable', 'image'],
         ]);
 
-        $user->update(Request::only('first_name', 'last_name', 'email', 'owner'));
+        $user->update(Request::only(['first_name', 'last_name', 'email', 'owner']));
 
         if (Request::file('photo')) {
             $user->update(['photo_path' => Request::file('photo')->store('users')]);
