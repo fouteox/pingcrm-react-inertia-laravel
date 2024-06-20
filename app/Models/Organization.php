@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -27,19 +28,19 @@ class Organization extends Model
         return $this->hasMany(Contact::class);
     }
 
-    public function scopeFilter($query, array $filters): void
+    public function scopeFilter(Builder $query, array $filters): void
     {
         $query
             ->when($filters['search'] ?? null, fn ($query, $search) => $this->applySearchFilter($query, $search))
             ->when($filters['trashed'] ?? null, fn ($query, $trashed) => $this->applyTrashedFilter($query, $trashed));
     }
 
-    private function applySearchFilter($query, $search): void
+    private function applySearchFilter(Builder $query, string $search): void
     {
         $query->where('name', 'like', '%'.$search.'%');
     }
 
-    private function applyTrashedFilter($query, $trashed): void
+    private function applyTrashedFilter(Builder $query, string $trashed): void
     {
         if ($trashed === 'with') {
             $query->withTrashed();

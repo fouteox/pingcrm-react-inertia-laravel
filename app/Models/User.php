@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -80,12 +81,14 @@ class User extends Authenticatable
         return $this->email === 'johndoe@example.com';
     }
 
-    public function scopeOrderByName($query): void
+    public function scopeOrderByName(Builder $query): void
     {
-        $query->orderBy('last_name')->orderBy('first_name');
+        $query
+            ->orderBy('last_name')
+            ->orderBy('first_name');
     }
 
-    public function scopeWhereRole($query, $role): void
+    public function scopeWhereRole(Builder $query, string $role): void
     {
         $query->where('owner', match ($role) {
             'user' => false,
@@ -93,7 +96,7 @@ class User extends Authenticatable
         });
     }
 
-    public function scopeFilter($query, array $filters): void
+    public function scopeFilter(Builder $query, array $filters): void
     {
         $query
             ->when($filters['search'] ?? null, fn ($query, $search) => $this->applySearchFilter($query, $search))
@@ -101,12 +104,12 @@ class User extends Authenticatable
             ->when($filters['trashed'] ?? null, fn ($query, $trashed) => $this->applyTrashedFilter($query, $trashed));
     }
 
-    private function applySearchFilter($query, $search): void
+    private function applySearchFilter(Builder $query, string $search): void
     {
         $query->whereAny(['first_name', 'last_name', 'email'], 'LIKE', '%'.$search.'%');
     }
 
-    private function applyTrashedFilter($query, $trashed): void
+    private function applyTrashedFilter(Builder $query, string $trashed): void
     {
         if ($trashed === 'with') {
             $query->withTrashed();

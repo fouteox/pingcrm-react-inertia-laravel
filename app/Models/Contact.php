@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -36,19 +37,19 @@ class Contact extends Model
         );
     }
 
-    public function scopeOrderByName($query): void
+    public function scopeOrderByName(Builder $query): void
     {
         $query->orderBy('last_name')->orderBy('first_name');
     }
 
-    public function scopeFilter($query, array $filters): void
+    public function scopeFilter(Builder $query, array $filters): void
     {
         $query
             ->when($filters['search'] ?? null, fn ($query, $search) => $this->applySearchFilter($query, $search))
             ->when($filters['trashed'] ?? null, fn ($query, $trashed) => $this->applyTrashedFilter($query, $trashed));
     }
 
-    private function applySearchFilter($query, $search): void
+    private function applySearchFilter(Builder $query, string $search): void
     {
         $query->where(function ($query) use ($search) {
             $query->whereAny(['first_name', 'last_name', 'email'], 'LIKE', '%'.$search.'%')
@@ -58,7 +59,7 @@ class Contact extends Model
         });
     }
 
-    private function applyTrashedFilter($query, $trashed): void
+    private function applyTrashedFilter(Builder $query, string $trashed): void
     {
         if ($trashed === 'with') {
             $query->withTrashed();
