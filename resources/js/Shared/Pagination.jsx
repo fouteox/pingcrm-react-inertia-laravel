@@ -9,12 +9,12 @@ export default function Pagination({ links = [] }) {
     if (links.length === 3) return null;
     return (
         <div className="flex flex-wrap mt-6 -mb-1">
-            {links.map(({ active, label, url }) => {
+            {links.map(({ active, label, url }, index) => {
                 return url === null ? (
-                    <PageInactive key={label} label={label} />
+                    <PageInactive key={index} label={label} />
                 ) : (
                     <PaginationItem
-                        key={label}
+                        key={index}
                         label={label}
                         active={active}
                         url={url}
