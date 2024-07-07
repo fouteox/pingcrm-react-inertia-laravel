@@ -16,7 +16,6 @@ services:
       - traefik.http.routers.pingcrm.entrypoints=websecure
       - traefik.http.routers.pingcrm.tls=true
       - traefik.http.routers.pingcrm.tls.certresolver=production
-      - traefik.http.routers.pingcrm.tls.domains[0].main=${DOMAIN_NAME}
 
 volumes:
   storage_data:
