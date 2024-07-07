@@ -13,7 +13,8 @@ services:
     labels:
       - traefik.enable=true
       - traefik.http.routers.pingcrm.rule=Host(`${DOMAIN_NAME}`)
-      - traefik.http.routers.pingcrm.entrypoints=web
+      - traefik.http.routers.pingcrm.entrypoints=websecure
+      - traefik.http.routers.pingcrm.tls=true
 
 volumes:
   storage_data:
