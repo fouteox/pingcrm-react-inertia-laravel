@@ -10,6 +10,15 @@ FROM dunglas/frankenphp:1-php8.3 AS frankenphp_upstream
 # Base FrankenPHP image
 FROM frankenphp_upstream AS frankenphp_base
 
+ARG USER=www-data
+ARG UID
+ARG GID
+
+RUN groupmod -g ${GID} ${USER} && \
+    usermod -u ${UID} -g ${GID} ${USER} && \
+    setcap CAP_NET_BIND_SERVICE=+eip /usr/local/bin/frankenphp && \
+    chown -R ${UID}:${GID} /data/caddy /var/www /config/caddy
+
 WORKDIR /app
 
 # persistent / runtime deps
@@ -20,7 +29,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 	gettext \
 	git \
     cron \
-	&& rm -rf /var/lib/apt/lists/*
+	&& apt-get clean && rm -rf /var/lib/apt/lists/*
 
 RUN set -eux; \
 	install-php-extensions \
@@ -34,8 +43,8 @@ RUN set -eux; \
 	;
 
 RUN echo "0 * * * * cd /app && /usr/local/bin/php artisan clear:hourly > /dev/null 2>&1" > /etc/cron.d/clear_hourly && \
-        chmod 0644 /etc/cron.d/clear_hourly && \
-        crontab /etc/cron.d/clear_hourly
+        crontab -u www-data /etc/cron.d/clear_hourly \
+        && chmod u+s /usr/sbin/cron
 
 # https://getcomposer.org/doc/03-cli.md#composer-allow-superuser
 ENV COMPOSER_ALLOW_SUPERUSER=1
@@ -55,23 +64,31 @@ CMD [ "frankenphp", "run", "--config", "/etc/caddy/Caddyfile" ]
 # Dev FrankenPHP image
 FROM frankenphp_base AS frankenphp_dev
 
-ENV APP_ENV=local XDEBUG_MODE=off
+ENV XDEBUG_MODE=off
 
-RUN mv "$PHP_INI_DIR/php.ini-development" "$PHP_INI_DIR/php.ini"
-
-RUN curl -fsSL https://deb.nodesource.com/setup_lts.x -o nodesource_setup.sh; \
-    bash nodesource_setup.sh; \
-    apt-get install -y nodejs; \
-    rm nodesource_setup.sh;
-
-RUN set -eux; \
-	install-php-extensions \
-		xdebug \
-	;
+RUN mv "$PHP_INI_DIR/php.ini-development" "$PHP_INI_DIR/php.ini" && \
+    install-php-extensions xdebug && \
+    curl -fsSL https://deb.nodesource.com/setup_lts.x | bash - && \
+    apt-get install -y nodejs && apt-get clean && rm -rf /var/lib/apt/lists/*
 
 COPY --link frankenphp/conf.d/app.dev.ini $PHP_INI_DIR/conf.d/
 
+USER ${USER}
+
 CMD [ "frankenphp", "run", "--config", "/etc/caddy/Caddyfile", "--watch" ]
+
+FROM frankenphp_base AS vendor
+
+COPY --link composer.* ./
+
+RUN set -eux; \
+    composer install \
+    --no-dev \
+    --no-interaction \
+    --no-autoloader \
+    --no-ansi \
+    --no-scripts \
+    --audit;
 
 FROM node:20-alpine AS build
 
@@ -88,6 +105,8 @@ RUN if [ -f $ROOT/package-lock.json ]; \
     npm install --loglevel=error --no-audit; \
     fi
 
+COPY --link --from=vendor /app/vendor vendor
+
 COPY --link . .
 
 RUN npm run build
@@ -95,43 +114,22 @@ RUN npm run build
 # Prod FrankenPHP image
 FROM frankenphp_base AS frankenphp_prod
 
-ENV APP_ENV=production
-
-RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
-
 COPY --link frankenphp/conf.d/app.prod.ini $PHP_INI_DIR/conf.d/
 
-# prevent the reinstallation of vendors at every changes in the source code
-COPY --link composer.* ./
+COPY --link --from=build --chown=${USER}:${USER} /app/public public
 
-RUN set -eux; \
-    composer install \
-    --no-dev \
-    --no-interaction \
-    --no-autoloader \
-    --no-ansi \
-    --no-scripts \
-    --audit;
+COPY --link --from=vendor --chown=${USER}:${USER} /app/vendor vendor
 
-# copy sources
-COPY --link . ./
-RUN rm -Rf frankenphp/
+COPY --link --chown=${USER}:${USER} . .
 
-# copy build assets
-COPY --link --from=build /app/public ./public
+RUN rm -Rf frankenphp
 
-RUN set -eux; \
-    mkdir -p storage/framework/sessions; \
-    mkdir -p storage/framework/views; \
-    mkdir -p storage/framework/cache; \
-    mkdir -p storage/framework/testing; \
-    mkdir -p storage/logs; \
-    mkdir -p bootstrap/cache; \
-    chmod -R a+rw storage; \
-    composer install \
-    --classmap-authoritative \
-    --no-interaction \
-    --no-ansi \
-    --no-dev; \
-    composer clear-cache; \
-    php artisan storage:link; sync;
+USER ${USER}
+
+RUN \
+    set -eux; \
+    mkdir -p storage/framework/sessions storage/framework/views storage/framework/cache storage/framework/testing storage/logs bootstrap/cache && \
+    chmod -R a+rw storage && \
+    composer dump-autoload --optimize --classmap-authoritative --no-interaction --no-ansi --no-dev && \
+    composer clear-cache && \
+    php artisan storage:link && sync

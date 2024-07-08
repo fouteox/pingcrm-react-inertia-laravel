@@ -1,5 +1,9 @@
+# Environment variables
+user := $(shell id -u)
+group := $(shell id -g)
+
 # Executables (local)
-DOCKER_COMP = docker compose
+DOCKER_COMP := USER_ID=$(user) GROUP_ID=$(group) docker compose
 
 # Docker containers
 PHP_CONT = $(DOCKER_COMP) exec php
@@ -40,7 +44,7 @@ lint: ## Execute linters
 	@$(COMPOSER) lint
 
 dep: ## Deploy the application
-	DOMAIN_NAME=pingcrm-react.com SERVER_NAME=:80 IMAGES_PREFIX=pingcrm ./deploy.sh
+	USER_ID=$(user) GROUP_ID=$(group) DOMAIN_NAME=pingcrm-react.com SERVER_NAME=:80 IMAGES_PREFIX=pingcrm ./deploy.sh
 
 ## —— Composer 🧙 ——————————————————————————————————————————————————————————————
 composer: ## Run composer, pass the parameter "c=" to run a given command, example: make composer c='req laravel/breeze --dev'

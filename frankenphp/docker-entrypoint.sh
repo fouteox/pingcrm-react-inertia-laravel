@@ -22,6 +22,11 @@ if [ "$1" = 'frankenphp' ] || [ "$1" = 'php' ] || [ "$1" = 'artisan' ]; then
         composer run-script post-create-project-cmd
     fi
 
+    if [ "$APP_ENV" = 'local' ] && [ -z "$(ls -A 'node_modules/' 2>/dev/null)" ]; then
+        npm install
+        php artisan db:seed
+    fi
+
     if [ "$APP_ENV" = 'demo' ]; then
         setfacl -R -m u:www-data:rwX -m u:"$(whoami)":rwX storage
         setfacl -dR -m u:www-data:rwX -m u:"$(whoami)":rwX storage
