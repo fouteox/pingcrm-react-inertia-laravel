@@ -9,7 +9,8 @@ export default defineConfig({
         host: '0.0.0.0',
         hmr: {
             host: 'localhost',
-        }
+        },
+        port: 5174,
     },
     plugins: [
         basicSsl({
