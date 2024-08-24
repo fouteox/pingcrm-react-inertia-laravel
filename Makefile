@@ -12,7 +12,7 @@ LARAVEL  = $(PHP) artisan
 
 # Misc
 .DEFAULT_GOAL = help
-.PHONY        : help build up start down logs sh lint dep composer vendor npm dev a seed cc
+.PHONY        : help build up start down logs update sh lint dep composer vendor npm dev a seed cc
 
 ## —— 🎵 🐳 The Laravel Docker Makefile 🐳 🎵 ——————————————————————————————————
 help: ## Outputs this help screen
@@ -32,6 +32,10 @@ down: ## Stop the docker hub
 
 logs: ## Show live logs
 	@$(DOCKER_COMP) logs --tail=0 --follow
+
+update: ## Update vendor and node_modules
+	@$(COMPOSER) update
+	@$(NPM) update
 
 sh: ## Connect to the FrankenPHP container
 	@$(PHP_CONT) sh
