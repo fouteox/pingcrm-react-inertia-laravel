@@ -33,9 +33,9 @@ RUN set -eux; \
         exif \
 	;
 
-RUN echo "0 * * * * cd /app && /usr/local/bin/php artisan clear:hourly > /dev/null 2>&1" > /etc/cron.d/clear_hourly && \
-        chmod 0644 /etc/cron.d/clear_hourly && \
-        crontab /etc/cron.d/clear_hourly
+RUN echo "* * * * * cd /app && /usr/local/bin/php artisan schedule:run > /dev/null 2>&1" > /etc/cron.d/schedule && \
+        chmod 0644 /etc/cron.d/schedule && \
+        crontab /etc/cron.d/schedule
 
 # https://getcomposer.org/doc/03-cli.md#composer-allow-superuser
 ENV COMPOSER_ALLOW_SUPERUSER=1
