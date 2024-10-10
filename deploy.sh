@@ -32,7 +32,7 @@ sed "s|^APP_KEY=.*|APP_KEY=${APP_KEY}|" .env > .env.tmp && mv .env.tmp .env
 
 # Arrêter le conteneur
 echo "Stopping the container..."
-docker compose down --remove-orphans
+docker compose -f compose.yaml -f compose.prod.yaml down --remove-orphans
 
 # Redémarrer Docker Compose avec le nouveau fichier .env
 echo "Restarting Docker Compose..."

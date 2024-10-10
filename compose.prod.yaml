@@ -9,14 +9,13 @@ services:
     volumes:
       - storage_data:/app/storage
       - cache_data:/app/bootstrap/cache
-      - database_data:/database
     labels:
       - traefik.enable=true
       - traefik.http.routers.pingcrm.rule=Host(`${DOMAIN_NAME}`)
       - traefik.http.routers.pingcrm.entrypoints=websecure
       - traefik.http.routers.pingcrm.tls=true
+      - traefik.http.routers.pingcrm.tls.certresolver=production
 
 volumes:
   storage_data:
   cache_data:
-  database_data:
