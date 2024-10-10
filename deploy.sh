@@ -7,10 +7,10 @@ echo "Starting Docker Compose..."
 docker compose -f compose.yaml -f compose.prod.yaml up -d --build --wait
 
 # Obtenir le nom du conteneur
-CONTAINER_NAME=$(docker ps --filter "name=${IMAGES_PREFIX}" --format "{{.ID}}")
+CONTAINER_NAME=$(docker ps --filter "name=pingcrm" --format "{{.ID}}")
 
 if [ -z "$CONTAINER_NAME" ]; then
-    echo "Error: No container found for prefix ${IMAGES_PREFIX}"
+    echo "Error: No container found for prefix pingcrm"
     exit 1
 fi
 
