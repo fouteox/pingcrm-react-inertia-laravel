@@ -6,7 +6,7 @@ services:
       args:
         UID: ${USER_ID}
         GID: ${GROUP_ID}
-    container_name: ${IMAGES_PREFIX:-}app-php
+    container_name: pingcrm
     restart: unless-stopped
     environment:
       SERVER_NAME: ${SERVER_NAME:-localhost}, php:80
