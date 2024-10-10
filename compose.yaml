@@ -1,6 +1,5 @@
 services:
   php:
-    image: ${IMAGES_PREFIX:-}app-php
     build:
       context: .
       args:
