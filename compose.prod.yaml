@@ -15,7 +15,13 @@ services:
       - traefik.http.routers.pingcrm.entrypoints=websecure
       - traefik.http.routers.pingcrm.tls=true
       - traefik.http.routers.pingcrm.tls.certresolver=production
+    networks:
+      - lsio
 
 volumes:
   storage_data:
   cache_data:
+
+networks:
+    lsio:
+        external: true
