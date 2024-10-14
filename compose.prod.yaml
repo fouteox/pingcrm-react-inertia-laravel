@@ -16,12 +16,12 @@ services:
       - traefik.http.routers.pingcrm.tls=true
       - traefik.http.routers.pingcrm.tls.certresolver=production
     networks:
-      - lsio
+      - traefik
 
 volumes:
   storage_data:
   cache_data:
 
 networks:
-    lsio:
+    traefik:
         external: true
