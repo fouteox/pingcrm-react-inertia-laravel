@@ -1,0 +1,8 @@
+name: laravel-scheduling
+repository: fouteox/ddev-laravel-scheduling
+version: 0.0.1
+install_date: "2025-02-22T17:14:34+01:00"
+project_files:
+    - config.laravel-scheduling.yaml
+global_files: []
+removal_actions: []

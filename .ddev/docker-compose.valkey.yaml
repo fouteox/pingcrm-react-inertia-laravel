@@ -1,0 +1,31 @@
+#ddev-generated
+services:
+  web:
+    depends_on:
+      redis:
+        condition: service_healthy
+
+  redis:
+    container_name: ddev-${DDEV_SITENAME}-valkey
+    image: valkey/valkey:8-alpine
+    command: valkey-server --appendonly yes --requirepass redis
+    healthcheck:
+      test: [ "CMD", "valkey-cli", "ping" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    # These labels ensure this service is discoverable by ddev.
+    labels:
+      com.ddev.site-name: ${DDEV_SITENAME}
+      com.ddev.approot: $DDEV_APPROOT
+    volumes:
+    - ".:/mnt/ddev_config"
+    - "ddev-global-cache:/mnt/ddev-global-cache"
+    - "valkey:/data"
+
+volumes:
+    valkey:
+      name: ddev-${DDEV_SITENAME}-valkey
+      labels:
+          com.ddev.site-name: ${DDEV_SITENAME}

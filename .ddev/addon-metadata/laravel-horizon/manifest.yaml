@@ -1,0 +1,8 @@
+name: laravel-horizon
+repository: fouteox/ddev-laravel-horizon
+version: 0.0.1
+install_date: "2025-02-22T17:11:26+01:00"
+project_files:
+    - config.laravel-horizon.yaml
+global_files: []
+removal_actions: []

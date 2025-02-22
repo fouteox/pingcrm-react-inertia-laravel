@@ -1,0 +1,7 @@
+#!/bin/sh
+#ddev-generated
+## Description: Run valkey-cli inside the valkey container
+## Usage: valkey [flags] [args]
+## Example: "valkey KEYS *" or "ddev valkey-cli INFO" or "ddev valkey-cli --version"
+
+valkey-cli -p 6379 -h redis -a redis --no-auth-warning "$@"

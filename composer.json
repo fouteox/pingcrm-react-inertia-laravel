@@ -9,7 +9,9 @@
         "fakerphp/faker": "^1.24",
         "inertiajs/inertia-laravel": "^2.0",
         "laravel/framework": "^11.43",
+        "laravel/horizon": "^5.30",
         "laravel/octane": "^2.8",
+        "laravel/reverb": "^1.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.9",
         "tightenco/ziggy": "^2.0"
