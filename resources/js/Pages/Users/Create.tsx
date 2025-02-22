@@ -1,4 +1,3 @@
-import FileInput from '@/Components/FileInput';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import Layout from '@/Components/Layout';
@@ -7,15 +6,17 @@ import SelectInput from '@/Components/SelectInput';
 import TextInput from '@/Components/TextInput';
 import { Head, Link, useForm } from '@inertiajs/react';
 import React, { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const Create = () => {
+    const { t } = useTranslation();
+
     const { data, setData, errors, post, processing } = useForm({
         first_name: '',
         last_name: '',
         email: '',
         password: '',
         owner: '0',
-        photo: '',
     });
 
     function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -25,17 +26,17 @@ const Create = () => {
 
     return (
         <>
-            <Head title="Create User" />
+            <Head title={t('Create User')} />
             <div>
                 <h1 className="mb-8 text-3xl font-bold">
                     <Link
                         href={route('users.index')}
                         className="text-indigo-600 hover:text-indigo-700"
                     >
-                        Users
+                        {t('User', { count: 2 })}
                     </Link>
                     <span className="font-medium text-indigo-600"> /</span>{' '}
-                    Create
+                    {t('Create')}
                 </h1>
             </div>
             <div className="max-w-3xl overflow-hidden rounded-sm bg-white shadow-sm">
@@ -44,7 +45,7 @@ const Create = () => {
                         <div className="w-full pr-6 pb-7 lg:w-1/2">
                             <InputLabel
                                 forInput="first_name"
-                                value="First name:"
+                                value={t('First name')}
                             />
                             <TextInput
                                 name="first_name"
@@ -59,7 +60,7 @@ const Create = () => {
                         <div className="w-full pr-6 pb-7 lg:w-1/2">
                             <InputLabel
                                 forInput="last_name"
-                                value="Last name:"
+                                value={t('Last name')}
                             />
                             <TextInput
                                 name="last_name"
@@ -72,7 +73,7 @@ const Create = () => {
                             <InputError message={errors.last_name} />
                         </div>
                         <div className="w-full pr-6 pb-7 lg:w-1/2">
-                            <InputLabel forInput="email" value="Email:" />
+                            <InputLabel forInput="email" value={t('Email')} />
                             <TextInput
                                 name="email"
                                 type="email"
@@ -85,7 +86,10 @@ const Create = () => {
                             <InputError message={errors.email} />
                         </div>
                         <div className="w-full pr-6 pb-7 lg:w-1/2">
-                            <InputLabel forInput="password" value="Password:" />
+                            <InputLabel
+                                forInput="password"
+                                value={t('Password')}
+                            />
                             <TextInput
                                 name="password"
                                 type="password"
@@ -96,7 +100,7 @@ const Create = () => {
                             />
                         </div>
                         <div className="w-full pr-6 pb-7 lg:w-1/2">
-                            <InputLabel forInput="owner" value="Owner:" />
+                            <InputLabel forInput="owner" value={t('Owner')} />
                             <SelectInput
                                 name="owner"
                                 value={data.owner}
@@ -104,21 +108,10 @@ const Create = () => {
                                     setData('owner', e.target.value)
                                 }
                             >
-                                <option value="1">Yes</option>
-                                <option value="0">No</option>
+                                <option value="1">{t('Yes')}</option>
+                                <option value="0">{t('No')}</option>
                             </SelectInput>
                         </div>
-                        <FileInput
-                            className="w-full pr-6 pb-8 lg:w-1/2"
-                            label="Photo"
-                            name="photo"
-                            accept="image/*"
-                            error={errors.photo}
-                            value={data.photo}
-                            onChange={(photo) =>
-                                setData('photo', photo as unknown as string)
-                            }
-                        />
                     </div>
                     <div className="flex items-center justify-end border-t border-gray-200 bg-gray-100 px-8 py-4">
                         <LoadingButton
@@ -126,7 +119,7 @@ const Create = () => {
                             type="submit"
                             className="btn-indigo"
                         >
-                            Create User
+                            {t('Create User')}
                         </LoadingButton>
                     </div>
                 </form>

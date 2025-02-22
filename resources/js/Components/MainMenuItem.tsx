@@ -28,7 +28,7 @@ export default function MainMenuItem({ icon, link, text }: MainMenuItemProps) {
                 className="group flex items-center py-3 text-indigo-300"
             >
                 <Icon name={icon} className={iconClasses} />
-                <div className={textClasses}>{text}</div>
+                <div className={`${textClasses} whitespace-nowrap`}>{text}</div>
             </Link>
         </div>
     );

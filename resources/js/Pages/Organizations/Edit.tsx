@@ -12,12 +12,15 @@ import TrashedMessage from '@/Components/TrashedMessage';
 import { FormAction, Organization, PageProps } from '@/types';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import React, { ReactNode, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface EditPageProps extends PageProps {
     organization: Organization;
 }
 
 const Edit = () => {
+    const { t } = useTranslation();
+
     const [showModal, setShowModal] = useState(false);
 
     const { organization } = usePage<EditPageProps>().props;
@@ -62,8 +65,8 @@ const Edit = () => {
 
     function modalContent() {
         const bodyModal = organization.deleted_at
-            ? 'Are you sure you want to restore this organization?'
-            : 'Are you sure you want to delete this organization?';
+            ? t('Are you sure you want to restore this organization?')
+            : t('Are you sure you want to delete this organization?');
         const actionModal = organization.deleted_at
             ? restoreOrganization
             : deleteOrganization;
@@ -72,11 +75,11 @@ const Edit = () => {
             <>
                 {organization.deleted_at ? (
                     <TrashedMessage onRestore={() => setShowModal(true)}>
-                        This organization has been deleted.
+                        {t('This organization has been deleted.')}
                     </TrashedMessage>
                 ) : (
                     <DeleteButton onClick={() => setShowModal(true)}>
-                        Delete Organization
+                        {t('Delete Organization')}
                     </DeleteButton>
                 )}
                 <Modal show={showModal} onClose={() => setShowModal(false)}>
@@ -89,7 +92,7 @@ const Edit = () => {
                             <SecondaryButton
                                 onClick={() => setShowModal(false)}
                             >
-                                Cancel
+                                {t('Cancel')}
                             </SecondaryButton>
 
                             <DangerButton
@@ -99,8 +102,8 @@ const Edit = () => {
                                 onClick={actionModal}
                             >
                                 {organization.deleted_at
-                                    ? 'Restore Organization'
-                                    : 'Delete Organization'}
+                                    ? t('Restore Organization')
+                                    : t('Delete Organization')}
                             </DangerButton>
                         </div>
                     </div>
@@ -117,7 +120,7 @@ const Edit = () => {
                     href={route('organizations.index')}
                     className="text-indigo-600 hover:text-indigo-700"
                 >
-                    Organizations
+                    {t('Organization', { count: 2 })}
                 </Link>
                 <span className="mx-2 font-medium text-indigo-600">/</span>
                 {data.name}
@@ -126,7 +129,11 @@ const Edit = () => {
             <div className="max-w-3xl overflow-hidden rounded-sm bg-white shadow-sm">
                 <form onSubmit={handleSubmit}>
                     <div className="-mr-6 -mb-8 flex flex-wrap p-8">
-                        <Field label="name" value="Name:" errors={errors.name}>
+                        <Field
+                            label="name"
+                            value={t('Name')}
+                            errors={errors.name}
+                        >
                             <TextInput
                                 name="name"
                                 value={data.name}
@@ -139,7 +146,7 @@ const Edit = () => {
 
                         <Field
                             label="email"
-                            value="Email:"
+                            value={t('Email')}
                             errors={errors.email}
                         >
                             <TextInput
@@ -155,7 +162,7 @@ const Edit = () => {
 
                         <Field
                             label="phone"
-                            value="Phone:"
+                            value={t('Phone')}
                             errors={errors.phone}
                         >
                             <TextInput
@@ -170,7 +177,7 @@ const Edit = () => {
 
                         <Field
                             label="adsress"
-                            value="Address:"
+                            value={t('Address')}
                             errors={errors.address}
                         >
                             <TextInput
@@ -183,7 +190,11 @@ const Edit = () => {
                             />
                         </Field>
 
-                        <Field label="city" value="City:" errors={errors.city}>
+                        <Field
+                            label="city"
+                            value={t('City')}
+                            errors={errors.city}
+                        >
                             <TextInput
                                 name="city"
                                 value={data.city}
@@ -196,7 +207,7 @@ const Edit = () => {
 
                         <Field
                             label="region"
-                            value="Province/State:"
+                            value={t('Province/State')}
                             errors={errors.region}
                         >
                             <TextInput
@@ -211,7 +222,7 @@ const Edit = () => {
 
                         <Field
                             label="country"
-                            value="Country:"
+                            value={t('Country')}
                             errors={errors.country}
                         >
                             <SelectInput
@@ -222,14 +233,14 @@ const Edit = () => {
                                 }
                             >
                                 <option value=""></option>
-                                <option value="CA">Canada</option>
-                                <option value="US">United States</option>
+                                <option value="CA">{t('Canada')}</option>
+                                <option value="US">{t('United States')}</option>
                             </SelectInput>
                         </Field>
 
                         <Field
                             label="postal_code"
-                            value="Postal code:"
+                            value={t('Postal Code')}
                             errors={errors.postal_code}
                         >
                             <TextInput
@@ -249,20 +260,22 @@ const Edit = () => {
                             type="submit"
                             className="ml-auto"
                         >
-                            Update Organization
+                            {t('Update Organization')}
                         </LoadingButton>
                     </div>
                 </form>
             </div>
-            <h2 className="mt-12 text-2xl font-bold">Contacts</h2>
+            <h2 className="mt-12 text-2xl font-bold">
+                {t('Contact', { count: 2 })}
+            </h2>
             <div className="mt-6 overflow-x-auto rounded-sm bg-white shadow-sm">
                 <table className="w-full whitespace-nowrap">
                     <thead>
                         <tr className="text-left font-bold">
-                            <th className="px-6 pt-5 pb-4">Name</th>
-                            <th className="px-6 pt-5 pb-4">City</th>
+                            <th className="px-6 pt-5 pb-4">{t('Name')}</th>
+                            <th className="px-6 pt-5 pb-4">{t('City')}</th>
                             <th className="px-6 pt-5 pb-4" colSpan={2}>
-                                Phone
+                                {t('Phone')}
                             </th>
                         </tr>
                     </thead>
@@ -337,7 +350,7 @@ const Edit = () => {
                         {organization.contacts.length === 0 && (
                             <tr>
                                 <td className="border-t px-6 py-4" colSpan={4}>
-                                    No contacts found.
+                                    {t('No contacts found.')}
                                 </td>
                             </tr>
                         )}

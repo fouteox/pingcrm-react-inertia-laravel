@@ -8,6 +8,7 @@
         "php": ">=8.4",
         "fakerphp/faker": "^1.24",
         "inertiajs/inertia-laravel": "^2.0",
+        "laravel-lang/common": "^6.5",
         "laravel/framework": "^11.43",
         "laravel/horizon": "^5.30",
         "laravel/octane": "^2.8",

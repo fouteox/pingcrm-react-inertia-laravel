@@ -7,12 +7,15 @@ import TextInput from '@/Components/TextInput';
 import { Organization, PageProps } from '@/types';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import React, { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface CreatePageProps extends PageProps {
     organizations: Organization[];
 }
 
 const Create = () => {
+    const { t } = useTranslation();
+
     const { organizations } = usePage<CreatePageProps>().props;
     const { data, setData, errors, post, processing } = useForm({
         first_name: '',
@@ -34,15 +37,16 @@ const Create = () => {
 
     return (
         <>
-            <Head title="Create Contact" />
+            <Head title={t('Create Contact')} />
             <h1 className="mb-8 text-3xl font-bold">
                 <Link
                     href={route('contacts.index')}
                     className="text-indigo-600 hover:text-indigo-700"
                 >
-                    Contacts
+                    {t('Contact', { count: 2 })}
                 </Link>
-                <span className="font-medium text-indigo-600"> /</span> Create
+                <span className="font-medium text-indigo-600"> /</span>{' '}
+                {t('Create')}
             </h1>
             <div className="max-w-3xl overflow-hidden rounded-sm bg-white shadow-sm">
                 <form onSubmit={handleSubmit}>
@@ -50,7 +54,7 @@ const Create = () => {
                         <div className="w-full pr-6 pb-7 lg:w-1/2">
                             <InputLabel
                                 forInput="first_name"
-                                value="First name:"
+                                value={t('First name')}
                             />
                             <TextInput
                                 name="first_name"
@@ -65,7 +69,7 @@ const Create = () => {
                         <div className="w-full pr-6 pb-7 lg:w-1/2">
                             <InputLabel
                                 forInput="last_name"
-                                value="Last name:"
+                                value={t('Last name')}
                             />
                             <TextInput
                                 name="last_name"
@@ -80,7 +84,7 @@ const Create = () => {
                         <div className="w-full pr-6 pb-7 lg:w-1/2">
                             <InputLabel
                                 forInput="organization_id"
-                                value="Organization:"
+                                value={t('Organization')}
                             />
                             <SelectInput
                                 name="organization_id"
@@ -98,7 +102,7 @@ const Create = () => {
                             </SelectInput>
                         </div>
                         <div className="w-full pr-6 pb-7 lg:w-1/2">
-                            <InputLabel forInput="email" value="Email:" />
+                            <InputLabel forInput="email" value={t('Email')} />
                             <TextInput
                                 name="email"
                                 type="email"
@@ -111,7 +115,7 @@ const Create = () => {
                             <InputError message={errors.email} />
                         </div>
                         <div className="w-full pr-6 pb-7 lg:w-1/2">
-                            <InputLabel forInput="phone" value="Phone:" />
+                            <InputLabel forInput="phone" value={t('Phone')} />
                             <TextInput
                                 name="phone"
                                 value={data.phone}
@@ -123,7 +127,10 @@ const Create = () => {
                             <InputError message={errors.phone} />
                         </div>
                         <div className="w-full pr-6 pb-7 lg:w-1/2">
-                            <InputLabel forInput="address" value="Address:" />
+                            <InputLabel
+                                forInput="address"
+                                value={t('Address')}
+                            />
                             <TextInput
                                 name="address"
                                 value={data.address}
@@ -135,7 +142,7 @@ const Create = () => {
                             <InputError message={errors.address} />
                         </div>
                         <div className="w-full pr-6 pb-7 lg:w-1/2">
-                            <InputLabel forInput="city" value="City:" />
+                            <InputLabel forInput="city" value={t('City')} />
                             <TextInput
                                 name="city"
                                 value={data.city}
@@ -149,7 +156,7 @@ const Create = () => {
                         <div className="w-full pr-6 pb-7 lg:w-1/2">
                             <InputLabel
                                 forInput="region"
-                                value="Province/State:"
+                                value={t('Province/State')}
                             />
                             <TextInput
                                 name="region"
@@ -162,7 +169,10 @@ const Create = () => {
                             <InputError message={errors.region} />
                         </div>
                         <div className="w-full pr-6 pb-7 lg:w-1/2">
-                            <InputLabel forInput="country" value="Country:" />
+                            <InputLabel
+                                forInput="country"
+                                value={t('Country')}
+                            />
                             <SelectInput
                                 name="country"
                                 value={data.country}
@@ -171,14 +181,14 @@ const Create = () => {
                                 }
                             >
                                 <option value=""></option>
-                                <option value="CA">Canada</option>
-                                <option value="US">United States</option>
+                                <option value="CA">{t('Canada')}</option>
+                                <option value="US">{t('United States')}</option>
                             </SelectInput>
                         </div>
                         <div className="w-full pr-6 pb-7 lg:w-1/2">
                             <InputLabel
                                 forInput="postal_code"
-                                value="Postal Code:"
+                                value={t('Postal Code')}
                             />
                             <TextInput
                                 name="postal_code"
@@ -197,7 +207,7 @@ const Create = () => {
                             type="submit"
                             className="btn-indigo"
                         >
-                            Create Contact
+                            {t('Create Contact')}
                         </LoadingButton>
                     </div>
                 </form>

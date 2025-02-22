@@ -6,12 +6,15 @@ import SearchFilter from '@/Components/SearchFilter.js';
 import { PageProps, PaginatedData, User } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface IndexPageProps extends PageProps {
     users: PaginatedData<User>;
 }
 
 const Index = () => {
+    const { t } = useTranslation();
+
     const { users } = usePage<IndexPageProps>().props;
 
     const {
@@ -21,8 +24,10 @@ const Index = () => {
 
     return (
         <>
-            <Head title="Users" />
-            <h1 className="mb-8 text-3xl font-bold">Users</h1>
+            <Head title={t('User', { count: 2 })} />
+            <h1 className="mb-8 text-3xl font-bold">
+                {t('User', { count: 2 })}
+            </h1>
             <div className="mb-6 flex items-center justify-between">
                 <SearchFilter />
                 <AnchorLink
@@ -30,18 +35,19 @@ const Index = () => {
                     href={route('users.create')}
                     style="btn"
                 >
-                    <span>Create</span>
-                    <span className="hidden md:inline"> User</span>
+                    <span className="md:hidden">{t('Create')}</span>
+
+                    <span className="hidden md:inline">{t('Create User')}</span>
                 </AnchorLink>
             </div>
             <div className="overflow-x-auto rounded-sm bg-white shadow-sm">
                 <table className="w-full whitespace-nowrap">
                     <thead>
                         <tr className="text-left font-bold">
-                            <th className="px-6 pt-5 pb-4">Name</th>
-                            <th className="px-6 pt-5 pb-4">Email</th>
+                            <th className="px-6 pt-5 pb-4">{t('Name')}</th>
+                            <th className="px-6 pt-5 pb-4">{t('Email')}</th>
                             <th className="px-6 pt-5 pb-4" colSpan={2}>
-                                Role
+                                {t('Role')}
                             </th>
                         </tr>
                     </thead>
@@ -81,7 +87,7 @@ const Index = () => {
                                             href={route('users.edit', id)}
                                             className="focus:text-indigo flex items-center px-6 py-4 focus:outline-hidden"
                                         >
-                                            {owner ? 'Owner' : 'User'}
+                                            {owner ? t('Owner') : t('User')}
                                         </Link>
                                     </td>
                                     <td className="w-px border-t">
@@ -102,7 +108,7 @@ const Index = () => {
                         {data.length === 0 && (
                             <tr>
                                 <td className="border-t px-6 py-4" colSpan={4}>
-                                    No users found.
+                                    {t('No users found.')}
                                 </td>
                             </tr>
                         )}

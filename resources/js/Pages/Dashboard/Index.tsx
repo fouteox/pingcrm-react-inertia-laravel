@@ -1,12 +1,15 @@
 import Layout from '@/Components/Layout';
 import { Head } from '@inertiajs/react';
 import { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 const Dashboard = () => {
+    const { t } = useTranslation();
+
     return (
         <>
-            <Head title="Dashboard" />
-            <h1 className="mb-8 text-3xl font-bold">Dashboard</h1>
+            <Head title={t('Dashboard')} />
+            <h1 className="mb-8 text-3xl font-bold">{t('Dashboard')}</h1>
             <p className="mb-6 leading-normal">
                 Hey there! Welcome to Ping CRM, a demo app designed to help
                 illustrate how

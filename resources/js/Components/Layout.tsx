@@ -19,7 +19,7 @@ export default function Layout({ children }: MainLayoutProps) {
                         <BottomHeader />
                     </div>
                     <div className="flex grow overflow-hidden">
-                        <MainMenu className="hidden w-56 shrink-0 overflow-y-auto bg-indigo-800 p-12 md:block" />
+                        <MainMenu className="hidden w-60 shrink-0 overflow-y-auto bg-indigo-800 p-12 md:block" />
                         {/* To reset scroll region (https://inertiajs.com/pages#scroll-regions) add `scroll-region="true"` to div below */}
                         <div className="w-full overflow-hidden overflow-y-auto px-4 py-8 md:p-12">
                             {children}

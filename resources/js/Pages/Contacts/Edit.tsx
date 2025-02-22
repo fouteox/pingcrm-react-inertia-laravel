@@ -11,6 +11,7 @@ import TrashedMessage from '@/Components/TrashedMessage';
 import { Contact, FormAction, Organization, PageProps } from '@/types';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import React, { ReactNode, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface EditPageProps extends PageProps {
     contact: Contact;
@@ -18,6 +19,8 @@ interface EditPageProps extends PageProps {
 }
 
 const Edit = () => {
+    const { t } = useTranslation();
+
     const [showModal, setShowModal] = useState(false);
 
     const { contact, organizations } = usePage<EditPageProps>().props;
@@ -65,18 +68,18 @@ const Edit = () => {
 
     function modalContent() {
         const bodyModal = contact.deleted_at
-            ? 'Are you sure you want to restore this contact?'
-            : 'Are you sure you want to delete this contact?';
+            ? t('Are you sure you want to restore this contact?')
+            : t('Are you sure you want to delete this contact?');
         const actionModal = contact.deleted_at ? restoreContact : deleteContact;
         return (
             <>
                 {contact.deleted_at ? (
                     <TrashedMessage onRestore={() => setShowModal(true)}>
-                        This contact has been deleted.
+                        {t('This contact has been deleted.')}
                     </TrashedMessage>
                 ) : (
                     <DeleteButton onClick={() => setShowModal(true)}>
-                        Delete Contact
+                        {t('Delete Contact')}
                     </DeleteButton>
                 )}
                 <Modal show={showModal} onClose={() => setShowModal(false)}>
@@ -89,7 +92,7 @@ const Edit = () => {
                             <SecondaryButton
                                 onClick={() => setShowModal(false)}
                             >
-                                Cancel
+                                {t('Cancel')}
                             </SecondaryButton>
 
                             <DangerButton
@@ -99,8 +102,8 @@ const Edit = () => {
                                 onClick={actionModal}
                             >
                                 {contact.deleted_at
-                                    ? 'Restore Contact'
-                                    : 'Delete Contact'}
+                                    ? t('Restore Contact')
+                                    : t('Delete Contact')}
                             </DangerButton>
                         </div>
                     </div>
@@ -117,7 +120,7 @@ const Edit = () => {
                     href={route('contacts.index')}
                     className="text-indigo-600 hover:text-indigo-700"
                 >
-                    Contacts
+                    {t('Contact', { count: 2 })}
                 </Link>
                 <span className="mx-2 font-medium text-indigo-600">/</span>
                 {data.first_name} {data.last_name}
@@ -128,7 +131,7 @@ const Edit = () => {
                     <div className="-mr-6 -mb-8 flex flex-wrap p-8">
                         <Field
                             label="first_name"
-                            value="First name:"
+                            value={t('First name')}
                             errors={errors.first_name}
                         >
                             <TextInput
@@ -143,7 +146,7 @@ const Edit = () => {
 
                         <Field
                             label="last_name"
-                            value="Last name:"
+                            value={t('Last name')}
                             errors={errors.last_name}
                         >
                             <TextInput
@@ -158,7 +161,7 @@ const Edit = () => {
 
                         <Field
                             label="organization_id"
-                            value="Organization:"
+                            value={t('Organization')}
                             errors={errors.organization_id}
                         >
                             <SelectInput
@@ -179,7 +182,7 @@ const Edit = () => {
 
                         <Field
                             label="email"
-                            value="Email:"
+                            value={t('Email')}
                             errors={errors.email}
                         >
                             <TextInput
@@ -195,7 +198,7 @@ const Edit = () => {
 
                         <Field
                             label="phone"
-                            value="Phone:"
+                            value={t('Phone')}
                             errors={errors.phone}
                         >
                             <TextInput
@@ -210,7 +213,7 @@ const Edit = () => {
 
                         <Field
                             label="address"
-                            value="Address:"
+                            value={t('Address')}
                             errors={errors.address}
                         >
                             <TextInput
@@ -223,7 +226,11 @@ const Edit = () => {
                             />
                         </Field>
 
-                        <Field label="city" value="City:" errors={errors.city}>
+                        <Field
+                            label="city"
+                            value={t('City')}
+                            errors={errors.city}
+                        >
                             <TextInput
                                 name="city"
                                 value={data.city}
@@ -236,7 +243,7 @@ const Edit = () => {
 
                         <Field
                             label="region"
-                            value="Province/State:"
+                            value={t('Province/State')}
                             errors={errors.region}
                         >
                             <TextInput
@@ -251,7 +258,7 @@ const Edit = () => {
 
                         <Field
                             label="country"
-                            value="Country:"
+                            value={t('Country')}
                             errors={errors.country}
                         >
                             <SelectInput
@@ -262,14 +269,14 @@ const Edit = () => {
                                 }
                             >
                                 <option value=""></option>
-                                <option value="CA">Canada</option>
-                                <option value="US">United States</option>
+                                <option value="CA">{t('Canada')}</option>
+                                <option value="US">{t('United States')}</option>
                             </SelectInput>
                         </Field>
 
                         <Field
                             label="postal_code"
-                            value="Postal Code:"
+                            value={t('Postal Code')}
                             errors={errors.postal_code}
                         >
                             <TextInput
@@ -289,7 +296,7 @@ const Edit = () => {
                             type="submit"
                             className="btn-indigo ml-auto"
                         >
-                            Update Contact
+                            {t('Update Contact')}
                         </LoadingButton>
                     </div>
                 </form>

@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import './flag-icons.css';
 
 @plugin '@tailwindcss/forms';
 

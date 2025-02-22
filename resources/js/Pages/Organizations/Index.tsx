@@ -6,12 +6,15 @@ import SearchFilter from '@/Components/SearchFilter';
 import { Organization, PageProps, PaginatedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface IndexPageProps extends PageProps {
     organizations: PaginatedData<Organization>;
 }
 
 const Index = () => {
+    const { t } = useTranslation();
+
     const { organizations } = usePage<IndexPageProps>().props;
     const {
         data,
@@ -20,8 +23,10 @@ const Index = () => {
 
     return (
         <>
-            <Head title="Organizations" />
-            <h1 className="mb-8 text-3xl font-bold">Organizations</h1>
+            <Head title={t('Organization', { count: 2 })} />
+            <h1 className="mb-8 text-3xl font-bold">
+                {t('Organization', { count: 2 })}
+            </h1>
             <div className="mb-6 flex items-center justify-between">
                 <SearchFilter />
                 <AnchorLink
@@ -29,18 +34,21 @@ const Index = () => {
                     style="btn"
                     href={route('organizations.create')}
                 >
-                    <span>Create</span>
-                    <span className="hidden md:inline"> Organization</span>
+                    <span className="md:hidden">{t('Create')}</span>
+
+                    <span className="hidden md:inline">
+                        {t('Create Organization')}
+                    </span>
                 </AnchorLink>
             </div>
             <div className="overflow-x-auto rounded-sm bg-white shadow-sm">
                 <table className="w-full whitespace-nowrap">
                     <thead>
                         <tr className="text-left font-bold">
-                            <th className="px-6 pt-5 pb-4">Name</th>
-                            <th className="px-6 pt-5 pb-4">City</th>
+                            <th className="px-6 pt-5 pb-4">{t('Name')}</th>
+                            <th className="px-6 pt-5 pb-4">{t('City')}</th>
                             <th className="px-6 pt-5 pb-4" colSpan={2}>
-                                Phone
+                                {t('Phone')}
                             </th>
                         </tr>
                     </thead>
@@ -113,7 +121,7 @@ const Index = () => {
                         {data.length === 0 && (
                             <tr>
                                 <td className="border-t px-6 py-4" colSpan={4}>
-                                    No organizations found.
+                                    {t('No organizations found.')}
                                 </td>
                             </tr>
                         )}

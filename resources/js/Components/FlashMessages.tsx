@@ -2,6 +2,7 @@ import { PageProps } from '@/types';
 import { router, usePage } from '@inertiajs/react';
 import { useCallback, useEffect, useRef } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
+import { useTranslation } from 'react-i18next';
 
 interface FlashMessage {
     success?: string;
@@ -15,6 +16,8 @@ interface FlashPageProps extends PageProps {
 }
 
 export default function FlashMessages() {
+    const { t } = useTranslation();
+
     const { flash, errors } = usePage<FlashPageProps>().props;
     const numOfErrors = Object.keys(errors).length;
 
@@ -43,16 +46,12 @@ export default function FlashMessages() {
             }
 
             if (flash.error || numOfErrors > 0) {
-                toast.error(
-                    numOfErrors === 1
-                        ? 'There is one form error'
-                        : `There are ${numOfErrors} form errors.`,
-                );
+                toast.error(t('form_errors', { count: numOfErrors }));
             }
 
             lastShownNavId.current = currentNavId.current;
         }
-    }, [flash, errors, numOfErrors]);
+    }, [flash, errors, numOfErrors, t]);
 
     return <Toaster />;
 }

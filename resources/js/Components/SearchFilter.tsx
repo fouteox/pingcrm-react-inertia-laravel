@@ -2,6 +2,7 @@ import SelectInput from '@/Components/SelectInput';
 import { PageProps } from '@/types';
 import { router, usePage } from '@inertiajs/react';
 import { ChangeEvent, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface Values {
     role: string;
@@ -29,6 +30,8 @@ interface SearchFilterPageProps extends PageProps {
 }
 
 export default function SearchFilter() {
+    const { t } = useTranslation();
+
     const { filters } = usePage<SearchFilterPageProps>().props;
     const [opened, setOpened] = useState(false);
 
@@ -109,8 +112,8 @@ export default function SearchFilter() {
                                 onChange={handleChange}
                             >
                                 <option value=""></option>
-                                <option value="user">User</option>
-                                <option value="owner">Owner</option>
+                                <option value="user">{t('User')}</option>
+                                <option value="owner">{t('Owner')}</option>
                             </SelectInput>
                         )}
                         <SelectInput
@@ -120,8 +123,8 @@ export default function SearchFilter() {
                             onChange={handleChange}
                         >
                             <option value=""></option>
-                            <option value="with">With Trashed</option>
-                            <option value="only">Only Trashed</option>
+                            <option value="with">{t('With Trashed')}</option>
+                            <option value="only">{t('Only Trashed')}</option>
                         </SelectInput>
                     </div>
                 </div>
@@ -131,7 +134,7 @@ export default function SearchFilter() {
                 >
                     <div className="flex items-baseline">
                         <span className="hidden text-gray-700 md:inline">
-                            Filter
+                            {t('Filter')}
                         </span>
                         <svg
                             className="h-2 w-2 fill-current text-gray-700 md:ml-2"
@@ -149,7 +152,7 @@ export default function SearchFilter() {
                     name="search"
                     value={values.search}
                     onChange={handleChange}
-                    placeholder="Search…"
+                    placeholder={t('Search')}
                 />
             </div>
             <button
@@ -157,7 +160,7 @@ export default function SearchFilter() {
                 className="ml-3 text-sm text-gray-600 hover:text-gray-700 focus:text-indigo-700 focus:outline-hidden"
                 type="button"
             >
-                Reset
+                {t('Reset')}
             </button>
         </div>
     );

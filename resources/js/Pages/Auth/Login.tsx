@@ -6,6 +6,7 @@ import Logo from '@/Components/Logo';
 import TextInput from '@/Components/TextInput';
 import { Head, useForm } from '@inertiajs/react';
 import React, { ChangeEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface LoginForm {
     email: string;
@@ -15,6 +16,8 @@ interface LoginForm {
 }
 
 export default function Login() {
+    const { t } = useTranslation();
+
     const { data, setData, post, processing, errors } = useForm<LoginForm>({
         email: 'johndoe@example.com',
         password: 'secret',
@@ -52,13 +55,13 @@ export default function Login() {
                 >
                     <div className="px-10 py-12">
                         <h1 className="text-center text-3xl font-bold">
-                            Welcome Back!
+                            {t('Welcome Back!')}
                         </h1>
 
                         <div className="mx-auto mt-6 w-24 border-b-2" />
 
                         <div className="mt-6">
-                            <InputLabel forInput="email" value="Email" />
+                            <InputLabel forInput="email" value={t('Email')} />
 
                             <TextInput
                                 type="email"
@@ -73,7 +76,10 @@ export default function Login() {
                         </div>
 
                         <div className="mt-4">
-                            <InputLabel forInput="password" value="Password" />
+                            <InputLabel
+                                forInput="password"
+                                value={t('Password')}
+                            />
 
                             <TextInput
                                 type="password"
@@ -93,7 +99,7 @@ export default function Login() {
                                 handleChange={onHandleChange}
                             />
                             <span className="ml-2 text-sm text-gray-600">
-                                Remember me
+                                {t('Remember me')}
                             </span>
                         </label>
                     </div>
@@ -103,7 +109,7 @@ export default function Login() {
                             className="ml-auto"
                             processing={processing}
                         >
-                            Log in
+                            {t('Log in')}
                         </LoadingButton>
                     </div>
                 </form>

@@ -1,5 +1,6 @@
 import Icon from '@/Components/Icon';
 import React, { MouseEvent, ReactNode } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface TrashedMessageProps {
     onRestore: (event: MouseEvent<HTMLButtonElement>) => void;
@@ -10,6 +11,8 @@ const TrashedMessage: React.FC<TrashedMessageProps> = ({
     onRestore,
     children,
 }) => {
+    const { t } = useTranslation();
+
     return (
         <div className="mb-6 flex max-w-3xl items-center justify-between rounded-sm border border-yellow-500 bg-yellow-400 p-4">
             <div className="flex items-center">
@@ -25,7 +28,7 @@ const TrashedMessage: React.FC<TrashedMessageProps> = ({
                 type="button"
                 onClick={onRestore}
             >
-                Restore
+                {t('Restore')}
             </button>
         </div>
     );
