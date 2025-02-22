@@ -1,137 +1,148 @@
-#syntax=docker/dockerfile:1.4
+ARG PHP_VERSION=8.4
+ARG FRANKENPHP_VERSION=1.4
+ARG BUN_VERSION="latest"
+ARG APP_ENV=production
+ARG NODE_VERSION=22
 
-# Versions
-FROM dunglas/frankenphp:1-php8.3 AS frankenphp_upstream
+FROM dunglas/frankenphp:${FRANKENPHP_VERSION}-php${PHP_VERSION} AS base
 
-# The different stages of this Dockerfile are meant to be built into separate images
-# https://docs.docker.com/develop/develop-images/multistage-build/#stop-at-a-specific-build-stage
-# https://docs.docker.com/compose/compose-file/#target
+ARG WWWUSER=1000
+ARG WWWGROUP=1000
+ARG APP_DIR=/app
+ARG SUPERCRONIC_VERSION=0.2.33
+ARG APP_ENV=production
+ARG TARGETARCH=x86_64
+ARG NODE_VERSION
 
-# Base FrankenPHP image
-FROM frankenphp_upstream AS frankenphp_base
+ENV DEBIAN_FRONTEND=noninteractive \
+    OCTANE_SERVER=frankenphp \
+    USER=www-data \
+    ROOT=${APP_DIR} \
+    APP_ENV=${APP_ENV} \
+    COMPOSER_FUND=0 \
+    COMPOSER_MAX_PARALLEL_HTTP=24 \
+    SERVER_NAME=:80 \
+    PATH=/usr/local/node/bin:$PATH \
+    XDG_CONFIG_HOME=${APP_DIR}/.config \
+    XDG_DATA_HOME=${APP_DIR}/.data
 
-WORKDIR /app
+WORKDIR ${ROOT}
 
-# persistent / runtime deps
-# hadolint ignore=DL3008
-RUN apt-get update && apt-get install -y --no-install-recommends \
-	acl \
-	file \
-	gettext \
-	git \
-    cron \
-	&& rm -rf /var/lib/apt/lists/*
+SHELL ["/bin/bash", "-eou", "pipefail", "-c"]
 
-RUN set -eux; \
-	install-php-extensions \
-		@composer \
-		apcu \
-		intl \
-		opcache \
-		zip \
+RUN apt-get update && apt-get upgrade -yqq && apt-get install -yqq --no-install-recommends \
+    git \
+    ca-certificates \
+    supervisor \
+    curl \
+    && install-php-extensions \
+        @composer \
+        pcntl \
+        bcmath \
+        sockets \
+        intl \
+        opcache \
+        zip \
         gd \
-        exif \
-	;
+    && curl -fsSL https://deb.nodesource.com/setup_${NODE_VERSION}.x -o nodesource_setup.sh \
+    && bash nodesource_setup.sh \
+    && apt-get install -y nodejs \
+    && npm install -g npm \
+    && rm nodesource_setup.sh \
+    && case "${TARGETARCH}" in \
+        arm64) _cronic_fname='supercronic-linux-arm64' ;; \
+        amd64) _cronic_fname='supercronic-linux-amd64' ;; \
+        *) echo >&2 "error: unsupported architecture: ${TARGETARCH}"; exit 1 ;; \
+    esac \
+    && curl -fsSL "https://github.com/aptible/supercronic/releases/download/v${SUPERCRONIC_VERSION}/${_cronic_fname}" -o /usr/bin/supercronic \
+    && chmod +x /usr/bin/supercronic \
+    && mkdir -p /etc/supercronic \
+    && echo "*/1 * * * * php ${ROOT}/artisan schedule:run --no-interaction" > /etc/supercronic/laravel \
+    && apt-get -y autoremove \
+    && apt-get clean \
+    && docker-php-source delete \
+    && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
+    && rm -f /var/log/lastlog /var/log/faillog
 
-RUN echo "0 * * * * cd /app && /usr/local/bin/php artisan clear:hourly > /dev/null 2>&1" > /etc/cron.d/clear_hourly && \
-        chmod 0644 /etc/cron.d/clear_hourly && \
-        crontab /etc/cron.d/clear_hourly
-
-# https://getcomposer.org/doc/03-cli.md#composer-allow-superuser
-ENV COMPOSER_ALLOW_SUPERUSER=1
-
-###> recipes ###
-###< recipes ###
-
-COPY --link frankenphp/conf.d/app.ini $PHP_INI_DIR/conf.d/
-COPY --link --chmod=755 frankenphp/docker-entrypoint.sh /usr/local/bin/docker-entrypoint
-COPY --link frankenphp/Caddyfile /etc/caddy/Caddyfile
-
-ENTRYPOINT ["docker-entrypoint"]
-
-HEALTHCHECK --start-period=60s CMD curl -f http://localhost:2019/metrics || exit 1
-CMD [ "frankenphp", "run", "--config", "/etc/caddy/Caddyfile" ]
-
-# Dev FrankenPHP image
-FROM frankenphp_base AS frankenphp_dev
-
-ENV APP_ENV=local XDEBUG_MODE=off
-
-RUN mv "$PHP_INI_DIR/php.ini-development" "$PHP_INI_DIR/php.ini"
-
-RUN curl -fsSL https://deb.nodesource.com/setup_lts.x -o nodesource_setup.sh; \
-    bash nodesource_setup.sh; \
-    apt-get install -y nodejs; \
-    rm nodesource_setup.sh;
-
-RUN set -eux; \
-	install-php-extensions \
-		xdebug \
-	;
-
-COPY --link frankenphp/conf.d/app.dev.ini $PHP_INI_DIR/conf.d/
-
-CMD [ "frankenphp", "run", "--config", "/etc/caddy/Caddyfile", "--watch" ]
-
-FROM node:20-alpine AS build
-
-WORKDIR /app
-
-RUN npm config set update-notifier false && npm set progress=false
-
-COPY --link package*.json ./
-
-RUN if [ -f $ROOT/package-lock.json ]; \
-    then \
-    npm ci --loglevel=error --no-audit; \
-    else \
-    npm install --loglevel=error --no-audit; \
-    fi
-
-COPY --link . .
-
-RUN npm run build
-
-# Prod FrankenPHP image
-FROM frankenphp_base AS frankenphp_prod
-
-ENV APP_ENV=production
+RUN userdel --remove --force www-data \
+    && groupadd --force -g ${WWWGROUP} ${USER} \
+    && useradd -ms /bin/bash --no-log-init --no-user-group -g ${WWWGROUP} -u ${WWWUSER} ${USER} \
+    && setcap -r /usr/local/bin/frankenphp \
+    && chown -R ${USER}:${USER} ${ROOT} /var/{log,run} \
+    && chmod -R a+rw ${ROOT} /var/{log,run}
 
 RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 
-COPY --link frankenphp/conf.d/app.prod.ini $PHP_INI_DIR/conf.d/
+USER ${USER}
 
-# prevent the reinstallation of vendors at every changes in the source code
-COPY --link composer.* ./
+COPY --link --chown=${WWWUSER}:${WWWUSER} deployment/supervisord.conf /etc/
+COPY --link --chown=${WWWUSER}:${WWWUSER} deployment/octane/FrankenPHP/supervisord.frankenphp.conf /etc/supervisor/conf.d/
+COPY --link --chown=${WWWUSER}:${WWWUSER} deployment/supervisord.*.conf /etc/supervisor/conf.d/
+COPY --link --chmod=755 --chown=${WWWUSER}:${WWWUSER} deployment/docker-entrypoint.sh /usr/local/bin/docker-entrypoint
+COPY --link --chmod=755 --chown=${WWWUSER}:${WWWUSER} deployment/healthcheck /usr/local/bin/healthcheck
+COPY --link --chown=${WWWUSER}:${WWWUSER} deployment/php.ini ${PHP_INI_DIR}/conf.d/99-octane.ini
 
-RUN set -eux; \
-    composer install \
+ENTRYPOINT ["docker-entrypoint"]
+
+HEALTHCHECK --start-period=5s --interval=2s --timeout=5s --retries=8 CMD healthcheck || exit 1
+
+###########################################
+
+FROM base AS common
+
+USER ${USER}
+
+COPY --link --chown=${WWWUSER}:${WWWUSER} composer.json composer.lock ./
+
+RUN composer install \
     --no-dev \
     --no-interaction \
     --no-autoloader \
     --no-ansi \
     --no-scripts \
-    --audit;
+    --audit
 
-# copy sources
-COPY --link . ./
-RUN rm -Rf frankenphp/
+###########################################
+# Build frontend assets with Bun
+###########################################
 
-# copy build assets
-COPY --link --from=build /app/public ./public
+FROM oven/bun:${BUN_VERSION} AS build
 
-RUN set -eux; \
-    mkdir -p storage/framework/sessions; \
-    mkdir -p storage/framework/views; \
-    mkdir -p storage/framework/cache; \
-    mkdir -p storage/framework/testing; \
-    mkdir -p storage/logs; \
-    mkdir -p bootstrap/cache; \
-    chmod -R a+rw storage; \
-    composer install \
+ARG APP_ENV=production
+
+ENV ROOT=/app \
+    APP_ENV=${APP_ENV} \
+    NODE_ENV=${APP_ENV:-production}
+
+WORKDIR ${ROOT}
+
+COPY --link package.json bun.lock* ./
+
+RUN bun install --frozen-lockfile
+
+COPY --link . .
+COPY --link --from=common ${ROOT}/vendor vendor
+
+RUN bun run build
+
+###########################################
+
+FROM common AS prod
+
+USER ${USER}
+
+COPY --link --chown=${WWWUSER}:${WWWUSER} . .
+COPY --link --chown=${WWWUSER}:${WWWUSER} --from=build ${ROOT}/public public
+COPY --link --chown=${WWWUSER}:${WWWUSER} --from=build ${ROOT}/bootstrap/ssr bootstrap/ssr
+COPY --link --chown=${WWWUSER}:${WWWUSER} --from=build ${ROOT}/node_modules node_modules
+
+RUN mkdir -p ${ROOT}/.infrastructure \
+    && mkdir -p ${ROOT}/storage/framework/{sessions,views,cache,testing} ${ROOT}/storage/logs ${ROOT}/bootstrap/cache \
+    && chmod -R a+rw ${ROOT}/.infrastructure ${ROOT}/storage ${ROOT}/bootstrap/cache
+
+RUN composer install \
     --classmap-authoritative \
     --no-interaction \
     --no-ansi \
-    --no-dev; \
-    composer clear-cache; \
-    php artisan storage:link; sync;
+    --no-dev \
+    && composer clear-cache

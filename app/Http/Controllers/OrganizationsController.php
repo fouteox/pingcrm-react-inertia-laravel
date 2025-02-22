@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Http\Requests\OrganizationsRequest;
@@ -12,7 +14,7 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Request;
 use Inertia\Inertia;
 
-class OrganizationsController extends Controller
+final class OrganizationsController extends Controller
 {
     public function index()
     {

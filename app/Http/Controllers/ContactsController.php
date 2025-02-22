@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ContactRequest;
@@ -14,7 +16,7 @@ use Illuminate\Support\Facades\Request;
 use Inertia\Inertia;
 use Inertia\Response;
 
-class ContactsController extends Controller
+final class ContactsController extends Controller
 {
     public function index()
     {

@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Tests\Feature;
 
 use App\Models\Account;
@@ -8,7 +10,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Inertia\Testing\AssertableInertia as Assert;
 use Tests\TestCase;
 
-class OrganizationsTest extends TestCase
+final class OrganizationsTest extends TestCase
 {
     use RefreshDatabase;
 

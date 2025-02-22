@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use Inertia\Inertia;
 
-class ReportsController extends Controller
+final class ReportsController extends Controller
 {
     public function index()
     {

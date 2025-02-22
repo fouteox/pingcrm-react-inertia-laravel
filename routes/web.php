@@ -1,9 +1,10 @@
 <?php
 
+declare(strict_types=1);
+
 use App\Http\Controllers\Auth\AuthenticatedSessionController;
 use App\Http\Controllers\ContactsController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\ImagesController;
 use App\Http\Controllers\OrganizationsController;
 use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\UsersController;
@@ -48,8 +49,3 @@ Route::middleware('auth')->group(function () {
     // Reports
     Route::get('reports', [ReportsController::class, 'index'])->name('reports');
 });
-
-// Images
-Route::get('/img/{path}', [ImagesController::class, 'show'])
-    ->where('path', '.*')
-    ->name('image');

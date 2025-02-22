@@ -1,27 +1,53 @@
-# Production environment override
+x-logging: &default-logging
+  driver: 'json-file'
+  options:
+    max-size: "50m"
+    max-file: 6
+
+x-base: &base
+  image: ${IMAGE_NAME:-app}:latest
+  environment:
+    SERVER_NAME: :80
+  user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+  ulimits:
+    nofile:
+      soft: 20000
+      hard: 40000
+  security_opt:
+    - no-new-privileges:true
+  volumes:
+    - 'app_public:/app/storage/app/public'
+    - 'app_logs:/app/storage/logs'
+    - 'database_sqlite:/app/.infrastructure/'
+  logging: *default-logging
+  restart: always
+
 services:
-  php:
+  app:
+    <<: *base
     build:
-      context: .
-      target: frankenphp_prod
+      args:
+        APP_ENV: 'production' # to load .env.production
+        WWWUSER: ${HOST_UID:-1000}
+        WWWGROUP: ${HOST_GID:-1000}
+        TARGETARCH: ${HOST_ARCH:-amd64}
+    healthcheck:
+      test: [ "CMD", "curl", "--fail", "localhost:8000/up" ]
+      start_period: 5s
+      interval: 10s
+      retries: 12
+    ports:
+      - "80:8000"
+
+  scheduler:
+    <<: *base
     environment:
-      APP_ENV: demo
-    volumes:
-      - storage_data:/app/storage
-      - cache_data:/app/bootstrap/cache
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.pingcrm.rule=Host(`${DOMAIN_NAME}`)
-      - traefik.http.routers.pingcrm.entrypoints=websecure
-      - traefik.http.routers.pingcrm.tls=true
-      - traefik.http.routers.pingcrm.tls.certresolver=production
-    networks:
-      - traefik
+      CONTAINER_MODE: scheduler
+    depends_on:
+      app:
+        condition: service_healthy
 
 volumes:
-  storage_data:
-  cache_data:
-
-networks:
-    traefik:
-        external: true
+  app_public:
+  app_logs:
+  database_sqlite:

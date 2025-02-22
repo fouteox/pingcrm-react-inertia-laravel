@@ -1,30 +1,28 @@
-import { defineConfig } from 'vite';
-import laravel from 'laravel-vite-plugin';
+import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
-import basicSsl from '@vitejs/plugin-basic-ssl'
+import laravel from 'laravel-vite-plugin';
+import { defineConfig } from 'vite';
+
+const port = 5173;
+const origin = `${process.env.DDEV_PRIMARY_URL}:${port}`;
 
 export default defineConfig({
     server: {
-        https: true,
         host: '0.0.0.0',
-        hmr: {
-            host: 'localhost',
+        port: port,
+        strictPort: true,
+        origin: origin,
+        cors: {
+            origin: { origin: process.env.DDEV_PRIMARY_URL },
         },
-        port: 5174,
     },
     plugins: [
-        basicSsl({
-            /** name of certification */
-            name: 'footeox',
-            /** custom trust domains */
-            domains: ['localhost'],
-            /** custom certification directory */
-            certDir: './cert'
-        }),
         laravel({
-            input: 'resources/js/app.jsx',
+            input: 'resources/js/app.tsx',
+            ssr: 'resources/js/ssr.tsx',
             refresh: true,
         }),
         react(),
+        tailwindcss(),
     ],
 });

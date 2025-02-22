@@ -5,23 +5,23 @@
     "keywords": ["laravel", "framework"],
     "license": "MIT",
     "require": {
-        "php": ">=8.3.8",
-        "inertiajs/inertia-laravel": "^1.0",
-        "laravel/framework": "^11.9",
+        "php": ">=8.4",
+        "fakerphp/faker": "^1.24",
+        "inertiajs/inertia-laravel": "^2.0",
+        "laravel/framework": "^11.43",
+        "laravel/octane": "^2.8",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.9",
-        "league/glide-symfony": "^2.0",
-        "tightenco/ziggy": "^2.0",
-        "fakerphp/faker": "^1.23"
+        "tightenco/ziggy": "^2.0"
     },
     "require-dev": {
-        "laravel/breeze": "^2.0",
-        "laravel/pint": "^1.13",
-        "laravel/sail": "^1.26",
+        "laravel/breeze": "^2.3",
+        "laravel/pint": "^1.21",
+        "laravel/sail": "^1.41",
         "mockery/mockery": "^1.6",
-        "nunomaduro/collision": "^8.0",
-        "pestphp/pest": "^2.0",
-        "pestphp/pest-plugin-laravel": "^2.0"
+        "nunomaduro/collision": "^8.5",
+        "pestphp/pest": "^3.7",
+        "pestphp/pest-plugin-laravel": "^3.1"
     },
     "autoload": {
         "psr-4": {
@@ -50,6 +50,10 @@
             "@php artisan key:generate --ansi",
             "@php -r \"file_exists('database/database.sqlite') || touch('database/database.sqlite');\"",
             "@php artisan migrate --graceful --ansi"
+        ],
+        "dev": [
+            "Composer\\Config::disableProcessTimeout",
+            "npx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fdba74\" \"php artisan serve\" \"php artisan queue:listen --tries=1\" \"php artisan pail --timeout=0\" \"npm run dev\" --names=server,queue,logs,vite"
         ],
         "lint": [
             "pint"

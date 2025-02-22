@@ -1,10 +1,12 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
 
-class OrganizationsRequest extends FormRequest
+final class OrganizationsRequest extends FormRequest
 {
     /**
      * Get the validation rules that apply to the request.

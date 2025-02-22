@@ -1,5 +1,7 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Controllers;
 
 use App\Http\Requests\UserRequest;
@@ -13,7 +15,7 @@ use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Request;
 use Inertia\Inertia;
 
-class UsersController extends Controller
+final class UsersController extends Controller
 {
     public function index()
     {
@@ -36,13 +38,7 @@ class UsersController extends Controller
 
     public function store(UserRequest $request): RedirectResponse
     {
-        $user = Auth::user()->account->users()->create($request->validated());
-
-        if ($request->hasFile('photo')) {
-            $user->update([
-                'photo' => $request->file('photo')->store('users'),
-            ]);
-        }
+        Auth::user()->account->users()->create($request->validated());
 
         return Redirect::route('users.index')->with('success', 'User created.');
     }
@@ -56,30 +52,26 @@ class UsersController extends Controller
 
     public function update(User $user, UserRequest $request): RedirectResponse
     {
-        if (App::environment('demo') && $user->isDemoUser()) {
+        if (App::environment('production') && $user->isDemoUser()) {
             return Redirect::back();
         }
 
-        $user->update($request->validated());
+        $data = $request->validated();
 
-        if ($request->hasFile('photo')) {
-            $user->update([
-                'photo' => $request->file('photo')->store('users'),
-            ]);
-        }
+        $user->update($data);
 
-        return Redirect::back()->with('success', 'User updated.');
+        return Redirect::back()->with('success', 'Utilisateur mis à jour.');
     }
 
     public function destroy(User $user): RedirectResponse
     {
-        if (App::environment('demo') && $user->isDemoUser()) {
-            return Redirect::back()->with('error', 'Deleting the demo user is not allowed.');
+        if (App::environment('production') && $user->isDemoUser()) {
+            return Redirect::back()->with('error', 'La suppression de l\'utilisateur de démonstration n\'est pas autorisée.');
         }
 
         $user->delete();
 
-        return Redirect::back()->with('success', 'User deleted.');
+        return Redirect::back()->with('success', 'Utilisateur supprimé.');
     }
 
     public function restore(User $user): RedirectResponse

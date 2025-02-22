@@ -1,12 +1,15 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Requests;
 
 use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\Password;
 
-class UserRequest extends FormRequest
+final class UserRequest extends FormRequest
 {
     /**
      * Determine if the user is authorized to make this request.
@@ -34,9 +37,15 @@ class UserRequest extends FormRequest
                 'email',
                 Rule::unique('users')->ignore($userId),
             ],
-            'password' => ['nullable'],
+            'password' => ['sometimes', 'required', Password::defaults()],
             'owner' => ['required', 'boolean'],
-            'photo' => ['nullable', 'image'],
+            'photo' => [
+                'nullable',
+                'image',
+                'mimes:jpeg,png,jpg,gif',
+                'max:2048',
+                'dimensions:min_width=100,min_height=100,max_width=2000,max_height=2000',
+            ],
         ];
     }
 }

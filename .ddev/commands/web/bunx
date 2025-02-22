@@ -1,0 +1,8 @@
+#!/bin/bash
+
+#ddev-generated
+## Description: Run bunx in the web container
+## Usage: bunx
+## Example: "ddev bunx"
+
+bunx "$@"

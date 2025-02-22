@@ -1,0 +1,2 @@
+#ddev-generated
+RUN npm install -g bun

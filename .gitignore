@@ -1,9 +1,12 @@
+/.phpunit.cache
+/bootstrap/ssr
 /node_modules
 /public/build
 /public/hot
 /public/storage
 /public/vendor
 /storage/*.key
+/storage/pail
 /vendor
 .env
 .env.backup
@@ -18,4 +21,7 @@ yarn-error.log
 /.idea
 /.vscode
 /cert
-/public/vendor
+
+**/caddy
+frankenphp
+frankenphp-worker.php

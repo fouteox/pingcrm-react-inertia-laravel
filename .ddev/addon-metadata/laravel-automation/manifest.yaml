@@ -1,0 +1,13 @@
+name: laravel-automation
+repository: fouteox/ddev-laravel-automation
+version: 0.0.2
+install_date: "2025-02-20T16:39:30+01:00"
+project_files:
+    - docker-compose.depends_on.yaml
+    - docker-compose.healthcheck-mariadb.yaml
+    - docker-compose.healthcheck-mysql.yaml
+    - docker-compose.healthcheck-postgres.yaml
+    - laravel-automation/
+    - config.laravel-automation.yaml
+global_files: []
+removal_actions: []

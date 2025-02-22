@@ -1,12 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Http\Resources;
 
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\ResourceCollection;
 use Illuminate\Support\Collection;
 
-class UserCollection extends ResourceCollection
+final class UserCollection extends ResourceCollection
 {
     /**
      * Transform the resource collection into an array.
@@ -18,7 +20,6 @@ class UserCollection extends ResourceCollection
             'name' => $user->name,
             'email' => $user->email,
             'owner' => $user->owner,
-            'photo' => $user->photo ? url()->route('image', ['path' => $user->photo, 'w' => 60, 'h' => 60, 'fit' => 'crop']) : null,
             'deleted_at' => $user->deleted_at,
         ]);
     }

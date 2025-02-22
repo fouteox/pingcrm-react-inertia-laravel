@@ -1,3 +1,35 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+@import 'tailwindcss';
+
+@plugin '@tailwindcss/forms';
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../js/**/*.tsx';
+@source '../views/**/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+@theme {
+    --color-transparent: transparent;
+    --color-current: currentColor;
+    --color-black: #000;
+    --color-white: #fff;
+
+    --color-indigo-100: #e6e8ff;
+    --color-indigo-300: #b2b7ff;
+    --color-indigo-400: #7886d7;
+    --color-indigo-500: #6574cd;
+    --color-indigo-600: #5661b3;
+    --color-indigo-800: #2f365f;
+    --color-indigo-900: #191e38;
+}
+
+.fill {
+    fill: currentColor;
+
+    @variant focus {
+        fill: currentColor;
+    }
+
+    @variant group-hover {
+        fill: currentColor;
+    }
+}
