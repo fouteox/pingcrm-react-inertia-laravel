@@ -11,12 +11,15 @@ import TrashedMessage from '@/Components/TrashedMessage';
 import { FormAction, PageProps, User } from '@/types';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import React, { ReactNode, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 
 interface EditPageProps extends PageProps {
     user: User & { password: string; photo: File | null };
 }
 
 const Edit = () => {
+    const { t } = useTranslation();
+
     const [showModal, setShowModal] = useState(false);
 
     const { user } = usePage<EditPageProps>().props;
@@ -68,18 +71,18 @@ const Edit = () => {
 
     function modalContent() {
         const bodyModal = user.deleted_at
-            ? 'Are you sure you want to restore this user?'
-            : 'Are you sure you want to delete this user?';
+            ? t('Are you sure you want to restore this user?')
+            : t('Are you sure you want to delete this user?');
         const actionModal = user.deleted_at ? restoreUser : deleteUser;
         return (
             <>
                 {user.deleted_at ? (
                     <TrashedMessage onRestore={() => setShowModal(true)}>
-                        This user has been deleted.
+                        {t('This user has been deleted.')}
                     </TrashedMessage>
                 ) : (
                     <DeleteButton onClick={() => setShowModal(true)}>
-                        Delete User
+                        {t('Delete User')}
                     </DeleteButton>
                 )}
                 <Modal show={showModal} onClose={() => setShowModal(false)}>
@@ -92,7 +95,7 @@ const Edit = () => {
                             <SecondaryButton
                                 onClick={() => setShowModal(false)}
                             >
-                                Cancel
+                                {t('Cancel')}
                             </SecondaryButton>
 
                             <DangerButton
@@ -102,8 +105,8 @@ const Edit = () => {
                                 onClick={actionModal}
                             >
                                 {user.deleted_at
-                                    ? 'Restore User'
-                                    : 'Delete User'}
+                                    ? t('Restore User')
+                                    : t('Delete User')}
                             </DangerButton>
                         </div>
                     </div>
@@ -121,7 +124,7 @@ const Edit = () => {
                         href={route('users.index')}
                         className="text-indigo-600 hover:text-indigo-700"
                     >
-                        Users
+                        {t('User', { count: 2 })}
                     </Link>
                     <span className="mx-2 font-medium text-indigo-600">/</span>
                     {data.first_name} {data.last_name}
@@ -130,7 +133,7 @@ const Edit = () => {
             {!user.can_delete ? (
                 <div className="mb-6 max-w-3xl rounded-sm border border-yellow-500 bg-yellow-400 p-4">
                     <div className="text-yellow-800">
-                        Updating the demo user is not allowed.
+                        {t('Updating the demo user is not allowed.')}
                     </div>
                 </div>
             ) : (
@@ -141,7 +144,7 @@ const Edit = () => {
                     <div className="-mr-6 -mb-8 flex flex-wrap p-8">
                         <Field
                             label="first_name"
-                            value="First name:"
+                            value={t('First name')}
                             errors={errors.first_name}
                         >
                             <TextInput
@@ -156,7 +159,7 @@ const Edit = () => {
 
                         <Field
                             label="last_name"
-                            value="Last name:"
+                            value={t('Last name')}
                             errors={errors.last_name}
                         >
                             <TextInput
@@ -171,7 +174,7 @@ const Edit = () => {
 
                         <Field
                             label="email"
-                            value="Email:"
+                            value={t('Email')}
                             errors={errors.email}
                         >
                             <TextInput
@@ -187,7 +190,7 @@ const Edit = () => {
 
                         <Field
                             label="password"
-                            value="Password:"
+                            value={t('Password')}
                             errors={errors.password}
                         >
                             <TextInput
@@ -202,7 +205,7 @@ const Edit = () => {
 
                         <Field
                             label="owner"
-                            value="Owner:"
+                            value={t('Owner')}
                             errors={errors.owner}
                         >
                             <SelectInput
@@ -212,8 +215,8 @@ const Edit = () => {
                                     setData('owner', e.target.value)
                                 }
                             >
-                                <option value="1">Yes</option>
-                                <option value="0">No</option>
+                                <option value="1">{t('Yes')}</option>
+                                <option value="0">{t('No')}</option>
                             </SelectInput>
                         </Field>
                     </div>
@@ -225,7 +228,7 @@ const Edit = () => {
                             type="submit"
                             className="btn-indigo ml-auto"
                         >
-                            Update User
+                            {t('Update User')}
                         </LoadingButton>
                     </div>
                 </form>

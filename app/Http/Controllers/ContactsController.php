@@ -49,7 +49,7 @@ final class ContactsController extends Controller
     {
         Auth::user()->account->contacts()->create($request->validated());
 
-        return Redirect::route('contacts')->with('success', 'Contact created.');
+        return Redirect::route('contacts.index')->with('success', 'Contact created.');
     }
 
     public function edit(Contact $contact): Response

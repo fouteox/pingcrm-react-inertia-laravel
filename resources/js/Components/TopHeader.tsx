@@ -6,7 +6,7 @@ import { useState } from 'react';
 export default function TopHeader() {
     const [menuOpened, setMenuOpened] = useState(false);
     return (
-        <div className="flex items-center justify-between bg-indigo-900 px-6 py-4 md:w-56 md:shrink-0 md:justify-center">
+        <div className="flex items-center justify-between bg-indigo-900 px-6 py-4 md:w-60 md:shrink-0 md:justify-center">
             <Link className="mt-1" href="/public">
                 <Logo
                     className="fill-current text-white"
