@@ -1,4 +1,4 @@
-name: Build and Deploy
+name: Build and Deploy Pingcrm App
 
 on:
   pull_request:
@@ -9,7 +9,6 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  CLOUDFLARED_VERSION: latest
   COMPOSE_FILE: compose.prod.yaml
   PROJECT_DIR: ${{ github.event.repository.name }}
 
@@ -25,9 +24,8 @@ jobs:
     steps:
       - name: Install cloudflared
         run: |
-          curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/${CLOUDFLARED_VERSION}/download/cloudflared-linux-amd64.deb
+          curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
           sudo dpkg -i cloudflared.deb
-          rm cloudflared.deb
 
       - name: Setup SSH configuration
         uses: shimataro/ssh-key-action@v2
@@ -41,35 +39,29 @@ jobs:
               User ${{ secrets.SSH_USER }}
               IdentityFile ~/.ssh/id_ed25519
               StrictHostKeyChecking accept-new
-              ServerAliveInterval 60
-              ServerAliveCountMax 10
 
       - name: Get target server information
         id: server-info
         run: |
-          get_server_info() {
-            SSH_UID=$(ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "id -u")
-            SSH_GID=$(ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "id -g")
-            SSH_ARCH=$(ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "uname -m")
+          SSH_UID=$(ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "id -u")
+          SSH_GID=$(ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "id -g")
+          SSH_ARCH=$(ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "uname -m")
 
-            case "$SSH_ARCH" in
-              "aarch64") DOCKER_ARCH="arm64" ;;
-              "x86_64")  DOCKER_ARCH="amd64" ;;
-              *)
-                echo "Architecture non supportée: $SSH_ARCH"
-                exit 1
-                ;;
-            esac
+          case "$SSH_ARCH" in
+            "aarch64") DOCKER_ARCH="arm64" ;;
+            "x86_64")  DOCKER_ARCH="amd64" ;;
+            *)
+              echo "Architecture non supportée: $SSH_ARCH"
+              exit 1
+              ;;
+          esac
 
-            {
-              echo "host_uid=$SSH_UID"
-              echo "host_gid=$SSH_GID"
-              echo "host_arch=$DOCKER_ARCH"
-              echo "target_platform=linux/$DOCKER_ARCH"
-            } >> $GITHUB_OUTPUT
-          }
-
-          get_server_info
+          {
+            echo "host_uid=$SSH_UID"
+            echo "host_gid=$SSH_GID"
+            echo "host_arch=$DOCKER_ARCH"
+            echo "target_platform=linux/$DOCKER_ARCH"
+          } >> $GITHUB_OUTPUT
 
   build:
     needs: gather-info
@@ -131,9 +123,8 @@ jobs:
     steps:
       - name: Install cloudflared
         run: |
-          curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/${CLOUDFLARED_VERSION}/download/cloudflared-linux-amd64.deb
+          curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
           sudo dpkg -i cloudflared.deb
-          rm cloudflared.deb
 
       - name: Setup SSH configuration
         uses: shimataro/ssh-key-action@v2
@@ -147,8 +138,6 @@ jobs:
               User ${{ secrets.SSH_USER }}
               IdentityFile ~/.ssh/id_ed25519
               StrictHostKeyChecking accept-new
-              ServerAliveInterval 60
-              ServerAliveCountMax 10
 
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -162,21 +151,17 @@ jobs:
         env:
           FULL_IMAGE_NAME: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
         run: |
-          deploy_app() {
-            local host_uid host_gid
-            host_uid=$(ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "id -u")
-            host_gid=$(ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "id -g")
+          HOST_UID=$(ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "id -u")
+          HOST_GID=$(ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "id -g")
 
-            echo "${{ secrets.GITHUB_TOKEN }}" | ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} \
-              "docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin"
+          echo "${{ secrets.GITHUB_TOKEN }}" | ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} \
+            "docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin"
 
-            ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "cd ~/${PROJECT_DIR} && \
-              HOST_UID=${host_uid} \
-              HOST_GID=${host_gid} \
-              IMAGE_NAME=${FULL_IMAGE_NAME} \
-              docker compose -f ${COMPOSE_FILE} pull && \
-              docker compose -f ${COMPOSE_FILE} up -d"
-          }
+          ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "cd ~/${PROJECT_DIR} && \
+            HOST_UID=${HOST_UID} \
+            HOST_GID=${HOST_GID} \
+            IMAGE_NAME=${FULL_IMAGE_NAME} \
+            docker compose -f ${COMPOSE_FILE} pull && \
+            docker compose -f ${COMPOSE_FILE} up -d --no-build"
 
-          deploy_app
           echo "✅ Deployment completed successfully!"
