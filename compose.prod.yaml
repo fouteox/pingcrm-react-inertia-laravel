@@ -23,6 +23,7 @@ x-base: &base
   volumes:
     - 'app_public:/app/storage/app/public'
     - 'app_logs:/app/storage/logs'
+    - 'app_cache:/app/bootstrap/cache'
   logging: *default-logging
   restart: always
 
@@ -114,6 +115,7 @@ services:
 volumes:
   app_public:
   app_logs:
+  app_cache:
   stack-valkey:
   mariadb_data:
   mariadb_custom_conf:
