@@ -148,55 +148,57 @@ jobs:
       - name: Extract database variables
         run: |
           echo "${{ secrets.ENV_FILE_BASE64 }}" | base64 -d > temp.env
-
           {
             DB_DATABASE=$(grep DB_DATABASE temp.env | cut -d '=' -f2-)
             DB_USERNAME=$(grep DB_USERNAME temp.env | cut -d '=' -f2-)
             DB_PASSWORD=$(grep DB_PASSWORD temp.env | cut -d '=' -f2-)
             REDIS_PASSWORD=$(grep REDIS_PASSWORD temp.env | cut -d '=' -f2-)
           } 2>/dev/null
-
           shred -u temp.env
 
-          {
-            echo "db_database<<EOF"
-            echo "$DB_DATABASE"
-            echo "EOF"
-            echo "db_username<<EOF"
-            echo "$DB_USERNAME"
-            echo "EOF"
-            echo "db_password<<EOF"
-            echo "$DB_PASSWORD"
-            echo "EOF"
-            echo "redis_password<<EOF"
-            echo "$REDIS_PASSWORD"
-            echo "EOF"
-          } >> $GITHUB_ENV
+          echo "::add-mask::$DB_DATABASE"
+          echo "::add-mask::$DB_USERNAME"
+          echo "::add-mask::$DB_PASSWORD"
+          echo "::add-mask::$REDIS_PASSWORD"
+
+          echo "db_database=$DB_DATABASE" >> $GITHUB_ENV
+          echo "db_username=$DB_USERNAME" >> $GITHUB_ENV
+          echo "db_password=$DB_PASSWORD" >> $GITHUB_ENV
+          echo "redis_password=$REDIS_PASSWORD" >> $GITHUB_ENV
 
       - name: Deploy with Docker context
         env:
           REPO_SHORT_NAME: ${{ github.event.repository.name }}
           FULL_IMAGE_NAME: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          COMPOSE_COMMAND: |
+            docker compose -f compose.prod.yaml
         run: |
+          # Crée un fichier temporaire sécurisé pour les variables d'environnement
+          ENVFILE=$(mktemp)
+          cat << EOF > "$ENVFILE"
+          DB_DATABASE=${{ env.db_database }}
+          DB_USERNAME=${{ env.db_username }}
+          DB_PASSWORD=${{ env.db_password }}
+          REDIS_PASSWORD=${{ env.redis_password }}
+          EOF
+
           HOST_UID=$(ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "id -u")
           HOST_GID=$(ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "id -g")
 
           echo "${{ secrets.GITHUB_TOKEN }}" | ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin"
 
+          ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "cd ~/$REPO_SHORT_NAME"
+
           ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "cd ~/$REPO_SHORT_NAME && \
-            DB_DATABASE='${{ env.db_database }}' \
-            DB_USERNAME='${{ env.db_username }}' \
-            DB_PASSWORD='${{ env.db_password }}' \
-            REDIS_PASSWORD='${{ env.redis_password }}' \
             HOST_UID=$HOST_UID \
             HOST_GID=$HOST_GID \
             IMAGE_NAME=$FULL_IMAGE_NAME \
-            docker compose -f compose.prod.yaml pull && \
-            DB_DATABASE='${{ env.db_database }}' \
-            DB_USERNAME='${{ env.db_username }}' \
-            DB_PASSWORD='${{ env.db_password }}' \
-            REDIS_PASSWORD='${{ env.redis_password }}' \
+            docker compose --env-file $ENVFILE -f compose.prod.yaml pull"
+
+          ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "cd ~/$REPO_SHORT_NAME && \
             HOST_UID=$HOST_UID \
             HOST_GID=$HOST_GID \
             IMAGE_NAME=$FULL_IMAGE_NAME \
-            docker compose -f compose.prod.yaml up -d"
+            docker compose --env-file $ENVFILE -f compose.prod.yaml up -d"
+
+          shred -u "$ENVFILE"

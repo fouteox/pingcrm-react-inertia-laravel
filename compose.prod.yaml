@@ -78,8 +78,6 @@ services:
       - no-new-privileges:true
     volumes:
       - 'stack-valkey:/data'
-    networks:
-      - traefik
     logging: *default-logging
     healthcheck:
       test: [ "CMD", "valkey-cli", "ping" ]
