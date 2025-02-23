@@ -102,8 +102,6 @@ services:
       - 'mariadb_data:/var/lib/mysql'
       - 'mariadb_custom_conf:/etc/mysql/conf.d'
       - 'mariadb_shared:/shared'
-    networks:
-      - traefik
     healthcheck:
       test: [ "CMD", "healthcheck.sh", "--connect", "--innodb_initialized" ]
       start_period: 10s
