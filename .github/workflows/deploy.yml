@@ -153,6 +153,7 @@ jobs:
             DB_DATABASE=$(grep DB_DATABASE temp.env | cut -d '=' -f2-)
             DB_USERNAME=$(grep DB_USERNAME temp.env | cut -d '=' -f2-)
             DB_PASSWORD=$(grep DB_PASSWORD temp.env | cut -d '=' -f2-)
+            REDIS_PASSWORD=$(grep REDIS_PASSWORD temp.env | cut -d '=' -f2-)
           } 2>/dev/null
 
           shred -u temp.env
@@ -166,6 +167,9 @@ jobs:
             echo "EOF"
             echo "db_password<<EOF"
             echo "$DB_PASSWORD"
+            echo "EOF"
+            echo "redis_password<<EOF"
+            echo "$REDIS_PASSWORD"
             echo "EOF"
           } >> $GITHUB_ENV
 
@@ -183,6 +187,7 @@ jobs:
             DB_DATABASE='${{ env.db_database }}' \
             DB_USERNAME='${{ env.db_username }}' \
             DB_PASSWORD='${{ env.db_password }}' \
+            REDIS_PASSWORD='${{ env.redis_password }}' \
             HOST_UID=$HOST_UID \
             HOST_GID=$HOST_GID \
             IMAGE_NAME=$FULL_IMAGE_NAME \
@@ -190,6 +195,7 @@ jobs:
             DB_DATABASE='${{ env.db_database }}' \
             DB_USERNAME='${{ env.db_username }}' \
             DB_PASSWORD='${{ env.db_password }}' \
+            REDIS_PASSWORD='${{ env.redis_password }}' \
             HOST_UID=$HOST_UID \
             HOST_GID=$HOST_GID \
             IMAGE_NAME=$FULL_IMAGE_NAME \
