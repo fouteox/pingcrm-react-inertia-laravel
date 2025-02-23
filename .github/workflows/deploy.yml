@@ -1,4 +1,4 @@
-name: Build and Deploy Pingcrm App
+name: Build and Deploy
 
 on:
   pull_request:
@@ -9,6 +9,9 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
+  CLOUDFLARED_VERSION: latest
+  COMPOSE_FILE: compose.prod.yaml
+  PROJECT_DIR: ${{ github.event.repository.name }}
 
 jobs:
   gather-info:
@@ -22,11 +25,11 @@ jobs:
     steps:
       - name: Install cloudflared
         run: |
-          curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+          curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/${CLOUDFLARED_VERSION}/download/cloudflared-linux-amd64.deb
           sudo dpkg -i cloudflared.deb
-          cloudflared --version
+          rm cloudflared.deb
 
-      - name: Setup SSH key
+      - name: Setup SSH configuration
         uses: shimataro/ssh-key-action@v2
         with:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
@@ -38,32 +41,39 @@ jobs:
               User ${{ secrets.SSH_USER }}
               IdentityFile ~/.ssh/id_ed25519
               StrictHostKeyChecking accept-new
+              ServerAliveInterval 60
+              ServerAliveCountMax 10
 
       - name: Get target server information
         id: server-info
         run: |
-          SSH_UID=$(ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "id -u")
-          SSH_GID=$(ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "id -g")
+          get_server_info() {
+            SSH_UID=$(ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "id -u")
+            SSH_GID=$(ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "id -g")
+            SSH_ARCH=$(ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "uname -m")
 
-          SSH_ARCH=$(ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "uname -m")
-          if [ "$SSH_ARCH" = "aarch64" ]; then
-            DOCKER_ARCH="arm64"
-          elif [ "$SSH_ARCH" = "x86_64" ]; then
-            DOCKER_ARCH="amd64"
-          else
-            echo "Architecture non supportée: $SSH_ARCH"
-            exit 1
-          fi
+            case "$SSH_ARCH" in
+              "aarch64") DOCKER_ARCH="arm64" ;;
+              "x86_64")  DOCKER_ARCH="amd64" ;;
+              *)
+                echo "Architecture non supportée: $SSH_ARCH"
+                exit 1
+                ;;
+            esac
 
-          echo "host_uid=$SSH_UID" >> $GITHUB_OUTPUT
-          echo "host_gid=$SSH_GID" >> $GITHUB_OUTPUT
-          echo "host_arch=$DOCKER_ARCH" >> $GITHUB_OUTPUT
-          echo "target_platform=linux/$DOCKER_ARCH" >> $GITHUB_OUTPUT
+            {
+              echo "host_uid=$SSH_UID"
+              echo "host_gid=$SSH_GID"
+              echo "host_arch=$DOCKER_ARCH"
+              echo "target_platform=linux/$DOCKER_ARCH"
+            } >> $GITHUB_OUTPUT
+          }
 
-  build-arm64:
+          get_server_info
+
+  build:
     needs: gather-info
-    if: needs.gather-info.outputs.host_arch == 'arm64'
-    runs-on: ubuntu-24.04-arm
+    runs-on: ${{ needs.gather-info.outputs.host_arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
     permissions:
       contents: read
       packages: write
@@ -73,60 +83,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Create .env.production file
-        run: |
-          echo "${{ secrets.ENV_FILE_BASE64 }}" | base64 -d > .env.production
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Log in to container registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Extract metadata for Docker
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=sha,format=short
-            type=ref,event=branch
-            latest
-
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          target: prod
-          platforms: ${{ needs.gather-info.outputs.target_platform }}
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          build-args: |
-            WWWUSER=${{ needs.gather-info.outputs.host_uid }}
-            WWWGROUP=${{ needs.gather-info.outputs.host_gid }}
-            TARGETARCH=${{ needs.gather-info.outputs.host_arch }}
-
-  build-amd64:
-    needs: gather-info
-    if: needs.gather-info.outputs.host_arch == 'amd64'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Create .env.production file
-        run: |
-          echo "${{ secrets.ENV_FILE_BASE64 }}" | base64 -d > .env.production
+        run: echo "${{ secrets.ENV_FILE_BASE64 }}" | base64 -d > .env.production
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -165,11 +122,7 @@ jobs:
             TARGETARCH=${{ needs.gather-info.outputs.host_arch }}
 
   deploy:
-    needs: [gather-info, build-arm64, build-amd64]
-    if: |
-      always() &&
-      (needs.build-arm64.result == 'success' || needs.build-arm64.result == 'skipped') &&
-      (needs.build-amd64.result == 'success' || needs.build-amd64.result == 'skipped')
+    needs: [gather-info, build]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -178,11 +131,11 @@ jobs:
     steps:
       - name: Install cloudflared
         run: |
-          curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+          curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/${CLOUDFLARED_VERSION}/download/cloudflared-linux-amd64.deb
           sudo dpkg -i cloudflared.deb
-          cloudflared --version
+          rm cloudflared.deb
 
-      - name: Setup SSH key
+      - name: Setup SSH configuration
         uses: shimataro/ssh-key-action@v2
         with:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
@@ -194,30 +147,36 @@ jobs:
               User ${{ secrets.SSH_USER }}
               IdentityFile ~/.ssh/id_ed25519
               StrictHostKeyChecking accept-new
+              ServerAliveInterval 60
+              ServerAliveCountMax 10
 
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Create project directory and copy compose file
-        env:
-          REPO_SHORT_NAME: ${{ github.event.repository.name }}
+      - name: Prepare deployment directory
         run: |
-          ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "mkdir -p ~/$REPO_SHORT_NAME"
-          scp compose.prod.yaml ${{ secrets.SSH_REMOTE_HOSTNAME }}:~/$REPO_SHORT_NAME/
+          ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "mkdir -p ~/${PROJECT_DIR}"
+          scp ${COMPOSE_FILE} ${{ secrets.SSH_REMOTE_HOSTNAME }}:~/${PROJECT_DIR}/
 
-      - name: Deploy with Docker context
+      - name: Deploy application
         env:
-          REPO_SHORT_NAME: ${{ github.event.repository.name }}
           FULL_IMAGE_NAME: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
         run: |
-          HOST_UID=$(ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "id -u")
-          HOST_GID=$(ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "id -g")
+          deploy_app() {
+            local host_uid host_gid
+            host_uid=$(ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "id -u")
+            host_gid=$(ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "id -g")
 
-          echo "${{ secrets.GITHUB_TOKEN }}" | ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin"
+            echo "${{ secrets.GITHUB_TOKEN }}" | ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} \
+              "docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin"
 
-          ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "export HOST_UID=$HOST_UID HOST_GID=$HOST_GID IMAGE_NAME=$FULL_IMAGE_NAME && \
-            cd ~/$REPO_SHORT_NAME && \
-            docker compose -f compose.prod.yaml pull && \
-            docker compose -f compose.prod.yaml up -d"
+            ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "cd ~/${PROJECT_DIR} && \
+              HOST_UID=${host_uid} \
+              HOST_GID=${host_gid} \
+              IMAGE_NAME=${FULL_IMAGE_NAME} \
+              docker compose -f ${COMPOSE_FILE} pull && \
+              docker compose -f ${COMPOSE_FILE} up -d"
+          }
 
+          deploy_app
           echo "✅ Deployment completed successfully!"
