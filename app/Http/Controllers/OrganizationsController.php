@@ -39,7 +39,7 @@ final class OrganizationsController extends Controller
     {
         Auth::user()->account->organizations()->create($request->validated());
 
-        return Redirect::route('organizations.index')->with('success', 'Organization created.');
+        return Redirect::route('organizations.index')->with('success', translate_with_gender('created', 'Organization'));
     }
 
     public function edit(Organization $organization)
@@ -53,20 +53,20 @@ final class OrganizationsController extends Controller
     {
         $organization->update($request->validated());
 
-        return Redirect::back()->with('success', 'Organization updated.');
+        return Redirect::back()->with('success', translate_with_gender('updated', 'Organization'));
     }
 
     public function destroy(Organization $organization): RedirectResponse
     {
         $organization->delete();
 
-        return Redirect::back()->with('success', 'Organization deleted.');
+        return Redirect::back()->with('success', translate_with_gender('deleted', 'Organization'));
     }
 
     public function restore(Organization $organization): RedirectResponse
     {
         $organization->restore();
 
-        return Redirect::back()->with('success', 'Organization restored.');
+        return Redirect::back()->with('success', translate_with_gender('restored', 'Organization'));
     }
 }

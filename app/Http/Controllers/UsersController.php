@@ -40,7 +40,7 @@ final class UsersController extends Controller
     {
         Auth::user()->account->users()->create($request->validated());
 
-        return Redirect::route('users.index')->with('success', 'User created.');
+        return Redirect::route('users.index')->with('success', translate_with_gender('created', 'User'));
     }
 
     public function edit(User $user)
@@ -60,7 +60,7 @@ final class UsersController extends Controller
 
         $user->update($data);
 
-        return Redirect::back()->with('success', 'Utilisateur mis à jour.');
+        return Redirect::back()->with('success', translate_with_gender('updated', 'User'));
     }
 
     public function destroy(User $user): RedirectResponse
@@ -71,13 +71,13 @@ final class UsersController extends Controller
 
         $user->delete();
 
-        return Redirect::back()->with('success', 'Utilisateur supprimé.');
+        return Redirect::back()->with('success', translate_with_gender('deleted', 'User'));
     }
 
     public function restore(User $user): RedirectResponse
     {
         $user->restore();
 
-        return Redirect::back()->with('success', 'User restored.');
+        return Redirect::back()->with('success', translate_with_gender('restored', 'User'));
     }
 }
