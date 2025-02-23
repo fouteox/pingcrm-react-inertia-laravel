@@ -49,7 +49,7 @@ final class ContactsController extends Controller
     {
         Auth::user()->account->contacts()->create($request->validated());
 
-        return Redirect::route('contacts.index')->with('success', 'Contact created.');
+        return Redirect::route('contacts.index')->with('success', translate_with_gender('created', 'Contact'));
     }
 
     public function edit(Contact $contact): Response
@@ -68,20 +68,20 @@ final class ContactsController extends Controller
     {
         $contact->update($request->validated());
 
-        return Redirect::back()->with('success', 'Contact updated.');
+        return Redirect::back()->with('success', translate_with_gender('updated', 'Contact'));
     }
 
     public function destroy(Contact $contact): RedirectResponse
     {
         $contact->delete();
 
-        return Redirect::back()->with('success', 'Contact deleted.');
+        return Redirect::back()->with('success', translate_with_gender('deleted', 'Contact'));
     }
 
     public function restore(Contact $contact): RedirectResponse
     {
         $contact->restore();
 
-        return Redirect::back()->with('success', 'Contact restored.');
+        return Redirect::back()->with('success', translate_with_gender('restored', 'Contact'));
     }
 }
