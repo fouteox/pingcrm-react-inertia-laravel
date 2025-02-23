@@ -3,11 +3,18 @@ set -e
 
 container_mode=${CONTAINER_MODE:-"http"}
 
+getDatabaseType() {
+    if [ -f /app/.env.production ]; then
+        grep "^DB_CONNECTION=" /app/.env.production | cut -d '=' -f2
+    fi
+}
+
 initialStuff() {
     echo "Container mode: $container_mode"
 
-    if [ ! -f /app/.infrastructure/database.sqlite ]; then
-        touch /app/.infrastructure/database.sqlite
+    db_type=$(getDatabaseType)
+    if [ "$db_type" = "sqlite" ]; then
+        [ ! -f /app/.infrastructure/database.sqlite ] && touch /app/.infrastructure/database.sqlite
     fi
 
     php artisan storage:link
@@ -18,25 +25,20 @@ optimizeApp() {
     php artisan optimize
 }
 
-startHttp() {
-    php artisan migrate:fresh --seed --force
-    optimizeApp
-    exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.frankenphp.conf
-}
+startService() {
+    [ "$1" = "http" ] && php artisan migrate:fresh --seed --force
 
-startScheduler() {
     optimizeApp
-    exec /usr/bin/supervisord -c /etc/supervisor/conf.d/supervisord.scheduler.conf
+    exec /usr/bin/supervisord -c "/etc/supervisor/conf.d/supervisord.$1.conf"
 }
 
 if [ "$1" != "" ]; then
     exec docker-php-entrypoint "$@"
-elif [ "${container_mode}" = "http" ]; then
-    initialStuff
-    startHttp
-elif [ "${container_mode}" = "scheduler" ]; then
-    initialStuff
-    startScheduler
+elif [ "${container_mode}" = "http" ] || \
+     [ "${container_mode}" = "horizon" ] || \
+     [ "${container_mode}" = "reverb" ] || \
+     [ "${container_mode}" = "scheduler" ]; then
+    startService "${container_mode}"
 else
     echo "Container mode mismatched."
     exit 1
