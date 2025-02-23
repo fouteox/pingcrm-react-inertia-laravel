@@ -70,6 +70,12 @@ export type PaginatedData<T> = {
     };
 };
 
+interface TranslationStore {
+    [locale: string]: {
+        translation: Record<string, string>;
+    };
+}
+
 export type PageProps<
     T extends Record<string, unknown> = Record<string, unknown>,
 > = T & {
@@ -77,6 +83,8 @@ export type PageProps<
         user: User;
     };
     ziggy: Config & { location: string };
+    locale: string;
+    translations: TranslationStore | null;
 };
 
 type DomElement =

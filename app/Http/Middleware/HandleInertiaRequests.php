@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Middleware;
 
+use App\Services\I18NextTranslationsLoader;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 use Tighten\Ziggy\Ziggy;
@@ -16,6 +17,8 @@ final class HandleInertiaRequests extends Middleware
      * @var string
      */
     protected $rootView = 'app';
+
+    public function __construct(private readonly I18NextTranslationsLoader $translationsLoader) {}
 
     /**
      * Determine the current asset version.
@@ -30,6 +33,8 @@ final class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
+        $locale = $request->getPreferredLanguage(['en', 'fr']) ?? 'en';
+
         return [
             ...parent::share($request),
             'auth' => function () use ($request) {
@@ -51,6 +56,12 @@ final class HandleInertiaRequests extends Middleware
                 ...(new Ziggy)->toArray(),
                 'location' => $request->url(),
             ],
+            'locale' => fn () => $locale,
+            'translations' => ! $request->inertia() ? [
+                $locale => [
+                    'translation' => $this->translationsLoader->loadTranslations($locale),
+                ],
+            ] : null,
             'flash' => function () use ($request) {
                 return [
                     'success' => $request->session()->get('success'),
