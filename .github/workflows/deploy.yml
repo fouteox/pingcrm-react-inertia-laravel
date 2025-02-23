@@ -9,8 +9,6 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
-  COMPOSE_FILE: compose.prod.yaml
-  PROJECT_DIR: ${{ github.event.repository.name }}
 
 jobs:
   gather-info:
@@ -27,7 +25,7 @@ jobs:
           curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
           sudo dpkg -i cloudflared.deb
 
-      - name: Setup SSH configuration
+      - name: Setup SSH key
         uses: shimataro/ssh-key-action@v2
         with:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
@@ -47,21 +45,19 @@ jobs:
           SSH_GID=$(ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "id -g")
           SSH_ARCH=$(ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "uname -m")
 
-          case "$SSH_ARCH" in
-            "aarch64") DOCKER_ARCH="arm64" ;;
-            "x86_64")  DOCKER_ARCH="amd64" ;;
-            *)
-              echo "Architecture non supportée: $SSH_ARCH"
-              exit 1
-              ;;
-          esac
+          if [ "$SSH_ARCH" = "aarch64" ]; then
+            DOCKER_ARCH="arm64"
+          elif [ "$SSH_ARCH" = "x86_64" ]; then
+            DOCKER_ARCH="amd64"
+          else
+            echo "Architecture non supportée: $SSH_ARCH"
+            exit 1
+          fi
 
-          {
-            echo "host_uid=$SSH_UID"
-            echo "host_gid=$SSH_GID"
-            echo "host_arch=$DOCKER_ARCH"
-            echo "target_platform=linux/$DOCKER_ARCH"
-          } >> $GITHUB_OUTPUT
+          echo "host_uid=$SSH_UID" >> $GITHUB_OUTPUT
+          echo "host_gid=$SSH_GID" >> $GITHUB_OUTPUT
+          echo "host_arch=$DOCKER_ARCH" >> $GITHUB_OUTPUT
+          echo "target_platform=linux/$DOCKER_ARCH" >> $GITHUB_OUTPUT
 
   build:
     needs: gather-info
@@ -142,26 +138,26 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Prepare deployment directory
-        run: |
-          ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "mkdir -p ~/${PROJECT_DIR}"
-          scp ${COMPOSE_FILE} ${{ secrets.SSH_REMOTE_HOSTNAME }}:~/${PROJECT_DIR}/
-
-      - name: Deploy application
+      - name: Create project directory and copy compose file
         env:
+          REPO_SHORT_NAME: ${{ github.event.repository.name }}
+        run: |
+          ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "mkdir -p ~/$REPO_SHORT_NAME"
+          scp compose.prod.yaml ${{ secrets.SSH_REMOTE_HOSTNAME }}:~/$REPO_SHORT_NAME/
+
+      - name: Deploy with Docker context
+        env:
+          REPO_SHORT_NAME: ${{ github.event.repository.name }}
           FULL_IMAGE_NAME: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
         run: |
           HOST_UID=$(ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "id -u")
           HOST_GID=$(ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "id -g")
 
-          echo "${{ secrets.GITHUB_TOKEN }}" | ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} \
-            "docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin"
+          echo "${{ secrets.GITHUB_TOKEN }}" | ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin"
 
-          ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "cd ~/${PROJECT_DIR} && \
-            HOST_UID=${HOST_UID} \
-            HOST_GID=${HOST_GID} \
-            IMAGE_NAME=${FULL_IMAGE_NAME} \
-            docker compose -f ${COMPOSE_FILE} pull && \
-            docker compose -f ${COMPOSE_FILE} up -d --no-build"
+          ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "export HOST_UID=$HOST_UID HOST_GID=$HOST_GID IMAGE_NAME=$FULL_IMAGE_NAME && \
+            cd ~/$REPO_SHORT_NAME && \
+            docker compose -f compose.prod.yaml pull && \
+            docker compose -f compose.prod.yaml up -d"
 
           echo "✅ Deployment completed successfully!"
