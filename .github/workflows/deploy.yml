@@ -1,4 +1,4 @@
-name: Build and Deploy Pingcrm App
+name: Build and Deploy
 
 on:
   pull_request:
