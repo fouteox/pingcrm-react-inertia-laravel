@@ -73,7 +73,7 @@ services:
       nofile:
         soft: 20000
         hard: 40000
-    command: [ "valkey-server", "--requirepass", "${REDIS_PASSWORD}", "--maxmemory", "2gb" ]
+    command: [ "valkey-server", "--requirepass", "${REDIS_PASSWORD:-cipassword}", "--maxmemory", "2gb" ]
     security_opt:
       - no-new-privileges:true
     volumes:
