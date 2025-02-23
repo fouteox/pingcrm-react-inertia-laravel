@@ -7,7 +7,12 @@ container_mode=${CONTAINER_MODE:-"http"}
 if [ "${container_mode}" = "http" ]; then
     php "${ROOT}/artisan" octane:status
 elif [ "${container_mode}" = "horizon" ]; then
-    php "${ROOT}/artisan" horizon:status
+    if [ "$(supervisorctl status horizon:horizon_0 | awk '{print tolower($2)}')" = "running" ]; then
+        exit 0
+    else
+        echo "Healthcheck failed."
+        exit 1
+    fi
 elif [ "${container_mode}" = "scheduler" ]; then
     if [ "$(supervisorctl status scheduler:scheduler_0 | awk '{print tolower($2)}')" = "running" ]; then
         exit 0

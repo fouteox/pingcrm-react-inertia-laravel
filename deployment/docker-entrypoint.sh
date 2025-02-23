@@ -9,26 +9,21 @@ getDatabaseType() {
     fi
 }
 
-initialStuff() {
-    echo "Container mode: $container_mode"
+startService() {
+    echo "Container mode: $1"
 
-    db_type=$(getDatabaseType)
-    if [ "$db_type" = "sqlite" ]; then
-        [ ! -f /app/.infrastructure/database.sqlite ] && touch /app/.infrastructure/database.sqlite
+    if [ "$1" = "http" ]; then
+        db_type=$(getDatabaseType)
+        if [ "$db_type" = "sqlite" ]; then
+            [ ! -f /app/.infrastructure/database.sqlite ] && touch /app/.infrastructure/database.sqlite
+        fi
+
+        php artisan storage:link
+        php artisan migrate:fresh --seed --force
+        php artisan optimize:clear
+        php artisan optimize
     fi
 
-    php artisan storage:link
-}
-
-optimizeApp() {
-    php artisan optimize:clear
-    php artisan optimize
-}
-
-startService() {
-    [ "$1" = "http" ] && php artisan migrate:fresh --seed --force
-
-    optimizeApp
     exec /usr/bin/supervisord -c "/etc/supervisor/conf.d/supervisord.$1.conf"
 }
 
