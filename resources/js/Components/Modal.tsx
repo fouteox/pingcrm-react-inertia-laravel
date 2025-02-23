@@ -1,39 +1,34 @@
-import { Dialog, DialogBackdrop, DialogPanel } from '@headlessui/react';
-import React, { ReactNode } from 'react';
-
-type MaxWidthType = 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+import DangerButton from '@/Components/DangerButton';
+import SecondaryButton from '@/Components/SecondaryButton';
+import {
+    Dialog,
+    DialogBackdrop,
+    DialogPanel,
+    DialogTitle,
+} from '@headlessui/react';
+import React from 'react';
 
 interface ModalProps {
-    children: ReactNode;
-    show?: boolean;
-    maxWidth?: MaxWidthType;
-    closeable?: boolean;
+    show: boolean;
     onClose: () => void;
+    onConfirm: (e: React.MouseEvent<HTMLButtonElement>) => void;
+    title: string;
+    confirmText: string;
+    cancelText: string;
+    isProcessing?: boolean;
 }
 
 const Modal: React.FC<ModalProps> = ({
-    children,
-    show = false,
-    maxWidth = '2xl',
-    closeable = true,
+    show,
     onClose,
+    onConfirm,
+    title,
+    confirmText,
+    cancelText,
+    isProcessing = false,
 }) => {
-    const close = () => {
-        if (closeable) {
-            onClose();
-        }
-    };
-
-    const maxWidthClass = {
-        sm: 'sm:max-w-sm',
-        md: 'sm:max-w-md',
-        lg: 'sm:max-w-lg',
-        xl: 'sm:max-w-xl',
-        '2xl': 'sm:max-w-2xl',
-    }[maxWidth];
-
     return (
-        <Dialog open={show} onClose={close} className="relative z-50">
+        <Dialog open={show} onClose={onClose} className="relative z-50">
             <DialogBackdrop
                 transition
                 className="fixed inset-0 bg-gray-500/75 duration-300 ease-out data-[closed]:opacity-0"
@@ -42,9 +37,28 @@ const Modal: React.FC<ModalProps> = ({
             <div className="fixed inset-0 flex w-screen items-center justify-center p-4">
                 <DialogPanel
                     transition
-                    className={`w-full transform overflow-hidden rounded-lg bg-white shadow-xl duration-300 ease-out data-[closed]:scale-95 data-[closed]:opacity-0 ${maxWidthClass}`}
+                    className="w-full max-w-lg transform overflow-hidden rounded-lg bg-white shadow-xl duration-300 ease-out data-[closed]:scale-95 data-[closed]:opacity-0"
                 >
-                    {children}
+                    <div className="p-6">
+                        <DialogTitle className="text-lg font-medium text-gray-900">
+                            {title}
+                        </DialogTitle>
+
+                        <div className="mt-6 flex justify-end">
+                            <SecondaryButton onClick={onClose}>
+                                {cancelText}
+                            </SecondaryButton>
+
+                            <DangerButton
+                                className="ml-3"
+                                processing={isProcessing}
+                                type="button"
+                                onClick={onConfirm}
+                            >
+                                {confirmText}
+                            </DangerButton>
+                        </div>
+                    </div>
                 </DialogPanel>
             </div>
         </Dialog>

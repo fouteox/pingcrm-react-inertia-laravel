@@ -1,17 +1,13 @@
-import DangerButton from '@/Components/DangerButton';
-import DeleteButton from '@/Components/DeleteButton';
 import { Field } from '@/Components/Form/Field';
 import Icon from '@/Components/Icon';
 import Layout from '@/Components/Layout';
 import LoadingButton from '@/Components/LoadingButton';
-import Modal from '@/Components/Modal';
-import SecondaryButton from '@/Components/SecondaryButton';
 import SelectInput from '@/Components/SelectInput';
 import TextInput from '@/Components/TextInput';
-import TrashedMessage from '@/Components/TrashedMessage';
-import { FormAction, Organization, PageProps } from '@/types';
+import { useDeletionControls } from '@/hooks/useDeletionControls';
+import { Organization, PageProps } from '@/types';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import React, { ReactNode, useState } from 'react';
+import React, { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface EditPageProps extends PageProps {
@@ -20,8 +16,6 @@ interface EditPageProps extends PageProps {
 
 const Edit = () => {
     const { t } = useTranslation();
-
-    const [showModal, setShowModal] = useState(false);
 
     const { organization } = usePage<EditPageProps>().props;
     const {
@@ -47,70 +41,22 @@ const Edit = () => {
         put(route('organizations.update', organization.id));
     }
 
-    const deleteOrganization: FormAction<HTMLButtonElement> = (e) => {
-        e.preventDefault();
-
-        destroy(route('organizations.destroy', organization.id), {
-            onFinish: () => setShowModal(false),
-        });
+    const handleDelete = async (id: number) => {
+        destroy(route('organizations.destroy', id));
     };
 
-    const restoreOrganization: FormAction<HTMLButtonElement> = (e) => {
-        e.preventDefault();
-
-        put(route('organizations.restore', organization.id), {
-            onFinish: () => setShowModal(false),
-        });
+    const handleRestore = async (id: number) => {
+        put(route('organizations.restore', id));
     };
 
-    function modalContent() {
-        const bodyModal = organization.deleted_at
-            ? t('Are you sure you want to restore this organization?')
-            : t('Are you sure you want to delete this organization?');
-        const actionModal = organization.deleted_at
-            ? restoreOrganization
-            : deleteOrganization;
-
-        return (
-            <>
-                {organization.deleted_at ? (
-                    <TrashedMessage onRestore={() => setShowModal(true)}>
-                        {t('This organization has been deleted.')}
-                    </TrashedMessage>
-                ) : (
-                    <DeleteButton onClick={() => setShowModal(true)}>
-                        {t('Delete Organization')}
-                    </DeleteButton>
-                )}
-                <Modal show={showModal} onClose={() => setShowModal(false)}>
-                    <div className="p-6">
-                        <h2 className="text-lg font-medium text-gray-900">
-                            {bodyModal}
-                        </h2>
-
-                        <div className="mt-6 flex justify-end">
-                            <SecondaryButton
-                                onClick={() => setShowModal(false)}
-                            >
-                                {t('Cancel')}
-                            </SecondaryButton>
-
-                            <DangerButton
-                                className="ml-3"
-                                processing={processing}
-                                type="button"
-                                onClick={actionModal}
-                            >
-                                {organization.deleted_at
-                                    ? t('Restore Organization')
-                                    : t('Delete Organization')}
-                            </DangerButton>
-                        </div>
-                    </div>
-                </Modal>
-            </>
-        );
-    }
+    const { showDeleteControls } = useDeletionControls({
+        resourceId: organization.id,
+        isDeleted: !!organization.deleted_at,
+        resourceType: 'organization',
+        onDelete: handleDelete,
+        onRestore: handleRestore,
+        processing,
+    });
 
     return (
         <>
@@ -125,7 +71,7 @@ const Edit = () => {
                 <span className="mx-2 font-medium text-indigo-600">/</span>
                 {data.name}
             </h1>
-            {organization.deleted_at && modalContent()}
+            {organization.deleted_at && showDeleteControls()}
             <div className="max-w-3xl overflow-hidden rounded-sm bg-white shadow-sm">
                 <form onSubmit={handleSubmit}>
                     <div className="-mr-6 -mb-8 flex flex-wrap p-8">
@@ -254,7 +200,7 @@ const Edit = () => {
                         </Field>
                     </div>
                     <div className="flex items-center border-t border-gray-200 bg-gray-100 px-8 py-4">
-                        {!organization.deleted_at && modalContent()}
+                        {!organization.deleted_at && showDeleteControls()}
                         <LoadingButton
                             processing={processing}
                             type="submit"
