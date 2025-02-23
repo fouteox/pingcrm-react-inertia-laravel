@@ -145,6 +145,30 @@ jobs:
           ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "mkdir -p ~/$REPO_SHORT_NAME"
           scp compose.prod.yaml ${{ secrets.SSH_REMOTE_HOSTNAME }}:~/$REPO_SHORT_NAME/
 
+      - name: Extract database variables
+        run: |
+          echo "${{ secrets.ENV_FILE_BASE64 }}" | base64 -d > temp.env
+
+          {
+            DB_DATABASE=$(grep DB_DATABASE temp.env | cut -d '=' -f2-)
+            DB_USERNAME=$(grep DB_USERNAME temp.env | cut -d '=' -f2-)
+            DB_PASSWORD=$(grep DB_PASSWORD temp.env | cut -d '=' -f2-)
+          } 2>/dev/null
+
+          shred -u temp.env
+
+          {
+            echo "db_database<<EOF"
+            echo "$DB_DATABASE"
+            echo "EOF"
+            echo "db_username<<EOF"
+            echo "$DB_USERNAME"
+            echo "EOF"
+            echo "db_password<<EOF"
+            echo "$DB_PASSWORD"
+            echo "EOF"
+          } >> $GITHUB_ENV
+
       - name: Deploy with Docker context
         env:
           REPO_SHORT_NAME: ${{ github.event.repository.name }}
@@ -155,9 +179,18 @@ jobs:
 
           echo "${{ secrets.GITHUB_TOKEN }}" | ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin"
 
-          ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "export HOST_UID=$HOST_UID HOST_GID=$HOST_GID IMAGE_NAME=$FULL_IMAGE_NAME && \
-            cd ~/$REPO_SHORT_NAME && \
+          ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "cd ~/$REPO_SHORT_NAME && \
+            DB_DATABASE='${{ env.db_database }}' \
+            DB_USERNAME='${{ env.db_username }}' \
+            DB_PASSWORD='${{ env.db_password }}' \
+            HOST_UID=$HOST_UID \
+            HOST_GID=$HOST_GID \
+            IMAGE_NAME=$FULL_IMAGE_NAME \
             docker compose -f compose.prod.yaml pull && \
+            DB_DATABASE='${{ env.db_database }}' \
+            DB_USERNAME='${{ env.db_username }}' \
+            DB_PASSWORD='${{ env.db_password }}' \
+            HOST_UID=$HOST_UID \
+            HOST_GID=$HOST_GID \
+            IMAGE_NAME=$FULL_IMAGE_NAME \
             docker compose -f compose.prod.yaml up -d"
-
-          echo "✅ Deployment completed successfully!"

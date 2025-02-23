@@ -5,6 +5,11 @@ x-logging: &default-logging
     max-file: 6
 
 x-base: &base
+  depends_on:
+    mariadb:
+      condition: service_healthy
+    redis:
+      condition: service_healthy
   image: ${IMAGE_NAME:-app}:latest
   environment:
     SERVER_NAME: :80
@@ -18,7 +23,6 @@ x-base: &base
   volumes:
     - 'app_public:/app/storage/app/public'
     - 'app_logs:/app/storage/logs'
-    - 'database_sqlite:/app/.infrastructure/'
   logging: *default-logging
   restart: always
 
@@ -39,6 +43,22 @@ services:
     ports:
       - "80:8000"
 
+  horizon:
+    <<: *base
+    environment:
+      CONTAINER_MODE: horizon
+    depends_on:
+      app:
+        condition: service_healthy
+
+  reverb:
+    <<: *base
+    environment:
+      CONTAINER_MODE: reverb
+    depends_on:
+      app:
+        condition: service_healthy
+
   scheduler:
     <<: *base
     environment:
@@ -47,7 +67,58 @@ services:
       app:
         condition: service_healthy
 
+  redis:
+    image: valkey/valkey:alpine
+    ulimits:
+      nofile:
+        soft: 20000
+        hard: 40000
+    command: [ "valkey-server", "--requirepass", "${REDIS_PASSWORD}", "--maxmemory", "2gb" ]
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - 'stack-valkey:/data'
+    networks:
+      - traefik
+    logging: *default-logging
+    healthcheck:
+      test: [ "CMD", "valkey-cli", "ping" ]
+      retries: 3
+      timeout: 5s
+    restart: always
+
+  mariadb:
+    image: mariadb:11.4
+    ulimits:
+      nofile:
+        soft: 20000
+        hard: 40000
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      MARIADB_RANDOM_ROOT_PASSWORD: "1"
+      MARIADB_DATABASE: "${DB_DATABASE:-cidatabase}"
+      MARIADB_USER: "${DB_USERNAME:-ciuser}"
+      MARIADB_PASSWORD: "${DB_PASSWORD:-cipassword}"
+    volumes:
+      - 'mariadb_data:/var/lib/mysql'
+      - 'mariadb_custom_conf:/etc/mysql/conf.d'
+      - 'mariadb_shared:/shared'
+    networks:
+      - traefik
+    healthcheck:
+      test: [ "CMD", "healthcheck.sh", "--connect", "--innodb_initialized" ]
+      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    restart: always
+    logging: *default-logging
+
 volumes:
   app_public:
   app_logs:
-  database_sqlite:
+  stack-valkey:
+  mariadb_data:
+  mariadb_custom_conf:
+  mariadb_shared:
