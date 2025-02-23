@@ -25,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->web(append: [
             App\Http\Middleware\HandleInertiaRequests::class,
             Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
+        ], prepend: [
             SetLocaleMiddleware::class,
         ]);
 
@@ -42,7 +43,12 @@ return Application::configure(basePath: dirname(__DIR__))
             }
             if ($response->getStatusCode() === 419) {
                 return back()->with([
-                    'message' => 'The page expired, please try again.',
+                    'message' => __('The page expired, please try again.'),
+                ]);
+            }
+            if ($response->getStatusCode() === 429) {
+                return back()->with([
+                    'error' => __('Sorry, you are making too many requests to our servers.'),
                 ]);
             }
 

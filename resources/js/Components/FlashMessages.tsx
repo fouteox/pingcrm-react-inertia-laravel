@@ -1,6 +1,6 @@
 import { PageProps } from '@/types';
 import { router, usePage } from '@inertiajs/react';
-import { useCallback, useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import toast, { Toaster } from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
 
@@ -15,42 +15,52 @@ interface FlashPageProps extends PageProps {
     [key: string]: unknown;
 }
 
+interface NavigationState {
+    currentId: string;
+    lastShownId: string | null;
+}
+
+type NotificationHandler = (message: string) => void;
+
 export default function FlashMessages() {
     const { t } = useTranslation();
-
     const { flash, errors } = usePage<FlashPageProps>().props;
     const numOfErrors = Object.keys(errors).length;
 
-    const currentNavId = useRef<string | null>(null);
-    const lastShownNavId = useRef<string | null>(null);
-
-    const handleNavigationStart = useCallback(() => {
-        currentNavId.current = Date.now().toString();
-    }, []);
+    const navigationState = useRef<NavigationState>({
+        currentId: Date.now().toString(),
+        lastShownId: null,
+    });
 
     useEffect(() => {
-        const removeStartEventListener = router.on(
-            'start',
-            handleNavigationStart,
-        );
+        const { currentId, lastShownId } = navigationState.current;
 
-        return () => {
-            removeStartEventListener();
-        };
-    }, [handleNavigationStart]);
+        if (currentId !== lastShownId) {
+            const notifications: [
+                string | undefined | false,
+                NotificationHandler,
+            ][] = [
+                [flash.success, toast.success],
+                [
+                    flash.error ||
+                        (numOfErrors > 0 &&
+                            t('form_errors', { count: numOfErrors })),
+                    toast.error,
+                ],
+            ];
 
-    useEffect(() => {
-        if (currentNavId.current !== lastShownNavId.current) {
-            if (flash.success) {
-                toast.success(flash.success);
-            }
+            notifications.forEach(([message, handler]) => {
+                if (message) {
+                    handler(message);
+                }
+            });
 
-            if (flash.error || numOfErrors > 0) {
-                toast.error(t('form_errors', { count: numOfErrors }));
-            }
-
-            lastShownNavId.current = currentNavId.current;
+            navigationState.current.lastShownId = currentId;
         }
+
+        return router.on('start', () => {
+            navigationState.current.currentId = Date.now().toString();
+        });
     }, [flash, errors, numOfErrors, t]);
 
     return <Toaster />;

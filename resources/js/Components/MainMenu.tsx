@@ -26,6 +26,11 @@ export default function MainMenu({ className, onClick }: MainMenuProps) {
                 link="contacts.index"
                 icon="users"
             />
+            <MainMenuItem
+                text="Demo Reverb"
+                link="reverb.index"
+                icon="socket"
+            />
             <MainMenuItem text={t('Reports')} link="reports" icon="printer" />
         </div>
     );

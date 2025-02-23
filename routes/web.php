@@ -8,19 +8,9 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FetchTranslationsController;
 use App\Http\Controllers\OrganizationsController;
 use App\Http\Controllers\ReportsController;
+use App\Http\Controllers\ReverbExampleController;
 use App\Http\Controllers\UsersController;
 use Illuminate\Support\Facades\Route;
-
-/*
-|--------------------------------------------------------------------------
-| Web Routes
-|--------------------------------------------------------------------------
-|
-| Here is where you can register web routes for your application. These
-| routes are loaded by the RouteServiceProvider within a group which
-| contains the "web" middleware group. Now create something great!
-|
-*/
 
 Route::get('/locales/{locale}/translation.json', FetchTranslationsController::class)->name('i18next.fetch');
 
@@ -51,4 +41,8 @@ Route::middleware('auth')->group(function () {
 
     // Reports
     Route::get('reports', [ReportsController::class, 'index'])->name('reports');
+
+    // Reverb example
+    Route::get('/reverb', [ReverbExampleController::class, 'index'])->name('reverb.index');
+    Route::post('/reverb', [ReverbExampleController::class, 'store'])->name('reverb.store')->middleware('throttle:5,1');
 });

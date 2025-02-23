@@ -1,7 +1,9 @@
 import BottomHeader from '@/Components/BottomHeader';
 import FlashMessages from '@/Components/FlashMessages';
 import MainMenu from '@/Components/MainMenu';
+import { ReverbNotificationListener } from '@/Components/ReverbNotificationListener';
 import TopHeader from '@/Components/TopHeader';
+import { ReverbExampleNotificationProvider } from '@/contexts/ReverbExampleNotificationContext';
 import React from 'react';
 
 interface MainLayoutProps {
@@ -10,8 +12,9 @@ interface MainLayoutProps {
 
 export default function Layout({ children }: MainLayoutProps) {
     return (
-        <>
+        <ReverbExampleNotificationProvider>
             <FlashMessages />
+            <ReverbNotificationListener />
             <div className="flex flex-col">
                 <div className="flex h-screen flex-col">
                     <div className="md:flex">
@@ -27,6 +30,6 @@ export default function Layout({ children }: MainLayoutProps) {
                     </div>
                 </div>
             </div>
-        </>
+        </ReverbExampleNotificationProvider>
     );
 }
