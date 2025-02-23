@@ -170,35 +170,19 @@ jobs:
         env:
           REPO_SHORT_NAME: ${{ github.event.repository.name }}
           FULL_IMAGE_NAME: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          COMPOSE_COMMAND: |
-            docker compose -f compose.prod.yaml
         run: |
-          # Crée un fichier temporaire sécurisé pour les variables d'environnement
-          ENVFILE=$(mktemp)
-          cat << EOF > "$ENVFILE"
-          DB_DATABASE=${{ env.db_database }}
-          DB_USERNAME=${{ env.db_username }}
-          DB_PASSWORD=${{ env.db_password }}
-          REDIS_PASSWORD=${{ env.redis_password }}
-          EOF
-
           HOST_UID=$(ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "id -u")
           HOST_GID=$(ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "id -g")
 
           echo "${{ secrets.GITHUB_TOKEN }}" | ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin"
 
-          ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "cd ~/$REPO_SHORT_NAME"
-
           ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "cd ~/$REPO_SHORT_NAME && \
-            HOST_UID=$HOST_UID \
-            HOST_GID=$HOST_GID \
-            IMAGE_NAME=$FULL_IMAGE_NAME \
-            docker compose --env-file $ENVFILE -f compose.prod.yaml pull"
-
-          ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "cd ~/$REPO_SHORT_NAME && \
-            HOST_UID=$HOST_UID \
-            HOST_GID=$HOST_GID \
-            IMAGE_NAME=$FULL_IMAGE_NAME \
-            docker compose --env-file $ENVFILE -f compose.prod.yaml up -d"
-
-          shred -u "$ENVFILE"
+            export DB_DATABASE='${{ env.db_database }}' && \
+            export DB_USERNAME='${{ env.db_username }}' && \
+            export DB_PASSWORD='${{ env.db_password }}' && \
+            export REDIS_PASSWORD='${{ env.redis_password }}' && \
+            export HOST_UID=$HOST_UID && \
+            export HOST_GID=$HOST_GID && \
+            export IMAGE_NAME=$FULL_IMAGE_NAME && \
+            docker compose -f compose.prod.yaml pull && \
+            docker compose -f compose.prod.yaml up -d"
