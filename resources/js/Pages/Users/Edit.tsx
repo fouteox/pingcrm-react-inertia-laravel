@@ -1,16 +1,12 @@
-import DangerButton from '@/Components/DangerButton';
-import DeleteButton from '@/Components/DeleteButton';
 import { Field } from '@/Components/Form/Field';
 import Layout from '@/Components/Layout';
 import LoadingButton from '@/Components/LoadingButton';
-import Modal from '@/Components/Modal';
-import SecondaryButton from '@/Components/SecondaryButton';
 import SelectInput from '@/Components/SelectInput';
 import TextInput from '@/Components/TextInput';
-import TrashedMessage from '@/Components/TrashedMessage';
-import { FormAction, PageProps, User } from '@/types';
+import { useDeletionControls } from '@/hooks/useDeletionControls';
+import { PageProps, User } from '@/types';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import React, { ReactNode, useState } from 'react';
+import React, { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface EditPageProps extends PageProps {
@@ -19,8 +15,6 @@ interface EditPageProps extends PageProps {
 
 const Edit = () => {
     const { t } = useTranslation();
-
-    const [showModal, setShowModal] = useState(false);
 
     const { user } = usePage<EditPageProps>().props;
 
@@ -53,67 +47,23 @@ const Edit = () => {
         post(route('users.update', user.id));
     }
 
-    const deleteUser: FormAction<HTMLButtonElement> = (e) => {
-        e.preventDefault();
-
-        destroy(route('users.destroy', user.id), {
-            onFinish: () => setShowModal(false),
-        });
+    const handleDelete = async (id: number) => {
+        destroy(route('users.destroy', id));
     };
 
-    const restoreUser: FormAction<HTMLButtonElement> = (e) => {
-        e.preventDefault();
-
-        put(route('users.restore', user.id), {
-            onFinish: () => setShowModal(false),
-        });
+    const handleRestore = async (id: number) => {
+        put(route('users.restore', id));
     };
 
-    function modalContent() {
-        const bodyModal = user.deleted_at
-            ? t('Are you sure you want to restore this user?')
-            : t('Are you sure you want to delete this user?');
-        const actionModal = user.deleted_at ? restoreUser : deleteUser;
-        return (
-            <>
-                {user.deleted_at ? (
-                    <TrashedMessage onRestore={() => setShowModal(true)}>
-                        {t('This user has been deleted.')}
-                    </TrashedMessage>
-                ) : (
-                    <DeleteButton onClick={() => setShowModal(true)}>
-                        {t('Delete User')}
-                    </DeleteButton>
-                )}
-                <Modal show={showModal} onClose={() => setShowModal(false)}>
-                    <div className="p-6">
-                        <h2 className="text-lg font-medium text-gray-900">
-                            {bodyModal}
-                        </h2>
-
-                        <div className="mt-6 flex justify-end">
-                            <SecondaryButton
-                                onClick={() => setShowModal(false)}
-                            >
-                                {t('Cancel')}
-                            </SecondaryButton>
-
-                            <DangerButton
-                                className="ml-3"
-                                processing={processing}
-                                type="button"
-                                onClick={actionModal}
-                            >
-                                {user.deleted_at
-                                    ? t('Restore User')
-                                    : t('Delete User')}
-                            </DangerButton>
-                        </div>
-                    </div>
-                </Modal>
-            </>
-        );
-    }
+    const { showDeleteControls } = useDeletionControls({
+        resourceId: user.id,
+        isDeleted: !!user.deleted_at,
+        resourceType: 'user',
+        canDelete: user.can_delete,
+        onDelete: handleDelete,
+        onRestore: handleRestore,
+        processing,
+    });
 
     return (
         <>
@@ -137,7 +87,7 @@ const Edit = () => {
                     </div>
                 </div>
             ) : (
-                user.deleted_at && modalContent()
+                user.deleted_at && showDeleteControls()
             )}
             <div className="max-w-3xl overflow-hidden rounded-sm bg-white shadow-sm">
                 <form onSubmit={handleSubmit}>
@@ -221,7 +171,9 @@ const Edit = () => {
                         </Field>
                     </div>
                     <div className="flex items-center border-t border-gray-200 bg-gray-100 px-8 py-4">
-                        {!user.deleted_at && user.can_delete && modalContent()}
+                        {!user.deleted_at &&
+                            user.can_delete &&
+                            showDeleteControls()}
                         <LoadingButton
                             processing={processing}
                             disabled={!user.can_delete}

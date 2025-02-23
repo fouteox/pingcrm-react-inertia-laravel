@@ -1,16 +1,12 @@
-import DangerButton from '@/Components/DangerButton';
-import DeleteButton from '@/Components/DeleteButton';
 import { Field } from '@/Components/Form/Field';
 import Layout from '@/Components/Layout';
 import LoadingButton from '@/Components/LoadingButton';
-import Modal from '@/Components/Modal';
-import SecondaryButton from '@/Components/SecondaryButton';
 import SelectInput from '@/Components/SelectInput';
 import TextInput from '@/Components/TextInput';
-import TrashedMessage from '@/Components/TrashedMessage';
-import { Contact, FormAction, Organization, PageProps } from '@/types';
+import { useDeletionControls } from '@/hooks/useDeletionControls';
+import { Contact, Organization, PageProps } from '@/types';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import React, { ReactNode, useState } from 'react';
+import React, { ReactNode } from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface EditPageProps extends PageProps {
@@ -20,8 +16,6 @@ interface EditPageProps extends PageProps {
 
 const Edit = () => {
     const { t } = useTranslation();
-
-    const [showModal, setShowModal] = useState(false);
 
     const { contact, organizations } = usePage<EditPageProps>().props;
     const {
@@ -50,67 +44,22 @@ const Edit = () => {
         put(route('contacts.update', contact.id));
     }
 
-    const deleteContact: FormAction<HTMLButtonElement> = (e) => {
-        e.preventDefault();
-
-        destroy(route('contacts.destroy', contact.id), {
-            onFinish: () => setShowModal(false),
-        });
+    const handleDelete = async (id: number) => {
+        destroy(route('contacts.destroy', id));
     };
 
-    const restoreContact: FormAction<HTMLButtonElement> = (e) => {
-        e.preventDefault();
-
-        put(route('contacts.restore', contact.id), {
-            onFinish: () => setShowModal(false),
-        });
+    const handleRestore = async (id: number) => {
+        put(route('contacts.restore', id));
     };
 
-    function modalContent() {
-        const bodyModal = contact.deleted_at
-            ? t('Are you sure you want to restore this contact?')
-            : t('Are you sure you want to delete this contact?');
-        const actionModal = contact.deleted_at ? restoreContact : deleteContact;
-        return (
-            <>
-                {contact.deleted_at ? (
-                    <TrashedMessage onRestore={() => setShowModal(true)}>
-                        {t('This contact has been deleted.')}
-                    </TrashedMessage>
-                ) : (
-                    <DeleteButton onClick={() => setShowModal(true)}>
-                        {t('Delete Contact')}
-                    </DeleteButton>
-                )}
-                <Modal show={showModal} onClose={() => setShowModal(false)}>
-                    <div className="p-6">
-                        <h2 className="text-lg font-medium text-gray-900">
-                            {bodyModal}
-                        </h2>
-
-                        <div className="mt-6 flex justify-end">
-                            <SecondaryButton
-                                onClick={() => setShowModal(false)}
-                            >
-                                {t('Cancel')}
-                            </SecondaryButton>
-
-                            <DangerButton
-                                className="ml-3"
-                                processing={processing}
-                                type="button"
-                                onClick={actionModal}
-                            >
-                                {contact.deleted_at
-                                    ? t('Restore Contact')
-                                    : t('Delete Contact')}
-                            </DangerButton>
-                        </div>
-                    </div>
-                </Modal>
-            </>
-        );
-    }
+    const { showDeleteControls } = useDeletionControls({
+        resourceId: contact.id,
+        isDeleted: !!contact.deleted_at,
+        resourceType: 'contact',
+        onDelete: handleDelete,
+        onRestore: handleRestore,
+        processing,
+    });
 
     return (
         <>
@@ -125,7 +74,7 @@ const Edit = () => {
                 <span className="mx-2 font-medium text-indigo-600">/</span>
                 {data.first_name} {data.last_name}
             </h1>
-            {contact.deleted_at && modalContent()}
+            {contact.deleted_at && showDeleteControls()}
             <div className="max-w-3xl overflow-hidden rounded-sm bg-white shadow-sm">
                 <form onSubmit={handleSubmit}>
                     <div className="-mr-6 -mb-8 flex flex-wrap p-8">
@@ -290,7 +239,7 @@ const Edit = () => {
                         </Field>
                     </div>
                     <div className="flex items-center border-t border-gray-200 bg-gray-100 px-8 py-4">
-                        {!contact.deleted_at && modalContent()}
+                        {!contact.deleted_at && showDeleteControls()}
                         <LoadingButton
                             processing={processing}
                             type="submit"
