@@ -10,66 +10,43 @@ const Dashboard = () => {
         <>
             <Head title={t('Dashboard')} />
             <h1 className="mb-8 text-3xl font-bold">{t('Dashboard')}</h1>
-            <p className="mb-6 leading-normal">
-                Hey there! Welcome to Ping CRM, a demo app designed to help
-                illustrate how
-                <a
-                    className="mx-1 text-indigo-600 underline hover:text-orange-500"
-                    href="https://inertiajs.com"
-                >
-                    Inertia.js
-                </a>
-                v2.0 works with
-                <a
-                    className="ml-1 text-indigo-600 underline hover:text-orange-500"
-                    href="https://react.dev/"
-                >
-                    React
-                </a>
-                . You can find the source code on
-                <a
-                    className="ml-1 text-indigo-600 underline hover:text-orange-500"
-                    href="https://github.com/fouteox/pingcrm-react-inertia-laravel"
-                >
-                    GitHub
-                </a>
-                .
-            </p>
+            <p
+                className="mb-6 leading-normal"
+                dangerouslySetInnerHTML={{
+                    __html: t('welcome_message', {
+                        inertia_link:
+                            '<a class="text-indigo-600 underline hover:text-orange-500" href="https://inertiajs.com">Inertia.js</a>',
+                        react_link:
+                            '<a class="text-indigo-600 underline hover:text-orange-500" href="https://react.dev/">React</a>',
+                        github_link:
+                            '<a class="text-indigo-600 underline hover:text-orange-500" href="https://github.com/fouteox/pingcrm-react-inertia-laravel">GitHub</a>',
+                    }),
+                }}
+            />
 
-            <p className="leading-normal">
-                Original
-                <a
-                    className="mx-1 text-indigo-600 underline hover:text-orange-500"
-                    href="https://github.com/liorocks/pingcrm-react"
-                >
-                    application
-                </a>
-                with Laravel and React by
-                <a
-                    className="ml-1 text-indigo-600 underline hover:text-orange-500"
-                    href="https://github.com/liorocks"
-                >
-                    @liorocks
-                </a>
-                .
-            </p>
-            <p className="mb-12 leading-normal">
-                Original
-                <a
-                    className="mx-1 text-indigo-600 underline hover:text-orange-500"
-                    href="https://demo.inertiajs.com/"
-                >
-                    application
-                </a>
-                with Laravel and VueJS by
-                <a
-                    className="ml-1 text-indigo-600 underline hover:text-orange-500"
-                    href="https://github.com/reinink"
-                >
-                    @reinink
-                </a>
-                .
-            </p>
+            <p
+                className="leading-normal"
+                dangerouslySetInnerHTML={{
+                    __html: t('original_react_credit', {
+                        app_link:
+                            '<a class="text-indigo-600 underline hover:text-orange-500" href="https://github.com/liorocks/pingcrm-react">Application</a>',
+                        author_link:
+                            '<a class="text-indigo-600 underline hover:text-orange-500" href="https://github.com/liorocks">@liorocks</a>',
+                    }),
+                }}
+            />
+
+            <p
+                className="mb-12 leading-normal"
+                dangerouslySetInnerHTML={{
+                    __html: t('original_vue_credit', {
+                        app_link:
+                            '<a class="text-indigo-600 underline hover:text-orange-500" href="https://demo.inertiajs.com/">Application</a>',
+                        author_link:
+                            '<a class="text-indigo-600 underline hover:text-orange-500" href="https://github.com/reinink">@reinink</a>',
+                    }),
+                }}
+            />
         </>
     );
 };
