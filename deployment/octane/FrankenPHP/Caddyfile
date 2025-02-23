@@ -25,7 +25,7 @@
 	}
 
 	route {
-        handle /app/* /apps/* {
+        handle_path /app/* /apps/* {
             reverse_proxy reverb:8080
         }
 
