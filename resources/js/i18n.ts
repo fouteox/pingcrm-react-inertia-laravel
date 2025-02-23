@@ -10,6 +10,10 @@ void i18n
     .init({
         supportedLngs: ['en', 'fr'],
         fallbackLng: 'en',
+
+        interpolation: {
+            escapeValue: false,
+        },
     });
 
 export default i18n;
