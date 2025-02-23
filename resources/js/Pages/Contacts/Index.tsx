@@ -47,7 +47,7 @@ const Index = () => {
                         <tr className="text-left font-bold">
                             <th className="px-6 pt-5 pb-4">{t('Name')}</th>
                             <th className="px-6 pt-5 pb-4">
-                                {t('Organization')}
+                                {t('Organization', { count: 1 })}
                             </th>
                             <th className="px-6 pt-5 pb-4">{t('City')}</th>
                             <th className="px-6 pt-5 pb-4" colSpan={2}>

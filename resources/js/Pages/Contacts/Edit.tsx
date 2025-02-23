@@ -110,7 +110,7 @@ const Edit = () => {
 
                         <Field
                             label="organization_id"
-                            value={t('Organization')}
+                            value={t('Organization', { count: 1 })}
                             errors={errors.organization_id}
                         >
                             <SelectInput

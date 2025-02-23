@@ -40,6 +40,7 @@ final class TranslationHelper
         }
 
         $gender = self::getGenderForItem($itemLower, $locale);
+
         return trans("$action.$gender", ['item' => $displayItem]);
     }
 

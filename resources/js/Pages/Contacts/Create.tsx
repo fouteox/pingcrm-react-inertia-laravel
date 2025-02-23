@@ -84,7 +84,7 @@ const Create = () => {
                         <div className="w-full pr-6 pb-7 lg:w-1/2">
                             <InputLabel
                                 forInput="organization_id"
-                                value={t('Organization')}
+                                value={t('Organization', { count: 1 })}
                             />
                             <SelectInput
                                 name="organization_id"
