@@ -78,7 +78,7 @@ RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 USER ${USER}
 
 COPY --link --chown=${WWWUSER}:${WWWUSER} deployment/supervisord.conf /etc/
-COPY --link --chown=${WWWUSER}:${WWWUSER} deployment/octane/FrankenPHP/supervisord.frankenphp.conf /etc/supervisor/conf.d/
+COPY --link --chown=${WWWUSER}:${WWWUSER} deployment/octane/FrankenPHP/supervisord.http.conf /etc/supervisor/conf.d/
 COPY --link --chown=${WWWUSER}:${WWWUSER} deployment/supervisord.*.conf /etc/supervisor/conf.d/
 COPY --link --chmod=755 --chown=${WWWUSER}:${WWWUSER} deployment/docker-entrypoint.sh /usr/local/bin/docker-entrypoint
 COPY --link --chmod=755 --chown=${WWWUSER}:${WWWUSER} deployment/healthcheck /usr/local/bin/healthcheck
