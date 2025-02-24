@@ -8,6 +8,11 @@ import { I18nProvider } from './Components/I18nProvider';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
+const getCookieLocale = () => {
+    const matches = document.cookie.match(/locale=([^;]+)/);
+    return matches ? matches[1] : null;
+};
+
 void createInertiaApp({
     title: (title) => `${title} - ${appName}`,
     resolve: (name) =>
@@ -16,10 +21,14 @@ void createInertiaApp({
             import.meta.glob('./Pages/**/*.tsx'),
         ),
     setup({ el, App, props }) {
+        const locale = import.meta.env.SSR
+            ? props.initialPage.props.locale
+            : getCookieLocale() || props.initialPage.props.locale;
+
         const AppWithI18n = (
             <I18nProvider
                 initialI18nStore={props.initialPage.props.translations || {}}
-                initialLanguage={props.initialPage.props.locale}
+                initialLanguage={locale}
             >
                 <App {...props} />
             </I18nProvider>

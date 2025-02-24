@@ -33,7 +33,7 @@ final class HandleInertiaRequests extends Middleware
      */
     public function share(Request $request): array
     {
-        $locale = $request->getPreferredLanguage(['en', 'fr']) ?? 'en';
+        $locale = $request->getLocale();
 
         return [
             ...parent::share($request),
