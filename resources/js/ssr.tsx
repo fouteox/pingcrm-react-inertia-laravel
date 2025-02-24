@@ -28,10 +28,27 @@ createServer((page) =>
                 });
             /* eslint-enable */
 
+            /* eslint-disable */
+            const req = (page as any).req;
+            let locale = page.props.locale;
+
+            if (req?.headers?.cookie) {
+                const cookies = req.headers.cookie.split(';');
+                const localeCookie = cookies
+                    .find((cookie: string) =>
+                        cookie.trim().startsWith('locale='),
+                    )
+                    ?.split('=')[1];
+
+                if (localeCookie) {
+                    locale = localeCookie;
+                }
+            }
+
             return (
                 <I18nProvider
                     initialI18nStore={page.props.translations || {}}
-                    initialLanguage={page.props.locale}
+                    initialLanguage={locale}
                 >
                     <App {...props} />
                 </I18nProvider>
