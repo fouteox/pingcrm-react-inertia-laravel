@@ -12,7 +12,11 @@ final class SetLocaleMiddleware
 {
     public function handle(Request $request, Closure $next)
     {
-        $locale = $request->getPreferredLanguage(['fr', 'en']);
+        $locale = $request->cookie('locale');
+
+        if (! in_array($locale, ['fr', 'en'])) {
+            $locale = $request->getPreferredLanguage(['fr', 'en']);
+        }
 
         if (! $locale) {
             $locale = config('app.locale');

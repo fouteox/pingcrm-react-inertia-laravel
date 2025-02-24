@@ -16,6 +16,11 @@ export const initClientI18n = () => {
             interpolation: {
                 escapeValue: false,
             },
+            detection: {
+                order: ['cookie', 'navigator'],
+                lookupCookie: 'locale',
+                caches: ['cookie'],
+            },
         });
 
     return i18nInstance;
