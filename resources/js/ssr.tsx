@@ -1,14 +1,16 @@
+import { Page } from '@inertiajs/core';
 import { createInertiaApp } from '@inertiajs/react';
 import createServer from '@inertiajs/react/server';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import ReactDOMServer from 'react-dom/server';
+import { I18nextProvider } from 'react-i18next';
 import { RouteName } from 'ziggy-js';
 import { route } from '../../vendor/tightenco/ziggy';
-import { I18nProvider } from './Components/I18nProvider';
+import { initI18n, setLocale } from './i18n';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
-createServer((page) =>
+createServer((page: Page) =>
     createInertiaApp({
         page,
         render: ReactDOMServer.renderToString,
@@ -28,30 +30,17 @@ createServer((page) =>
                 });
             /* eslint-enable */
 
-            /* eslint-disable */
-            const req = (page as any).req;
-            let locale = page.props.locale;
-
-            if (req?.headers?.cookie) {
-                const cookies = req.headers.cookie.split(';');
-                const localeCookie = cookies
-                    .find((cookie: string) =>
-                        cookie.trim().startsWith('locale='),
-                    )
-                    ?.split('=')[1];
-
-                if (localeCookie) {
-                    locale = localeCookie;
-                }
-            }
+            const currentLocale = page.props.locale;
+            const i18nInstance = initI18n(
+                currentLocale,
+                page.props.translations || {},
+            );
+            setLocale(currentLocale);
 
             return (
-                <I18nProvider
-                    initialI18nStore={page.props.translations || {}}
-                    initialLanguage={locale}
-                >
+                <I18nextProvider i18n={i18nInstance}>
                     <App {...props} />
-                </I18nProvider>
+                </I18nextProvider>
             );
         },
     }),

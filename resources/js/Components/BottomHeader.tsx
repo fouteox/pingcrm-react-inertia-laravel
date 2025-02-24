@@ -13,9 +13,8 @@ const LANGUAGES = [
 type Language = (typeof LANGUAGES)[number];
 
 export default function BottomHeader() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
 
-    const { i18n } = useTranslation();
     const [currentLang, setCurrentLang] = useState<Language>(
         LANGUAGES.find((lang) => lang.code === i18n.language) ?? LANGUAGES[0],
     );

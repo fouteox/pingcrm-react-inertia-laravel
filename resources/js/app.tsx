@@ -4,14 +4,10 @@ import './echo';
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot, hydrateRoot } from 'react-dom/client';
-import { I18nProvider } from './Components/I18nProvider';
+import { I18nextProvider } from 'react-i18next';
+import { initI18n, setLocale } from './i18n';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
-
-const getCookieLocale = () => {
-    const matches = document.cookie.match(/locale=([^;]+)/);
-    return matches ? matches[1] : null;
-};
 
 void createInertiaApp({
     title: (title) => `${title} - ${appName}`,
@@ -21,17 +17,17 @@ void createInertiaApp({
             import.meta.glob('./Pages/**/*.tsx'),
         ),
     setup({ el, App, props }) {
-        const locale = import.meta.env.SSR
-            ? props.initialPage.props.locale
-            : getCookieLocale() || props.initialPage.props.locale;
+        const currentLocale = props.initialPage.props.locale;
+        const i18nInstance = initI18n(
+            currentLocale,
+            props.initialPage.props.translations || {},
+        );
+        setLocale(currentLocale);
 
         const AppWithI18n = (
-            <I18nProvider
-                initialI18nStore={props.initialPage.props.translations || {}}
-                initialLanguage={locale}
-            >
+            <I18nextProvider i18n={i18nInstance}>
                 <App {...props} />
-            </I18nProvider>
+            </I18nextProvider>
         );
 
         if (import.meta.env.SSR) {
