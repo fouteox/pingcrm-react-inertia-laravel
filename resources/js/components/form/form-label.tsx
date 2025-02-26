@@ -1,5 +1,5 @@
-import React, { ReactNode } from 'react';
 import { cn } from '@/lib/utils';
+import { ReactNode } from 'react';
 
 interface FormLabelProps {
     children: ReactNode;
@@ -8,19 +8,14 @@ interface FormLabelProps {
     className?: string;
 }
 
-export function FormLabel({
-                              children,
-                              htmlFor,
-                              error,
-                              className
-                          }: FormLabelProps) {
+export function FormLabel({ children, htmlFor, error, className }: FormLabelProps) {
     return (
         <label
             htmlFor={htmlFor}
             className={cn(
-                "text-sm font-medium block mb-2 peer-disabled:cursor-not-allowed peer-disabled:opacity-70",
-                error && "text-destructive",
-                className
+                'mb-2 block text-sm font-medium peer-disabled:cursor-not-allowed peer-disabled:opacity-70',
+                error && 'text-destructive',
+                className,
             )}
         >
             {children}

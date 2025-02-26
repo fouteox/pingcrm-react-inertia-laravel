@@ -1,8 +1,8 @@
 import { buttonVariants } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
+import { type VariantProps } from 'class-variance-authority';
 import { ReactNode } from 'react';
-import { type VariantProps } from "class-variance-authority";
 
 type LinkType = 'btn' | 'anchor';
 

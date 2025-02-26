@@ -1,5 +1,5 @@
-import React, { ReactNode, FormEvent } from 'react';
 import { cn } from '@/lib/utils';
+import { FormEvent, ReactNode } from 'react';
 
 interface FormProps {
     children: ReactNode;
@@ -9,7 +9,7 @@ interface FormProps {
 
 export function Form({ children, onSubmit, className }: FormProps) {
     return (
-        <form onSubmit={onSubmit} className={cn("space-y-4", className)}>
+        <form onSubmit={onSubmit} className={cn('space-y-4', className)}>
             {children}
         </form>
     );

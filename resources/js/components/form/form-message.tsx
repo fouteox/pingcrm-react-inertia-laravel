@@ -1,4 +1,3 @@
-import React from 'react';
 import { cn } from '@/lib/utils';
 
 interface FormMessageProps {
@@ -6,15 +5,8 @@ interface FormMessageProps {
     className?: string;
 }
 
-export function FormMessage({
-                                error,
-                                className
-                            }: FormMessageProps) {
+export function FormMessage({ error, className }: FormMessageProps) {
     if (!error) return null;
 
-    return (
-        <p className={cn("text-sm font-medium text-destructive", className)}>
-            {error}
-        </p>
-    );
+    return <p className={cn('text-destructive text-sm font-medium', className)}>{error}</p>;
 }
