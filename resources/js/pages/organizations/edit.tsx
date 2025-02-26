@@ -9,6 +9,8 @@ import { useTranslation } from 'react-i18next';
 import { Form, FormInput, FormLabel, FormMessage } from '@/components/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useDeletionControls } from '@/hooks/use-deletion-controls';
+import { TableContainer } from '@/components/table-container';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 
 interface EditPageProps extends SharedData {
     organization: Organization;
@@ -247,70 +249,68 @@ export default function Edit() {
                 </Form>
             </div>
 
-            <h2 className="mt-12 text-2xl font-bold">{t('Contact', { count: 2 })}</h2>
-            <div className="mt-6 overflow-x-auto rounded-sm bg-white shadow-sm">
-                <table className="w-full whitespace-nowrap">
-                    <thead>
-                        <tr className="text-left font-bold">
-                            <th className="px-6 pt-5 pb-4">{t('Name')}</th>
-                            <th className="px-6 pt-5 pb-4">{t('City')}</th>
-                            <th className="px-6 pt-5 pb-4" colSpan={2}>
-                                {t('Phone')}
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody>
+            <h2 className="mt-12 mb-6 text-lg font-semibold">{t('Contact', { count: 2 })}</h2>
+
+            <TableContainer>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>{t('Name')}</TableHead>
+                            <TableHead>{t('City')}</TableHead>
+                            <TableHead colSpan={2}>{t('Phone')}</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
                         {organization.contacts.map(({ id, name, phone, city, deleted_at }) => {
                             return (
-                                <tr key={id} className="focus-within:bg-gray-100 hover:bg-gray-100">
-                                    <td className="border-t">
-                                        <Link
-                                            href={route('contacts.edit', id)}
-                                            className="focus:text-indigo flex items-center px-6 py-4 focus:outline-hidden"
-                                            prefetch
-                                        >
+                                <TableRow key={id}>
+                                    <TableCell className="relative p-2">
+                                        <div className="absolute inset-0 z-10">
+                                            <Link href={route('contacts.edit', id)} prefetch className="block h-full w-full">
+                                                <span className="sr-only">Modifier {name}</span>
+                                            </Link>
+                                        </div>
+                                        <div className="relative z-0 max-w-full overflow-hidden text-ellipsis whitespace-nowrap">
                                             {name}
-                                            {deleted_at && <Trash className="ml-2 h-3 w-3 shrink-0 fill-current text-gray-400" />}
-                                        </Link>
-                                    </td>
-                                    <td className="border-t">
-                                        <Link
-                                            tabIndex={-1}
-                                            href={route('contacts.edit', id)}
-                                            className="focus:text-indigo flex items-center px-6 py-4 focus:outline-hidden"
-                                            prefetch
-                                        >
-                                            {city}
-                                        </Link>
-                                    </td>
-                                    <td className="border-t">
-                                        <Link
-                                            tabIndex={-1}
-                                            href={route('contacts.edit', id)}
-                                            className="focus:text-indigo flex items-center px-6 py-4 focus:outline-hidden"
-                                            prefetch
-                                        >
-                                            {phone}
-                                        </Link>
-                                    </td>
-                                    <td className="w-px border-t">
-                                        <Link tabIndex={-1} href={route('contacts.edit', id)} className="flex items-center px-4" prefetch>
-                                            <ChevronRight className="block h-6 w-6 fill-current text-gray-400" />
-                                        </Link>
-                                    </td>
-                                </tr>
+                                            {deleted_at && <Trash className="text-muted-foreground ml-2 h-3 w-3 shrink-0" />}
+                                        </div>
+                                    </TableCell>
+                                    <TableCell className="relative p-2">
+                                        <div className="absolute inset-0 z-10">
+                                            <Link href={route('contacts.edit', id)} prefetch tabIndex={-1} className="block h-full w-full">
+                                                <span className="sr-only">Modifier {name}</span>
+                                            </Link>
+                                        </div>
+                                        <div className="relative z-0 max-w-full overflow-hidden text-ellipsis whitespace-nowrap">{city}</div>
+                                    </TableCell>
+                                    <TableCell className="relative p-2">
+                                        <div className="absolute inset-0 z-10">
+                                            <Link href={route('contacts.edit', id)} prefetch tabIndex={-1} className="block h-full w-full">
+                                                <span className="sr-only">Modifier {name}</span>
+                                            </Link>
+                                        </div>
+                                        <div className="relative z-0 max-w-full overflow-hidden text-ellipsis whitespace-nowrap">{phone}</div>
+                                    </TableCell>
+                                    <TableCell className="w-px">
+                                        <Button asChild variant="ghost" size="icon">
+                                            <Link tabIndex={-1} href={route('contacts.edit', id)} prefetch>
+                                                <ChevronRight className="text-muted-foreground h-4 w-4" />
+                                            </Link>
+                                        </Button>
+                                    </TableCell>
+                                </TableRow>
                             );
                         })}
                         {organization.contacts.length === 0 && (
-                            <tr>
-                                <td className="border-t px-6 py-4" colSpan={4}>
+                            <TableRow>
+                                <TableCell colSpan={4} className="h-24 text-center">
                                     {t('No contacts found.')}
-                                </td>
-                            </tr>
+                                </TableCell>
+                            </TableRow>
                         )}
-                    </tbody>
-                </table>
-            </div>
+                    </TableBody>
+                </Table>
+            </TableContainer>
         </AppLayout>
     );
 }
