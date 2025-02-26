@@ -1,24 +1,13 @@
-import { Head, useForm } from '@inertiajs/react';
-import React, { FormEvent } from 'react';
-import { useTranslation } from 'react-i18next';
-import { BreadcrumbItem } from '@/types';
-import AppLayout from '@/layouts/app-layout';
-import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import AppLayout from '@/layouts/app-layout';
+import { BreadcrumbItem } from '@/types';
+import { Head, useForm } from '@inertiajs/react';
+import { Loader2 } from 'lucide-react';
+import { FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 
-import {
-    Form,
-    FormLabel,
-    FormMessage,
-    FormInput
-} from '@/components/form';
+import { Form, FormInput, FormLabel, FormMessage } from '@/components/form';
 
 interface UserFormData {
     first_name: string;
@@ -62,11 +51,11 @@ export default function Create() {
             <Head title={t('Create User')} />
 
             <div className="max-w-3xl">
-                <h2 className="text-xl font-semibold mb-6">{t('Create User')}</h2>
+                <h2 className="mb-6 text-xl font-semibold">{t('Create User')}</h2>
 
                 <Form onSubmit={onSubmit}>
                     <div className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                             <div>
                                 <FormLabel htmlFor="first_name" error={form.errors.first_name}>
                                     {t('First name')}
@@ -76,7 +65,7 @@ export default function Create() {
                                     id="first_name"
                                     type="text"
                                     value={form.data.first_name}
-                                    onChange={(e) => form.setData("first_name", e.target.value)}
+                                    onChange={(e) => form.setData('first_name', e.target.value)}
                                     required
                                     autoComplete="given-name"
                                     disabled={form.processing}
@@ -95,7 +84,7 @@ export default function Create() {
                                     id="last_name"
                                     type="text"
                                     value={form.data.last_name}
-                                    onChange={(e) => form.setData("last_name", e.target.value)}
+                                    onChange={(e) => form.setData('last_name', e.target.value)}
                                     required
                                     autoComplete="family-name"
                                     disabled={form.processing}
@@ -106,7 +95,7 @@ export default function Create() {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                             <div>
                                 <FormLabel htmlFor="email" error={form.errors.email}>
                                     {t('Email')}
@@ -116,7 +105,7 @@ export default function Create() {
                                     id="email"
                                     type="email"
                                     value={form.data.email}
-                                    onChange={(e) => form.setData("email", e.target.value)}
+                                    onChange={(e) => form.setData('email', e.target.value)}
                                     required
                                     autoComplete="email"
                                     disabled={form.processing}
@@ -135,7 +124,7 @@ export default function Create() {
                                     id="password"
                                     type="password"
                                     value={form.data.password}
-                                    onChange={(e) => form.setData("password", e.target.value)}
+                                    onChange={(e) => form.setData('password', e.target.value)}
                                     required
                                     autoComplete="new-password"
                                     disabled={form.processing}
@@ -151,15 +140,8 @@ export default function Create() {
                                 {t('Owner')}
                             </FormLabel>
 
-                            <Select
-                                value={form.data.owner}
-                                onValueChange={(value) => form.setData('owner', value)}
-                                disabled={form.processing}
-                            >
-                                <SelectTrigger
-                                    id="owner"
-                                    className={form.errors.owner ? "border-destructive" : ""}
-                                >
+                            <Select value={form.data.owner} onValueChange={(value) => form.setData('owner', value)} disabled={form.processing}>
+                                <SelectTrigger id="owner" className={form.errors.owner ? 'border-destructive' : ''}>
                                     <SelectValue placeholder={t('Select an option')} />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -172,13 +154,8 @@ export default function Create() {
                         </div>
 
                         <div className="flex justify-end">
-                            <Button
-                                type="submit"
-                                disabled={form.processing}
-                            >
-                                {form.processing && (
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                )}
+                            <Button type="submit" disabled={form.processing}>
+                                {form.processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 {t('Create User')}
                             </Button>
                         </div>

@@ -6,12 +6,7 @@ interface DeleteButtonProps {
 }
 
 const DeleteButton: React.FC<DeleteButtonProps> = ({ onClick, children }) => (
-    <button
-        className="text-red-600 hover:underline focus:outline-hidden"
-        tabIndex={-1}
-        type="button"
-        onClick={onClick}
-    >
+    <button className="text-red-600 hover:underline focus:outline-hidden" tabIndex={-1} type="button" onClick={onClick}>
         {children}
     </button>
 );

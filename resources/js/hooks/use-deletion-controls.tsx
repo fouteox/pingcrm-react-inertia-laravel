@@ -51,8 +51,7 @@ export const useDeletionControls = ({
     };
 
     const getResourceString = () => {
-        const capitalize = (str: string) =>
-            str.charAt(0).toUpperCase() + str.slice(1);
+        const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
         return t(capitalize(resourceType));
     };
 
@@ -65,13 +64,9 @@ export const useDeletionControls = ({
         return (
             <>
                 {isDeleted ? (
-                    <TrashedMessage onRestore={() => setShowModal(true)}>
-                        {t(`This ${resourceType} has been deleted.`)}
-                    </TrashedMessage>
+                    <TrashedMessage onRestore={() => setShowModal(true)}>{t(`This ${resourceType} has been deleted.`)}</TrashedMessage>
                 ) : (
-                    <DeleteButton onClick={() => setShowModal(true)}>
-                        {t(`Delete ${getResourceString()}`)}
-                    </DeleteButton>
+                    <DeleteButton onClick={() => setShowModal(true)}>{t(`Delete ${getResourceString()}`)}</DeleteButton>
                 )}
                 <Modal
                     show={showModal}
@@ -79,18 +74,10 @@ export const useDeletionControls = ({
                     onConfirm={handleAction}
                     title={
                         isDeleted
-                            ? t(
-                                  `Are you sure you want to restore this ${resourceType}?`,
-                              )
-                            : t(
-                                  `Are you sure you want to delete this ${resourceType}?`,
-                              )
+                            ? t(`Are you sure you want to restore this ${resourceType}?`)
+                            : t(`Are you sure you want to delete this ${resourceType}?`)
                     }
-                    confirmText={
-                        isDeleted
-                            ? t(`Restore ${getResourceString()}`)
-                            : t(`Delete ${getResourceString()}`)
-                    }
+                    confirmText={isDeleted ? t(`Restore ${getResourceString()}`) : t(`Delete ${getResourceString()}`)}
                     cancelText={t('Cancel')}
                     isProcessing={processing}
                 />

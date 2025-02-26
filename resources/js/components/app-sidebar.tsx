@@ -34,7 +34,7 @@ const mainNavItems: NavItem[] = [
         title: 'Reverb Demo',
         url: route('reverb.index', {}, false),
         icon: ChevronsLeftRightEllipsis,
-    }
+    },
 ];
 
 export function AppSidebar() {

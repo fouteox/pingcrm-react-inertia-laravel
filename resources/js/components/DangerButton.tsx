@@ -1,8 +1,7 @@
 import clsx from 'clsx';
 import React, { ButtonHTMLAttributes, ReactNode } from 'react';
 
-interface DangerButtonProps
-    extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'onClick'> {
+interface DangerButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'onClick'> {
     type?: 'button' | 'submit' | 'reset';
     className?: string;
     processing?: boolean;
@@ -29,14 +28,7 @@ const LoadingSpinner = () => (
     </svg>
 );
 
-const DangerButton: React.FC<DangerButtonProps> = ({
-    type = 'submit',
-    className = '',
-    processing = false,
-    children,
-    onClick,
-    ...props
-}) => {
+const DangerButton: React.FC<DangerButtonProps> = ({ type = 'submit', className = '', processing = false, children, onClick, ...props }) => {
     return (
         <button
             type={type}

@@ -1,17 +1,12 @@
+import { Button } from '@/components/ui/button';
+import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem, Organization, PageProps } from '@/types';
 import { Head, useForm, usePage } from '@inertiajs/react';
+import { Loader2 } from 'lucide-react';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import AppLayout from '@/layouts/app-layout';
-import { Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 
-import {
-    Form,
-    FormLabel,
-    FormMessage,
-    FormInput
-} from '@/components/form';
+import { Form, FormInput, FormLabel, FormMessage } from '@/components/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface CreatePageProps extends PageProps {
@@ -71,11 +66,11 @@ export default function Create() {
             <Head title={t('Create Contact')} />
 
             <div className="max-w-3xl">
-                <h2 className="text-xl font-semibold mb-6">{t('Create Contact')}</h2>
+                <h2 className="mb-6 text-xl font-semibold">{t('Create Contact')}</h2>
 
                 <Form onSubmit={onSubmit}>
                     <div className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                             <div>
                                 <FormLabel htmlFor="first_name" error={form.errors.first_name}>
                                     {t('First name')}
@@ -85,7 +80,7 @@ export default function Create() {
                                     id="first_name"
                                     type="text"
                                     value={form.data.first_name}
-                                    onChange={(e) => form.setData("first_name", e.target.value)}
+                                    onChange={(e) => form.setData('first_name', e.target.value)}
                                     required
                                     autoFocus
                                     tabIndex={1}
@@ -106,7 +101,7 @@ export default function Create() {
                                     id="last_name"
                                     type="text"
                                     value={form.data.last_name}
-                                    onChange={(e) => form.setData("last_name", e.target.value)}
+                                    onChange={(e) => form.setData('last_name', e.target.value)}
                                     required
                                     tabIndex={2}
                                     maxLength={25}
@@ -118,21 +113,18 @@ export default function Create() {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                             <div>
                                 <FormLabel htmlFor="organization_id" error={form.errors.organization_id}>
                                     {t('Organization', { count: 1 })}
                                 </FormLabel>
 
                                 <Select
-                                    value={form.data.organization_id || "0"}
-                                    onValueChange={(value) => form.setData('organization_id', value === "0" ? "" : value)}
+                                    value={form.data.organization_id || '0'}
+                                    onValueChange={(value) => form.setData('organization_id', value === '0' ? '' : value)}
                                     disabled={form.processing}
                                 >
-                                    <SelectTrigger
-                                        id="organization_id"
-                                        className={form.errors.organization_id ? "border-destructive" : ""}
-                                    >
+                                    <SelectTrigger id="organization_id" className={form.errors.organization_id ? 'border-destructive' : ''}>
                                         <SelectValue placeholder={t('Select an organization')} />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -157,7 +149,7 @@ export default function Create() {
                                     id="email"
                                     type="email"
                                     value={form.data.email}
-                                    onChange={(e) => form.setData("email", e.target.value)}
+                                    onChange={(e) => form.setData('email', e.target.value)}
                                     required
                                     tabIndex={4}
                                     maxLength={50}
@@ -169,7 +161,7 @@ export default function Create() {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                             <div>
                                 <FormLabel htmlFor="phone" error={form.errors.phone}>
                                     {t('Phone')}
@@ -179,7 +171,7 @@ export default function Create() {
                                     id="phone"
                                     type="tel"
                                     value={form.data.phone}
-                                    onChange={(e) => form.setData("phone", e.target.value)}
+                                    onChange={(e) => form.setData('phone', e.target.value)}
                                     tabIndex={5}
                                     maxLength={50}
                                     disabled={form.processing}
@@ -198,7 +190,7 @@ export default function Create() {
                                     id="address"
                                     type="text"
                                     value={form.data.address}
-                                    onChange={(e) => form.setData("address", e.target.value)}
+                                    onChange={(e) => form.setData('address', e.target.value)}
                                     tabIndex={6}
                                     maxLength={150}
                                     disabled={form.processing}
@@ -209,7 +201,7 @@ export default function Create() {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                             <div>
                                 <FormLabel htmlFor="city" error={form.errors.city}>
                                     {t('City')}
@@ -219,7 +211,7 @@ export default function Create() {
                                     id="city"
                                     type="text"
                                     value={form.data.city}
-                                    onChange={(e) => form.setData("city", e.target.value)}
+                                    onChange={(e) => form.setData('city', e.target.value)}
                                     tabIndex={7}
                                     maxLength={50}
                                     disabled={form.processing}
@@ -238,7 +230,7 @@ export default function Create() {
                                     id="region"
                                     type="text"
                                     value={form.data.region}
-                                    onChange={(e) => form.setData("region", e.target.value)}
+                                    onChange={(e) => form.setData('region', e.target.value)}
                                     tabIndex={8}
                                     maxLength={50}
                                     disabled={form.processing}
@@ -249,21 +241,18 @@ export default function Create() {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                             <div>
                                 <FormLabel htmlFor="country" error={form.errors.country}>
                                     {t('Country')}
                                 </FormLabel>
 
                                 <Select
-                                    value={form.data.country || "0"}
-                                    onValueChange={(value) => form.setData('country', value === "0" ? "" : value)}
+                                    value={form.data.country || '0'}
+                                    onValueChange={(value) => form.setData('country', value === '0' ? '' : value)}
                                     disabled={form.processing}
                                 >
-                                    <SelectTrigger
-                                        id="country"
-                                        className={form.errors.country ? "border-destructive" : ""}
-                                    >
+                                    <SelectTrigger id="country" className={form.errors.country ? 'border-destructive' : ''}>
                                         <SelectValue placeholder={t('Select a country')} />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -285,7 +274,7 @@ export default function Create() {
                                     id="postal_code"
                                     type="text"
                                     value={form.data.postal_code}
-                                    onChange={(e) => form.setData("postal_code", e.target.value)}
+                                    onChange={(e) => form.setData('postal_code', e.target.value)}
                                     tabIndex={10}
                                     maxLength={25}
                                     disabled={form.processing}
@@ -297,13 +286,8 @@ export default function Create() {
                         </div>
 
                         <div className="flex justify-end">
-                            <Button
-                                type="submit"
-                                disabled={form.processing}
-                            >
-                                {form.processing && (
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                )}
+                            <Button type="submit" disabled={form.processing}>
+                                {form.processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 {t('Create Contact')}
                             </Button>
                         </div>

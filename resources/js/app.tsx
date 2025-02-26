@@ -1,12 +1,12 @@
 import '../css/app.css';
 import './echo';
 
+import { initializeTheme } from '@/hooks/use-appearance';
 import { createInertiaApp } from '@inertiajs/react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot, hydrateRoot } from 'react-dom/client';
 import { I18nextProvider } from 'react-i18next';
 import { initI18n, setLocale } from './i18n';
-import { initializeTheme } from '@/hooks/use-appearance';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -15,10 +15,7 @@ void createInertiaApp({
     resolve: (name) => resolvePageComponent(`./pages/${name}.tsx`, import.meta.glob('./pages/**/*.tsx')),
     setup({ el, App, props }) {
         const currentLocale = props.initialPage.props.locale;
-        const i18nInstance = initI18n(
-            currentLocale,
-            props.initialPage.props.translations || {},
-        );
+        const i18nInstance = initI18n(currentLocale, props.initialPage.props.translations || {});
         setLocale(currentLocale);
 
         const AppWithI18n = (

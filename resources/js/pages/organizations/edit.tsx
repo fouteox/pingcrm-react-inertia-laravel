@@ -1,17 +1,12 @@
+import { Button } from '@/components/ui/button';
+import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem, Organization, PageProps } from '@/types';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { ChevronRight, Loader2, Trash } from 'lucide-react';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import AppLayout from '@/layouts/app-layout';
-import { Loader2, ChevronRight, Trash } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 
-import {
-    Form,
-    FormLabel,
-    FormMessage,
-    FormInput
-} from '@/components/form';
+import { Form, FormInput, FormLabel, FormMessage } from '@/components/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useDeletionControls } from '@/hooks/use-deletion-controls';
 
@@ -76,11 +71,11 @@ export default function Edit() {
             {organization.deleted_at && showDeleteControls()}
 
             <div className="max-w-3xl">
-                <h2 className="text-xl font-semibold mb-6">{t('Edit Organization')}</h2>
+                <h2 className="mb-6 text-xl font-semibold">{t('Edit Organization')}</h2>
 
                 <Form onSubmit={onSubmit}>
                     <div className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                             <div>
                                 <FormLabel htmlFor="name" error={form.errors.name}>
                                     {t('Name')}
@@ -90,7 +85,7 @@ export default function Edit() {
                                     id="name"
                                     type="text"
                                     value={form.data.name}
-                                    onChange={(e) => form.setData("name", e.target.value)}
+                                    onChange={(e) => form.setData('name', e.target.value)}
                                     required
                                     autoFocus
                                     maxLength={100}
@@ -110,7 +105,7 @@ export default function Edit() {
                                     id="email"
                                     type="email"
                                     value={form.data.email}
-                                    onChange={(e) => form.setData("email", e.target.value)}
+                                    onChange={(e) => form.setData('email', e.target.value)}
                                     required
                                     maxLength={50}
                                     disabled={form.processing}
@@ -121,7 +116,7 @@ export default function Edit() {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                             <div>
                                 <FormLabel htmlFor="phone" error={form.errors.phone}>
                                     {t('Phone')}
@@ -131,7 +126,7 @@ export default function Edit() {
                                     id="phone"
                                     type="tel"
                                     value={form.data.phone}
-                                    onChange={(e) => form.setData("phone", e.target.value)}
+                                    onChange={(e) => form.setData('phone', e.target.value)}
                                     maxLength={50}
                                     disabled={form.processing}
                                     error={form.errors.phone}
@@ -149,7 +144,7 @@ export default function Edit() {
                                     id="address"
                                     type="text"
                                     value={form.data.address}
-                                    onChange={(e) => form.setData("address", e.target.value)}
+                                    onChange={(e) => form.setData('address', e.target.value)}
                                     maxLength={150}
                                     disabled={form.processing}
                                     error={form.errors.address}
@@ -159,7 +154,7 @@ export default function Edit() {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                             <div>
                                 <FormLabel htmlFor="city" error={form.errors.city}>
                                     {t('City')}
@@ -169,7 +164,7 @@ export default function Edit() {
                                     id="city"
                                     type="text"
                                     value={form.data.city}
-                                    onChange={(e) => form.setData("city", e.target.value)}
+                                    onChange={(e) => form.setData('city', e.target.value)}
                                     maxLength={50}
                                     disabled={form.processing}
                                     error={form.errors.city}
@@ -187,7 +182,7 @@ export default function Edit() {
                                     id="region"
                                     type="text"
                                     value={form.data.region}
-                                    onChange={(e) => form.setData("region", e.target.value)}
+                                    onChange={(e) => form.setData('region', e.target.value)}
                                     maxLength={50}
                                     disabled={form.processing}
                                     error={form.errors.region}
@@ -197,21 +192,18 @@ export default function Edit() {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                             <div>
                                 <FormLabel htmlFor="country" error={form.errors.country}>
                                     {t('Country')}
                                 </FormLabel>
 
                                 <Select
-                                    value={form.data.country || "0"}
-                                    onValueChange={(value) => form.setData('country', value === "0" ? "" : value)}
+                                    value={form.data.country || '0'}
+                                    onValueChange={(value) => form.setData('country', value === '0' ? '' : value)}
                                     disabled={form.processing}
                                 >
-                                    <SelectTrigger
-                                        id="country"
-                                        className={form.errors.country ? "border-destructive" : ""}
-                                    >
+                                    <SelectTrigger id="country" className={form.errors.country ? 'border-destructive' : ''}>
                                         <SelectValue placeholder={t('None')} />
                                     </SelectTrigger>
                                     <SelectContent>
@@ -233,7 +225,7 @@ export default function Edit() {
                                     id="postal_code"
                                     type="text"
                                     value={form.data.postal_code}
-                                    onChange={(e) => form.setData("postal_code", e.target.value)}
+                                    onChange={(e) => form.setData('postal_code', e.target.value)}
                                     maxLength={25}
                                     disabled={form.processing}
                                     error={form.errors.postal_code}
@@ -246,13 +238,8 @@ export default function Edit() {
                         <div className="flex justify-end gap-4">
                             {!organization.deleted_at && showDeleteControls()}
 
-                            <Button
-                                type="submit"
-                                disabled={form.processing}
-                            >
-                                {form.processing && (
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                )}
+                            <Button type="submit" disabled={form.processing}>
+                                {form.processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 {t('Update Organization')}
                             </Button>
                         </div>
@@ -260,50 +247,36 @@ export default function Edit() {
                 </Form>
             </div>
 
-            <h2 className="mt-12 text-2xl font-bold">
-                {t('Contact', { count: 2 })}
-            </h2>
+            <h2 className="mt-12 text-2xl font-bold">{t('Contact', { count: 2 })}</h2>
             <div className="mt-6 overflow-x-auto rounded-sm bg-white shadow-sm">
                 <table className="w-full whitespace-nowrap">
                     <thead>
-                    <tr className="text-left font-bold">
-                        <th className="px-6 pt-5 pb-4">{t('Name')}</th>
-                        <th className="px-6 pt-5 pb-4">{t('City')}</th>
-                        <th className="px-6 pt-5 pb-4" colSpan={2}>
-                            {t('Phone')}
-                        </th>
-                    </tr>
+                        <tr className="text-left font-bold">
+                            <th className="px-6 pt-5 pb-4">{t('Name')}</th>
+                            <th className="px-6 pt-5 pb-4">{t('City')}</th>
+                            <th className="px-6 pt-5 pb-4" colSpan={2}>
+                                {t('Phone')}
+                            </th>
+                        </tr>
                     </thead>
                     <tbody>
-                    {organization.contacts.map(
-                        ({ id, name, phone, city, deleted_at }) => {
+                        {organization.contacts.map(({ id, name, phone, city, deleted_at }) => {
                             return (
-                                <tr
-                                    key={id}
-                                    className="focus-within:bg-gray-100 hover:bg-gray-100"
-                                >
+                                <tr key={id} className="focus-within:bg-gray-100 hover:bg-gray-100">
                                     <td className="border-t">
                                         <Link
-                                            href={route(
-                                                'contacts.edit',
-                                                id,
-                                            )}
+                                            href={route('contacts.edit', id)}
                                             className="focus:text-indigo flex items-center px-6 py-4 focus:outline-hidden"
                                             prefetch
                                         >
                                             {name}
-                                            {deleted_at && (
-                                                <Trash className="ml-2 h-3 w-3 shrink-0 fill-current text-gray-400" />
-                                            )}
+                                            {deleted_at && <Trash className="ml-2 h-3 w-3 shrink-0 fill-current text-gray-400" />}
                                         </Link>
                                     </td>
                                     <td className="border-t">
                                         <Link
                                             tabIndex={-1}
-                                            href={route(
-                                                'contacts.edit',
-                                                id,
-                                            )}
+                                            href={route('contacts.edit', id)}
                                             className="focus:text-indigo flex items-center px-6 py-4 focus:outline-hidden"
                                             prefetch
                                         >
@@ -313,10 +286,7 @@ export default function Edit() {
                                     <td className="border-t">
                                         <Link
                                             tabIndex={-1}
-                                            href={route(
-                                                'contacts.edit',
-                                                id,
-                                            )}
+                                            href={route('contacts.edit', id)}
                                             className="focus:text-indigo flex items-center px-6 py-4 focus:outline-hidden"
                                             prefetch
                                         >
@@ -324,29 +294,20 @@ export default function Edit() {
                                         </Link>
                                     </td>
                                     <td className="w-px border-t">
-                                        <Link
-                                            tabIndex={-1}
-                                            href={route(
-                                                'contacts.edit',
-                                                id,
-                                            )}
-                                            className="flex items-center px-4"
-                                            prefetch
-                                        >
+                                        <Link tabIndex={-1} href={route('contacts.edit', id)} className="flex items-center px-4" prefetch>
                                             <ChevronRight className="block h-6 w-6 fill-current text-gray-400" />
                                         </Link>
                                     </td>
                                 </tr>
                             );
-                        },
-                    )}
-                    {organization.contacts.length === 0 && (
-                        <tr>
-                            <td className="border-t px-6 py-4" colSpan={4}>
-                                {t('No contacts found.')}
-                            </td>
-                        </tr>
-                    )}
+                        })}
+                        {organization.contacts.length === 0 && (
+                            <tr>
+                                <td className="border-t px-6 py-4" colSpan={4}>
+                                    {t('No contacts found.')}
+                                </td>
+                            </tr>
+                        )}
                     </tbody>
                 </table>
             </div>

@@ -13,7 +13,7 @@ export default defineConfig({
         strictPort: true,
         origin: origin,
         cors: {
-            origin: { origin: process.env.DDEV_PRIMARY_URL },
+            origin: process.env.DDEV_PRIMARY_URL,
         },
     },
     plugins: [

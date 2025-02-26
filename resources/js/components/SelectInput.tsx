@@ -1,8 +1,7 @@
 import clsx from 'clsx';
 import React, { ReactNode, SelectHTMLAttributes } from 'react';
 
-interface SelectInputProps
-    extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'className'> {
+interface SelectInputProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'className'> {
     name: string;
     className?: string;
     children: ReactNode;
@@ -10,13 +9,7 @@ interface SelectInputProps
     label?: string;
 }
 
-const SelectInput: React.FC<SelectInputProps> = ({
-    name,
-    className = '',
-    containerClassName = '',
-    children,
-    ...props
-}) => {
+const SelectInput: React.FC<SelectInputProps> = ({ name, className = '', containerClassName = '', children, ...props }) => {
     return (
         <div className={containerClassName}>
             <select

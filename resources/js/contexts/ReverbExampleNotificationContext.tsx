@@ -6,18 +6,13 @@ interface ReverbNotificationContextType {
     removeUuid: (uuid: string) => void;
 }
 
-const ReverbExampleNotificationContext =
-    createContext<ReverbNotificationContextType>({
-        pendingUuids: new Set(),
-        addUuid: () => {},
-        removeUuid: () => {},
-    });
+const ReverbExampleNotificationContext = createContext<ReverbNotificationContextType>({
+    pendingUuids: new Set(),
+    addUuid: () => {},
+    removeUuid: () => {},
+});
 
-export function ReverbExampleNotificationProvider({
-    children,
-}: {
-    children: React.ReactNode;
-}) {
+export function ReverbExampleNotificationProvider({ children }: { children: React.ReactNode }) {
     const [pendingUuids, setPendingUuids] = useState<Set<string>>(new Set());
 
     const addUuid = (uuid: string) => {
@@ -37,14 +32,7 @@ export function ReverbExampleNotificationProvider({
         });
     };
 
-    return (
-        <ReverbExampleNotificationContext
-            value={{ pendingUuids, addUuid, removeUuid }}
-        >
-            {children}
-        </ReverbExampleNotificationContext>
-    );
+    return <ReverbExampleNotificationContext value={{ pendingUuids, addUuid, removeUuid }}>{children}</ReverbExampleNotificationContext>;
 }
 
-export const useReverbNotification = () =>
-    useContext(ReverbExampleNotificationContext);
+export const useReverbNotification = () => useContext(ReverbExampleNotificationContext);

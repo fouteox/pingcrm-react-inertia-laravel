@@ -1,17 +1,12 @@
+import { Button } from '@/components/ui/button';
+import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem, PageProps, User } from '@/types';
 import { Head, useForm, usePage } from '@inertiajs/react';
+import { Loader2 } from 'lucide-react';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
-import AppLayout from '@/layouts/app-layout';
-import { Loader2 } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 
-import {
-    Form,
-    FormLabel,
-    FormMessage,
-    FormInput
-} from '@/components/form';
+import { Form, FormInput, FormLabel, FormMessage } from '@/components/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useDeletionControls } from '@/hooks/use-deletion-controls';
 
@@ -54,7 +49,7 @@ export default function Edit() {
         }));
 
         form.post(route('users.update', user.id), {
-            method: 'put'
+            method: 'put',
         });
     }
 
@@ -82,20 +77,18 @@ export default function Edit() {
 
             {!user.can_delete ? (
                 <div className="mb-6 max-w-3xl rounded-sm border border-yellow-500 bg-yellow-400 p-4">
-                    <div className="text-yellow-800">
-                        {t('Updating the demo user is not allowed.')}
-                    </div>
+                    <div className="text-yellow-800">{t('Updating the demo user is not allowed.')}</div>
                 </div>
             ) : (
                 user.deleted_at && showDeleteControls()
             )}
 
             <div className="max-w-3xl">
-                <h2 className="text-xl font-semibold mb-6">{t('Edit User')}</h2>
+                <h2 className="mb-6 text-xl font-semibold">{t('Edit User')}</h2>
 
                 <Form onSubmit={onSubmit}>
                     <div className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                             <div>
                                 <FormLabel htmlFor="first_name" error={form.errors.first_name}>
                                     {t('First name')}
@@ -105,7 +98,7 @@ export default function Edit() {
                                     id="first_name"
                                     type="text"
                                     value={form.data.first_name}
-                                    onChange={(e) => form.setData("first_name", e.target.value)}
+                                    onChange={(e) => form.setData('first_name', e.target.value)}
                                     required
                                     autoComplete="given-name"
                                     disabled={form.processing || !user.can_delete}
@@ -124,7 +117,7 @@ export default function Edit() {
                                     id="last_name"
                                     type="text"
                                     value={form.data.last_name}
-                                    onChange={(e) => form.setData("last_name", e.target.value)}
+                                    onChange={(e) => form.setData('last_name', e.target.value)}
                                     required
                                     autoComplete="family-name"
                                     disabled={form.processing || !user.can_delete}
@@ -135,7 +128,7 @@ export default function Edit() {
                             </div>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
                             <div>
                                 <FormLabel htmlFor="email" error={form.errors.email}>
                                     {t('Email')}
@@ -145,7 +138,7 @@ export default function Edit() {
                                     id="email"
                                     type="email"
                                     value={form.data.email}
-                                    onChange={(e) => form.setData("email", e.target.value)}
+                                    onChange={(e) => form.setData('email', e.target.value)}
                                     required
                                     autoComplete="email"
                                     disabled={form.processing || !user.can_delete}
@@ -164,7 +157,7 @@ export default function Edit() {
                                     id="password"
                                     type="password"
                                     value={form.data.password}
-                                    onChange={(e) => form.setData("password", e.target.value)}
+                                    onChange={(e) => form.setData('password', e.target.value)}
                                     autoComplete="new-password"
                                     disabled={form.processing || !user.can_delete}
                                     error={form.errors.password}
@@ -184,10 +177,7 @@ export default function Edit() {
                                 onValueChange={(value) => form.setData('owner', value)}
                                 disabled={form.processing || !user.can_delete}
                             >
-                                <SelectTrigger
-                                    id="owner"
-                                    className={form.errors.owner ? "border-destructive" : ""}
-                                >
+                                <SelectTrigger id="owner" className={form.errors.owner ? 'border-destructive' : ''}>
                                     <SelectValue placeholder={t('Select an option')} />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -202,13 +192,8 @@ export default function Edit() {
                         <div className="flex justify-end gap-4">
                             {!user.deleted_at && user.can_delete && showDeleteControls()}
 
-                            <Button
-                                type="submit"
-                                disabled={form.processing || !user.can_delete}
-                            >
-                                {form.processing && (
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                )}
+                            <Button type="submit" disabled={form.processing || !user.can_delete}>
+                                {form.processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 {t('Update User')}
                             </Button>
                         </div>

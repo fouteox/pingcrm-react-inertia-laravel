@@ -1,7 +1,7 @@
 import { useReverbNotification } from '@/contexts/ReverbExampleNotificationContext';
 import { Broadcaster } from 'laravel-echo';
 import { useEffect, useRef } from 'react';
-import { toast } from "sonner";
+import { toast } from 'sonner';
 
 interface ReverbCompletedEvent {
     type: string;
@@ -28,20 +28,15 @@ export function ReverbNotificationListener() {
             if (!activeSubscriptions.current.find((sub) => sub.uuid === uuid)) {
                 const channel = window.Echo.private(`reverb.${uuid}`);
 
-                channel.listen(
-                    '.reverb.completed',
-                    (e: ReverbCompletedEvent) => {
-                        toast.success(e.message);
-                        removeUuid(uuid);
+                channel.listen('.reverb.completed', (e: ReverbCompletedEvent) => {
+                    toast.success(e.message);
+                    removeUuid(uuid);
 
-                        const subscription = activeSubscriptions.current.find(
-                            (sub) => sub.uuid === uuid,
-                        );
-                        if (subscription) {
-                            subscription.active = false;
-                        }
-                    },
-                );
+                    const subscription = activeSubscriptions.current.find((sub) => sub.uuid === uuid);
+                    if (subscription) {
+                        subscription.active = false;
+                    }
+                });
 
                 activeSubscriptions.current.push({
                     uuid,
@@ -52,16 +47,14 @@ export function ReverbNotificationListener() {
         });
 
         return () => {
-            activeSubscriptions.current = activeSubscriptions.current.filter(
-                (sub) => {
-                    if (!pendingUuids.has(sub.uuid) || !sub.active) {
-                        sub.channel.stopListening('.reverb.completed');
-                        sub.channel.unsubscribe();
-                        return false;
-                    }
-                    return true;
-                },
-            );
+            activeSubscriptions.current = activeSubscriptions.current.filter((sub) => {
+                if (!pendingUuids.has(sub.uuid) || !sub.active) {
+                    sub.channel.stopListening('.reverb.completed');
+                    sub.channel.unsubscribe();
+                    return false;
+                }
+                return true;
+            });
         };
     }, [pendingUuids, removeUuid]);
 

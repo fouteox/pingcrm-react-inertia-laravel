@@ -14,9 +14,7 @@ type Language = (typeof LANGUAGES)[number];
 export default function BottomHeader() {
     const { t, i18n } = useTranslation();
 
-    const [currentLang, setCurrentLang] = useState<Language>(
-        LANGUAGES.find((lang) => lang.code === i18n.language) ?? LANGUAGES[0],
-    );
+    const [currentLang, setCurrentLang] = useState<Language>(LANGUAGES.find((lang) => lang.code === i18n.language) ?? LANGUAGES[0]);
 
     const handleLanguageChange = (language: Language) => {
         void i18n.changeLanguage(language.code);
@@ -32,10 +30,7 @@ export default function BottomHeader() {
             <div className="mt-1 mr-4">{auth.user.account.name}</div>
             <div className="flex justify-between gap-4">
                 <div className="relative">
-                    <div
-                        className="group flex cursor-pointer items-center select-none"
-                        onClick={() => setMenuFlagOpened(true)}
-                    >
+                    <div className="group flex cursor-pointer items-center select-none" onClick={() => setMenuFlagOpened(true)}>
                         <span
                             className={`fib fi-${currentLang.flag} h-[24px] w-[24px] rounded-sm md:h-[20px] md:w-[20px]`}
                             role="img"
@@ -71,15 +66,10 @@ export default function BottomHeader() {
                     </div>
                 </div>
                 <div className="relative">
-                    <div
-                        className="group flex cursor-pointer items-center select-none"
-                        onClick={() => setMenuOpened(true)}
-                    >
+                    <div className="group flex cursor-pointer items-center select-none" onClick={() => setMenuOpened(true)}>
                         <div className="mr-1 whitespace-nowrap text-gray-800 group-hover:text-indigo-600 focus:text-indigo-600">
                             <span>{auth.user.first_name}</span>
-                            <span className="ml-1 hidden md:inline">
-                                {auth.user.last_name}
-                            </span>
+                            <span className="ml-1 hidden md:inline">{auth.user.last_name}</span>
                         </div>
                     </div>
                     <div className={menuOpened ? '' : 'hidden'}>

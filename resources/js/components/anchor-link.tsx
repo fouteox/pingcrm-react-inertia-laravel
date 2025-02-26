@@ -1,36 +1,24 @@
-import { Link } from "@inertiajs/react";
-import { cn } from "@/lib/utils";
-import { buttonVariants, type ButtonProps } from "@/components/ui/button";
-import { ReactNode } from "react";
+import { buttonVariants } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
+import { Link } from '@inertiajs/react';
+import { ReactNode } from 'react';
+import { type VariantProps } from "class-variance-authority";
 
-type LinkType = "btn" | "anchor";
+type LinkType = 'btn' | 'anchor';
 
 interface AnchorLinkProps {
     href: string;
     linkType?: LinkType;
     children: ReactNode;
     className?: string;
-    variant?: ButtonProps["variant"];
-    size?: ButtonProps["size"];
+    variant?: VariantProps<typeof buttonVariants>['variant'];
+    size?: VariantProps<typeof buttonVariants>['size'];
 }
 
-const AnchorLink = ({
-                        href,
-                        linkType = "btn",
-                        className,
-                        variant = "default",
-                        size = "default",
-                        children,
-                    }: AnchorLinkProps) => {
-    if (linkType === "anchor") {
+const AnchorLink = ({ href, linkType = 'btn', className, variant = 'default', size = 'default', children }: AnchorLinkProps) => {
+    if (linkType === 'anchor') {
         return (
-            <Link
-                href={href}
-                className={cn(
-                    "text-sm text-muted-foreground hover:text-foreground",
-                    className
-                )}
-            >
+            <Link href={href} className={cn('text-muted-foreground hover:text-foreground text-sm', className)}>
                 {children}
             </Link>
         );
@@ -44,7 +32,7 @@ const AnchorLink = ({
                     variant,
                     size,
                 }),
-                className
+                className,
             )}
         >
             {children}

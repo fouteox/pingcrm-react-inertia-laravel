@@ -1,9 +1,9 @@
+import FlashMessages from '@/components/flash-messages';
+import { ReverbNotificationListener } from '@/components/ReverbNotificationListener';
+import { ReverbExampleNotificationProvider } from '@/contexts/ReverbExampleNotificationContext';
 import AppLayoutTemplate from '@/layouts/app/app-sidebar-layout';
 import { type BreadcrumbItem } from '@/types';
-import React, { ReactNode } from 'react';
-import FlashMessages from '@/components/flash-messages';
-import { ReverbExampleNotificationProvider } from '@/contexts/ReverbExampleNotificationContext';
-import { ReverbNotificationListener } from '@/components/ReverbNotificationListener';
+import { ReactNode } from 'react';
 
 interface AppLayoutProps {
     children: ReactNode;

@@ -7,10 +7,7 @@ interface TrashedMessageProps {
     children: ReactNode;
 }
 
-const TrashedMessage: React.FC<TrashedMessageProps> = ({
-    onRestore,
-    children,
-}) => {
+const TrashedMessage: React.FC<TrashedMessageProps> = ({ onRestore, children }) => {
     const { t } = useTranslation();
 
     return (
@@ -19,12 +16,7 @@ const TrashedMessage: React.FC<TrashedMessageProps> = ({
                 <Trash className="mr-2 h-4 w-4 shrink-0 fill-current text-yellow-800" />
                 <div className="text-yellow-800">{children}</div>
             </div>
-            <button
-                className="text-sm text-yellow-800 hover:underline focus:outline-hidden"
-                tabIndex={-1}
-                type="button"
-                onClick={onRestore}
-            >
+            <button className="text-sm text-yellow-800 hover:underline focus:outline-hidden" tabIndex={-1} type="button" onClick={onRestore}>
                 {t('Restore')}
             </button>
         </div>

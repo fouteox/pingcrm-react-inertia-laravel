@@ -9,14 +9,7 @@ interface SecondaryButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
     onClick?: () => void;
 }
 
-const SecondaryButton: React.FC<SecondaryButtonProps> = ({
-    type = 'button',
-    className = '',
-    processing = false,
-    children,
-    onClick,
-    ...props
-}) => {
+const SecondaryButton: React.FC<SecondaryButtonProps> = ({ type = 'button', className = '', processing = false, children, onClick, ...props }) => {
     return (
         <button
             type={type}

@@ -1,9 +1,9 @@
+import { Toaster } from '@/components/ui/sonner';
 import { PageProps } from '@/types';
 import { router, usePage } from '@inertiajs/react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Toaster } from '@/components/ui/sonner';
-import { toast } from "sonner"
+import { toast } from 'sonner';
 
 interface FlashMessage {
     success?: string;
@@ -37,17 +37,9 @@ export default function FlashMessages() {
         const { currentId, lastShownId } = navigationState.current;
 
         if (currentId !== lastShownId) {
-            const notifications: [
-                string | undefined | false,
-                NotificationHandler,
-            ][] = [
+            const notifications: [string | undefined | false, NotificationHandler][] = [
                 [flash.success, toast.success],
-                [
-                    flash.error ||
-                        (numOfErrors > 0 &&
-                            t('form_errors', { count: numOfErrors })),
-                    toast.error,
-                ],
+                [flash.error || (numOfErrors > 0 && t('form_errors', { count: numOfErrors })), toast.error],
             ];
 
             notifications.forEach(([message, handler]) => {

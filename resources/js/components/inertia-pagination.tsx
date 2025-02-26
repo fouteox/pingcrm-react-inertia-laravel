@@ -1,15 +1,9 @@
-import * as React from "react";
-import { Link } from "@inertiajs/react";
-import { useTranslation } from "react-i18next";
-import { cn } from "@/lib/utils";
-import {
-    Pagination,
-    PaginationContent,
-    PaginationItem,
-    PaginationEllipsis,
-} from "@/components/ui/pagination";
-import { buttonVariants } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { buttonVariants } from '@/components/ui/button';
+import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem } from '@/components/ui/pagination';
+import { cn } from '@/lib/utils';
+import { Link } from '@inertiajs/react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 
 interface InertiaLinkType {
     url: string | null;
@@ -37,13 +31,13 @@ export default function InertiaPagination({ links, className }: InertiaPaginatio
 
     // Helper to clean HTML entities in labels
     const cleanLabel = (label: string) => {
-        const temp = document.createElement("div");
+        const temp = document.createElement('div');
         temp.innerHTML = label;
         return temp.textContent || temp.innerText || label;
     };
 
     // Determine which page links to show on mobile
-    const activeIndex = pageLinks.findIndex(link => link.active);
+    const activeIndex = pageLinks.findIndex((link) => link.active);
     const totalPages = pageLinks.length;
 
     // If many pages, determine which ones to show on mobile
@@ -62,62 +56,53 @@ export default function InertiaPagination({ links, className }: InertiaPaginatio
                     {prevLink.url ? (
                         <Link
                             href={prevLink.url}
-                            className={cn(
-                                buttonVariants({ variant: "ghost", size: "default" }),
-                                "gap-1 px-2.5"
-                            )}
-                            aria-label={t("Go to previous page")}
+                            className={cn(buttonVariants({ variant: 'ghost', size: 'default' }), 'gap-1 px-2.5')}
+                            aria-label={t('Go to previous page')}
                         >
                             <ChevronLeft className="h-4 w-4" />
-                            <span className="hidden sm:inline">{t("Previous")}</span>
+                            <span className="hidden sm:inline">{t('Previous')}</span>
                         </Link>
                     ) : (
                         <span
-                            className={cn(
-                                buttonVariants({ variant: "ghost", size: "default" }),
-                                "pointer-events-none opacity-50 gap-1 px-2.5"
-                            )}
+                            className={cn(buttonVariants({ variant: 'ghost', size: 'default' }), 'pointer-events-none gap-1 px-2.5 opacity-50')}
                             aria-disabled="true"
                         >
                             <ChevronLeft className="h-4 w-4" />
-                            <span className="hidden sm:inline">{t("Previous")}</span>
+                            <span className="hidden sm:inline">{t('Previous')}</span>
                         </span>
                     )}
                 </PaginationItem>
 
                 {/* Page links */}
                 {pageLinks.map((link, i) => (
-                    <PaginationItem
-                        key={i}
-                        className={!getMobileVisibility(i) ? 'hidden sm:block' : undefined}
-                    >
+                    <PaginationItem key={i} className={!getMobileVisibility(i) ? 'hidden sm:block' : undefined}>
                         {link.url ? (
                             <Link
                                 href={link.url}
                                 className={cn(
                                     buttonVariants({
-                                        variant: link.active ? "outline" : "ghost",
-                                        size: "icon",
-                                    })
+                                        variant: link.active ? 'outline' : 'ghost',
+                                        size: 'icon',
+                                    }),
                                 )}
-                                aria-current={link.active ? "page" : undefined}
-                                aria-label={`${t("Page")} ${cleanLabel(link.label)}`}
+                                aria-current={link.active ? 'page' : undefined}
+                                aria-label={`${t('Page')} ${cleanLabel(link.label)}`}
                             >
                                 {cleanLabel(link.label)}
                             </Link>
-                        ) : link.label.includes("...") ? (
+                        ) : link.label.includes('...') ? (
                             <PaginationEllipsis />
                         ) : (
                             <span
                                 className={cn(
                                     buttonVariants({
-                                        variant: link.active ? "outline" : "ghost",
-                                        size: "icon",
+                                        variant: link.active ? 'outline' : 'ghost',
+                                        size: 'icon',
                                     }),
-                                    "pointer-events-none"
+                                    'pointer-events-none',
                                 )}
                                 aria-disabled="true"
-                                aria-current={link.active ? "page" : undefined}
+                                aria-current={link.active ? 'page' : undefined}
                             >
                                 {cleanLabel(link.label)}
                             </span>
@@ -130,24 +115,18 @@ export default function InertiaPagination({ links, className }: InertiaPaginatio
                     {nextLink.url ? (
                         <Link
                             href={nextLink.url}
-                            className={cn(
-                                buttonVariants({ variant: "ghost", size: "default" }),
-                                "gap-1 px-2.5"
-                            )}
-                            aria-label={t("Go to next page")}
+                            className={cn(buttonVariants({ variant: 'ghost', size: 'default' }), 'gap-1 px-2.5')}
+                            aria-label={t('Go to next page')}
                         >
-                            <span className="hidden sm:inline">{t("Next")}</span>
+                            <span className="hidden sm:inline">{t('Next')}</span>
                             <ChevronRight className="h-4 w-4" />
                         </Link>
                     ) : (
                         <span
-                            className={cn(
-                                buttonVariants({ variant: "ghost", size: "default" }),
-                                "pointer-events-none opacity-50 gap-1 px-2.5"
-                            )}
+                            className={cn(buttonVariants({ variant: 'ghost', size: 'default' }), 'pointer-events-none gap-1 px-2.5 opacity-50')}
                             aria-disabled="true"
                         >
-                            <span className="hidden sm:inline">{t("Next")}</span>
+                            <span className="hidden sm:inline">{t('Next')}</span>
                             <ChevronRight className="h-4 w-4" />
                         </span>
                     )}
