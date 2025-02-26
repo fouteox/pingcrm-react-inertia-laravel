@@ -1,5 +1,5 @@
 import { DeletionControls } from '@/components/deletion-controls';
-import { ReactElement } from 'react';
+import React, { ReactElement } from 'react';
 
 export interface UseDeletionControlsOptions {
     resourceId: number;
