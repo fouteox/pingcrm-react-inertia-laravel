@@ -1,5 +1,5 @@
 import { Toaster } from '@/components/ui/sonner';
-import { PageProps } from '@/types';
+import { SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
@@ -10,7 +10,7 @@ interface FlashMessage {
     error?: string;
 }
 
-interface FlashPageProps extends PageProps {
+interface FlashPageProps extends SharedData {
     flash: FlashMessage;
     errors: Record<string, string[]>;
     [key: string]: unknown;

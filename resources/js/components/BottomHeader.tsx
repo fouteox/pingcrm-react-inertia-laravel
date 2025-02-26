@@ -1,4 +1,4 @@
-import { PageProps } from '@/types';
+import { SharedData } from '@/types';
 import { Button } from '@headlessui/react';
 import { Link, usePage } from '@inertiajs/react';
 import { useState } from 'react';
@@ -21,7 +21,7 @@ export default function BottomHeader() {
         setCurrentLang(language);
     };
 
-    const { auth } = usePage<PageProps>().props;
+    const { auth } = usePage<SharedData>().props;
     const [menuOpened, setMenuOpened] = useState(false);
     const [menuFlagOpened, setMenuFlagOpened] = useState(false);
 

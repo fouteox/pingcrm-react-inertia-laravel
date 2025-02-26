@@ -5,12 +5,12 @@ import { TableContainer } from '@/components/table-container';
 import { Button } from '@/components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import AppLayout from '@/layouts/app-layout';
-import { BreadcrumbItem, PageProps, PaginatedData, User } from '@/types';
+import { BreadcrumbItem, PaginatedData, SharedData, User } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { ChevronRight, Trash } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
-interface IndexPageProps extends PageProps {
+interface IndexPageProps extends SharedData {
     users: PaginatedData<User>;
 }
 

@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
-import { BreadcrumbItem, Organization, PageProps } from '@/types';
+import { BreadcrumbItem, Organization, SharedData } from '@/types';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { Loader2 } from 'lucide-react';
 import React from 'react';
@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { Form, FormInput, FormLabel, FormMessage } from '@/components/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-interface CreatePageProps extends PageProps {
+interface CreatePageProps extends SharedData {
     organizations: Organization[];
 }
 

@@ -21,6 +21,7 @@ export interface User {
     first_name: string;
     last_name: string;
     email: string;
+    avatar?: string;
     owner: string;
     deleted_at: string;
     account: Account;
@@ -91,17 +92,11 @@ interface TranslationStore {
     };
 }
 
-export type PageProps<T extends Record<string, unknown> = Record<string, unknown>> = T & {
-    auth: {
-        user: User;
-    };
-    ziggy: Config & { location: string };
-    locale: string;
-    translations: TranslationStore | null;
-};
-
 export interface SharedData {
     name: string;
     auth: Auth;
+    ziggy: Config & { location: string };
+    locale: string;
+    translations: TranslationStore | null;
     [key: string]: unknown;
 }

@@ -1,10 +1,10 @@
-import { PageProps } from '@/types';
+import { SharedData } from '@/types';
 import { Head } from '@inertiajs/react';
 import { useTranslation } from 'react-i18next';
 
-type ErrorPageProps = PageProps<{
+interface ErrorPageProps extends SharedData {
     status: number;
-}>;
+}
 
 export default function ErrorPage({ status }: ErrorPageProps) {
     const { t } = useTranslation();

@@ -3,7 +3,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PageProps } from '@/types';
+import { SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
 import { Filter, X } from 'lucide-react';
 import * as React from 'react';
@@ -30,7 +30,7 @@ function pickBy(object: Values): Partial<Values> {
     }, {});
 }
 
-interface SearchFilterPageProps extends PageProps {
+interface SearchFilterPageProps extends SharedData {
     filters: {
         role?: string;
         search?: string;

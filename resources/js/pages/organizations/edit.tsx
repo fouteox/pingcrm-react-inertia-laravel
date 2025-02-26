@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import AppLayout from '@/layouts/app-layout';
-import { BreadcrumbItem, Organization, PageProps } from '@/types';
+import { BreadcrumbItem, Organization, SharedData } from '@/types';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ChevronRight, Loader2, Trash } from 'lucide-react';
 import React from 'react';
@@ -10,7 +10,7 @@ import { Form, FormInput, FormLabel, FormMessage } from '@/components/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useDeletionControls } from '@/hooks/use-deletion-controls';
 
-interface EditPageProps extends PageProps {
+interface EditPageProps extends SharedData {
     organization: Organization;
 }
 
