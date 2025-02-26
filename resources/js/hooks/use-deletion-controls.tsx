@@ -1,10 +1,7 @@
-import DeleteButton from '@/components/DeleteButton';
-import Modal from '@/components/Modal';
-import TrashedMessage from '@/components/TrashedMessage';
-import React, { ReactElement, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { DeletionControls } from '@/components/deletion-controls';
+import { ReactElement } from 'react';
 
-interface UseDeletionControlsOptions {
+export interface UseDeletionControlsOptions {
     resourceId: number;
     isDeleted: boolean;
     resourceType: 'contact' | 'organization' | 'user';
@@ -14,10 +11,8 @@ interface UseDeletionControlsOptions {
     processing: boolean;
 }
 
-interface DeletionControls {
+export interface DeletionControlsResult {
     showDeleteControls: () => ReactElement | null;
-    isModalOpen: boolean;
-    closeModal: () => void;
 }
 
 export const useDeletionControls = ({
@@ -28,12 +23,7 @@ export const useDeletionControls = ({
     onDelete,
     onRestore,
     processing,
-}: UseDeletionControlsOptions): DeletionControls => {
-    const { t } = useTranslation();
-    const [showModal, setShowModal] = useState(false);
-
-    const closeModal = () => setShowModal(false);
-
+}: UseDeletionControlsOptions): DeletionControlsResult => {
     const handleAction = async (e: React.MouseEvent<HTMLButtonElement>) => {
         e.preventDefault();
 
@@ -46,48 +36,17 @@ export const useDeletionControls = ({
         } else {
             await onDelete(resourceId);
         }
-
-        closeModal();
-    };
-
-    const getResourceString = () => {
-        const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
-        return t(capitalize(resourceType));
     };
 
     const showDeleteControls = () => {
-        // Si on ne peut pas supprimer, on ne montre pas les contrôles
         if (!canDelete) {
             return null;
         }
 
-        return (
-            <>
-                {isDeleted ? (
-                    <TrashedMessage onRestore={() => setShowModal(true)}>{t(`This ${resourceType} has been deleted.`)}</TrashedMessage>
-                ) : (
-                    <DeleteButton onClick={() => setShowModal(true)}>{t(`Delete ${getResourceString()}`)}</DeleteButton>
-                )}
-                <Modal
-                    show={showModal}
-                    onClose={closeModal}
-                    onConfirm={handleAction}
-                    title={
-                        isDeleted
-                            ? t(`Are you sure you want to restore this ${resourceType}?`)
-                            : t(`Are you sure you want to delete this ${resourceType}?`)
-                    }
-                    confirmText={isDeleted ? t(`Restore ${getResourceString()}`) : t(`Delete ${getResourceString()}`)}
-                    cancelText={t('Cancel')}
-                    isProcessing={processing}
-                />
-            </>
-        );
+        return <DeletionControls resourceType={resourceType} isDeleted={isDeleted} processing={processing} onAction={handleAction} />;
     };
 
     return {
         showDeleteControls,
-        isModalOpen: showModal,
-        closeModal,
     };
 };

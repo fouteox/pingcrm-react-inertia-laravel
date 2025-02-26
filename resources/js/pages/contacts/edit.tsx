@@ -293,7 +293,7 @@ export default function Edit() {
                             </div>
                         </div>
 
-                        <div className="flex justify-end gap-4">
+                        <div className="flex flex-col justify-end gap-4 sm:flex-row">
                             {!contact.deleted_at && showDeleteControls()}
 
                             <Button type="submit" disabled={form.processing}>

@@ -189,7 +189,7 @@ export default function Edit() {
                             <FormMessage error={form.errors.owner} />
                         </div>
 
-                        <div className="flex justify-end gap-4">
+                        <div className="flex flex-col justify-end gap-4 sm:flex-row">
                             {!user.deleted_at && user.can_delete && showDeleteControls()}
 
                             <Button type="submit" disabled={form.processing || !user.can_delete}>
