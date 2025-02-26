@@ -25,4 +25,7 @@ export default defineConfig({
         react(),
         tailwindcss(),
     ],
+    esbuild: {
+        jsx: 'automatic',
+    },
 });

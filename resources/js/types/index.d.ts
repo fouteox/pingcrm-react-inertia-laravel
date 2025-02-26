@@ -1,5 +1,19 @@
-import React from 'react';
+import { LucideIcon } from 'lucide-react';
 import { Config } from 'ziggy-js';
+
+export interface BreadcrumbItem {
+    title: string;
+    count?: number;
+    href: string;
+}
+
+export interface NavItem {
+    title: string;
+    count?: number;
+    url: string;
+    icon?: LucideIcon | null;
+    isActive?: boolean;
+}
 
 export interface User {
     id: number;
@@ -11,6 +25,7 @@ export interface User {
     deleted_at: string;
     account: Account;
     can_delete: boolean;
+    [key: string]: unknown; // This allows for additional properties...
 }
 
 export interface Organization {
@@ -87,16 +102,8 @@ export type PageProps<
     translations: TranslationStore | null;
 };
 
-type DomElement =
-    | HTMLElement
-    | HTMLButtonElement
-    | HTMLFormElement
-    | HTMLInputElement;
-
-type DomEvent<T extends DomElement = HTMLElement> =
-    | React.MouseEvent<T>
-    | React.FormEvent<T>;
-
-export type FormAction<T extends DomElement = HTMLElement> = (
-    e: DomEvent<T>,
-) => void;
+export interface SharedData {
+    name: string;
+    auth: Auth;
+    [key: string]: unknown;
+}

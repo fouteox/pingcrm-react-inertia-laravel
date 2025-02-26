@@ -14,7 +14,7 @@ final class ReverbExampleController extends Controller
 {
     public function index(): Response
     {
-        return Inertia::render('ReverbExample/Index');
+        return Inertia::render('reverb-example');
     }
 
     public function store(Request $request)

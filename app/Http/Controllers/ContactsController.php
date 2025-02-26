@@ -20,7 +20,7 @@ final class ContactsController extends Controller
 {
     public function index()
     {
-        return Inertia::render('Contacts/Index', [
+        return Inertia::render('contacts/index', [
             'filters' => Request::all(['search', 'trashed']),
             'contacts' => new ContactCollection(
                 Auth::user()->account->contacts()
@@ -35,7 +35,7 @@ final class ContactsController extends Controller
 
     public function create()
     {
-        return Inertia::render('Contacts/Create', [
+        return Inertia::render('contacts/create', [
             'organizations' => Auth::user()->account
                 ->organizations()
                 ->orderBy('name')
@@ -54,7 +54,7 @@ final class ContactsController extends Controller
 
     public function edit(Contact $contact): Response
     {
-        return Inertia::render('Contacts/Edit', [
+        return Inertia::render('contacts/edit', [
             'contact' => new ContactResource($contact),
             'organizations' => new UserOrganizationCollection(
                 Auth::user()->account->organizations()

@@ -18,7 +18,7 @@ final class OrganizationsController extends Controller
 {
     public function index()
     {
-        return Inertia::render('Organizations/Index', [
+        return Inertia::render('organizations/index', [
             'filters' => Request::all(['search', 'trashed']),
             'organizations' => new OrganizationCollection(
                 Auth::user()->account->organizations()
@@ -32,7 +32,7 @@ final class OrganizationsController extends Controller
 
     public function create()
     {
-        return Inertia::render('Organizations/Create');
+        return Inertia::render('organizations/create');
     }
 
     public function store(OrganizationsRequest $request): RedirectResponse
@@ -44,7 +44,7 @@ final class OrganizationsController extends Controller
 
     public function edit(Organization $organization)
     {
-        return Inertia::render('Organizations/Edit', [
+        return Inertia::render('organizations/edit', [
             'organization' => new OrganizationResource($organization),
         ]);
     }

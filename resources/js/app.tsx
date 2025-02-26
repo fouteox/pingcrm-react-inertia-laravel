@@ -6,16 +6,13 @@ import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot, hydrateRoot } from 'react-dom/client';
 import { I18nextProvider } from 'react-i18next';
 import { initI18n, setLocale } from './i18n';
+import { initializeTheme } from '@/hooks/use-appearance';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
 void createInertiaApp({
     title: (title) => `${title} - ${appName}`,
-    resolve: (name) =>
-        resolvePageComponent(
-            `./Pages/${name}.tsx`,
-            import.meta.glob('./Pages/**/*.tsx'),
-        ),
+    resolve: (name) => resolvePageComponent(`./pages/${name}.tsx`, import.meta.glob('./pages/**/*.tsx')),
     setup({ el, App, props }) {
         const currentLocale = props.initialPage.props.locale;
         const i18nInstance = initI18n(
@@ -41,3 +38,6 @@ void createInertiaApp({
         color: '#4B5563',
     },
 });
+
+// This will set light / dark mode on load...
+initializeTheme();

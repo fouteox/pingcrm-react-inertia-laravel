@@ -5,6 +5,7 @@ import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import ReactDOMServer from 'react-dom/server';
 import { I18nextProvider } from 'react-i18next';
 import { RouteName } from 'ziggy-js';
+// noinspection ES6PreferShortImport
 import { route } from '../../vendor/tightenco/ziggy';
 import { initI18n, setLocale } from './i18n';
 
@@ -17,8 +18,8 @@ createServer((page: Page) =>
         title: (title) => `${title} - ${appName}`,
         resolve: (name) =>
             resolvePageComponent(
-                `./Pages/${name}.tsx`,
-                import.meta.glob('./Pages/**/*.tsx'),
+                `./pages/${name}.tsx`,
+                import.meta.glob('./pages/**/*.tsx'),
             ),
         setup: ({ App, props }) => {
             /* eslint-disable */
@@ -31,10 +32,7 @@ createServer((page: Page) =>
             /* eslint-enable */
 
             const currentLocale = page.props.locale;
-            const i18nInstance = initI18n(
-                currentLocale,
-                page.props.translations || {},
-            );
+            const i18nInstance = initI18n(currentLocale, page.props.translations || {});
             setLocale(currentLocale);
 
             return (

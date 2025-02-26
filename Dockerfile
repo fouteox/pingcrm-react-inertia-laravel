@@ -77,12 +77,12 @@ RUN mv "$PHP_INI_DIR/php.ini-production" "$PHP_INI_DIR/php.ini"
 
 USER ${USER}
 
-COPY --link --chown=${WWWUSER}:${WWWUSER} deployment/supervisord.conf /etc/
-COPY --link --chown=${WWWUSER}:${WWWUSER} deployment/octane/FrankenPHP/supervisord.http.conf /etc/supervisor/conf.d/
-COPY --link --chown=${WWWUSER}:${WWWUSER} deployment/supervisord.*.conf /etc/supervisor/conf.d/
-COPY --link --chmod=755 --chown=${WWWUSER}:${WWWUSER} deployment/docker-entrypoint.sh /usr/local/bin/docker-entrypoint
-COPY --link --chmod=755 --chown=${WWWUSER}:${WWWUSER} deployment/healthcheck /usr/local/bin/healthcheck
-COPY --link --chown=${WWWUSER}:${WWWUSER} deployment/php.ini ${PHP_INI_DIR}/conf.d/99-octane.ini
+COPY --link --chown=${WWWUSER}:${WWWGROUP} deployment/supervisord.conf /etc/
+COPY --link --chown=${WWWUSER}:${WWWGROUP} deployment/octane/FrankenPHP/supervisord.http.conf /etc/supervisor/conf.d/
+COPY --link --chown=${WWWUSER}:${WWWGROUP} deployment/supervisord.*.conf /etc/supervisor/conf.d/
+COPY --link --chmod=755 --chown=${WWWUSER}:${WWWGROUP} deployment/docker-entrypoint.sh /usr/local/bin/docker-entrypoint
+COPY --link --chmod=755 --chown=${WWWUSER}:${WWWGROUP} deployment/healthcheck /usr/local/bin/healthcheck
+COPY --link --chown=${WWWUSER}:${WWWGROUP} deployment/php.ini ${PHP_INI_DIR}/conf.d/99-octane.ini
 
 ENTRYPOINT ["docker-entrypoint"]
 

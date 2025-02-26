@@ -19,7 +19,7 @@ final class UsersController extends Controller
 {
     public function index()
     {
-        return Inertia::render('Users/Index', [
+        return Inertia::render('users/index', [
             'filters' => Request::all(['search', 'role', 'trashed']),
             'users' => new UserCollection(
                 Auth::user()->account->users()
@@ -33,7 +33,7 @@ final class UsersController extends Controller
 
     public function create()
     {
-        return Inertia::render('Users/Create');
+        return Inertia::render('users/create');
     }
 
     public function store(UserRequest $request): RedirectResponse
@@ -45,7 +45,7 @@ final class UsersController extends Controller
 
     public function edit(User $user)
     {
-        return Inertia::render('Users/Edit', [
+        return Inertia::render('users/edit', [
             'user' => new UserResource($user),
         ]);
     }
