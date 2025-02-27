@@ -8,7 +8,7 @@ let i18nInstance: typeof i18n | null = null;
 const createI18nInstance = () => {
     const instance = i18n.createInstance();
 
-    instance.use(initReactI18next).init({
+    void instance.use(initReactI18next).init({
         supportedLngs: ['en', 'fr'],
         fallbackLng: 'en',
         interpolation: {
