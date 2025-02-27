@@ -7,6 +7,7 @@ import ReactDOMServer from 'react-dom/server';
 import { I18nextProvider } from 'react-i18next';
 import { type RouteName, route } from 'ziggy-js';
 import { initI18n, setLocale } from './i18n';
+import { LayoutProvider } from '@/contexts/page-context';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 
@@ -39,9 +40,11 @@ createServer((page: Page) =>
             setLocale(currentLocale);
 
             return (
-                <I18nextProvider i18n={i18nInstance}>
-                    <App {...props} />
-                </I18nextProvider>
+                <LayoutProvider>
+                    <I18nextProvider i18n={i18nInstance}>
+                        <App {...props} />
+                    </I18nextProvider>
+                </LayoutProvider>
             );
         },
     }),
