@@ -1,24 +1,15 @@
+import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import * as React from 'react';
 
-interface TableContainerProps extends React.HTMLAttributes<HTMLDivElement> {
-    condensed?: boolean;
-}
-
-export function TableContainer({ className, children, condensed = false, ...props }: TableContainerProps) {
+function TableContainer({ className, ...props }: React.ComponentProps<'table'>) {
     return (
-        <div
-            className={cn(
-                'bg-card rounded-lg shadow-sm',
-                'overflow-x-auto',
-                condensed &&
-                    '[&_[data-slot=table-cell]]:py-0.5 [&_[data-slot=table-head]]:h-6 [&_[data-slot=table-head]]:py-0.5 [&_[data-slot=table-row]]:h-auto',
-                '[&_[data-slot=table-cell]]:whitespace-nowrap',
-                className,
-            )}
-            {...props}
-        >
-            {children}
-        </div>
+        <ScrollArea className="overflow-contain grid w-full grid-cols-1">
+            <table data-slot="table" className={cn('w-full caption-bottom text-sm', className)} {...props} />
+            <ScrollBar orientation="horizontal" />
+            <ScrollBar orientation="vertical" />
+        </ScrollArea>
     );
 }
+
+export { TableContainer };

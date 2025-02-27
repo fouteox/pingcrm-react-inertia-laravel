@@ -4,8 +4,8 @@ import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem } from '@/types';
 import { Head, useForm } from '@inertiajs/react';
 import React from 'react';
-import toast from 'react-hot-toast';
 import { useTranslation } from 'react-i18next';
+import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
 
 interface FormData {
