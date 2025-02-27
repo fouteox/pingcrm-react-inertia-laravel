@@ -1,6 +1,7 @@
+import { MobileAwareLink } from '@/components/mobile-aware-link';
 import { SidebarGroup, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
-import { Link, usePage } from '@inertiajs/react';
+import { usePage } from '@inertiajs/react';
 import { useTranslation } from 'react-i18next';
 
 export function NavMain({ items = [] }: { items: NavItem[] }) {
@@ -13,10 +14,10 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
                 {items.map((item) => (
                     <SidebarMenuItem key={item.title}>
                         <SidebarMenuButton asChild isActive={item.url === page.url}>
-                            <Link href={item.url} prefetch>
+                            <MobileAwareLink href={item.url} prefetch>
                                 {item.icon && <item.icon />}
                                 <span>{t(item.title, item.count !== undefined ? { count: item.count } : undefined)}</span>
-                            </Link>
+                            </MobileAwareLink>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 ))}

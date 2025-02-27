@@ -1,3 +1,4 @@
+import { MobileAwareLink } from '@/components/mobile-aware-link';
 import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { UserInfo } from '@/components/user-info';
 import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
@@ -25,10 +26,10 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
                 <DropdownMenuItem asChild>
-                    <Link className="block w-full" href={route('users.edit', auth.user.id)} as="button" prefetch onClick={cleanup}>
+                    <MobileAwareLink className="block w-full" href={route('users.edit', auth.user.id)} as="button" prefetch onClick={cleanup}>
                         <Settings className="mr-2" />
                         {t('My Profile')}
-                    </Link>
+                    </MobileAwareLink>
                 </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
