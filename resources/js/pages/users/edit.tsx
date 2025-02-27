@@ -58,6 +58,7 @@ export default function Edit() {
 
         form.post(route('users.update', user.id), {
             method: 'put',
+            preserveScroll: true,
         });
     }
 

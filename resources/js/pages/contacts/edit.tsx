@@ -55,7 +55,9 @@ export default function Edit() {
 
     function onSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
-        form.put(route('contacts.update', contact.id));
+        form.put(route('contacts.update', contact.id), {
+            preserveScroll: true,
+        });
     }
 
     const handleDelete = async (id: number) => {
