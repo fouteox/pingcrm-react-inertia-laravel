@@ -1,11 +1,11 @@
+import { applyLayoutToPage } from '@/lib/layout-resolver';
 import { Page } from '@inertiajs/core';
 import { createInertiaApp } from '@inertiajs/react';
 import createServer from '@inertiajs/react/server';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import ReactDOMServer from 'react-dom/server';
 import { I18nextProvider } from 'react-i18next';
-import { RouteName } from 'ziggy-js';
-import { route } from '../../vendor/tightenco/ziggy';
+import { type RouteName, route } from 'ziggy-js';
 import { initI18n, setLocale } from './i18n';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
@@ -15,11 +15,15 @@ createServer((page: Page) =>
         page,
         render: ReactDOMServer.renderToString,
         title: (title) => `${title} - ${appName}`,
-        resolve: (name) =>
-            resolvePageComponent(
-                `./Pages/${name}.tsx`,
-                import.meta.glob('./Pages/**/*.tsx'),
-            ),
+        resolve: (name) => {
+            const pageModule = resolvePageComponent(`./pages/${name}.tsx`, import.meta.glob('./pages/**/*.tsx'));
+
+            pageModule.then((module) => {
+                applyLayoutToPage(module, name);
+            });
+
+            return pageModule;
+        },
         setup: ({ App, props }) => {
             /* eslint-disable */
             // @ts-expect-error
@@ -31,10 +35,7 @@ createServer((page: Page) =>
             /* eslint-enable */
 
             const currentLocale = page.props.locale;
-            const i18nInstance = initI18n(
-                currentLocale,
-                page.props.translations || {},
-            );
+            const i18nInstance = initI18n(currentLocale, page.props.translations || {});
             setLocale(currentLocale);
 
             return (

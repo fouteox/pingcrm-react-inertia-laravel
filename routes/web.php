@@ -7,7 +7,6 @@ use App\Http\Controllers\ContactsController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\FetchTranslationsController;
 use App\Http\Controllers\OrganizationsController;
-use App\Http\Controllers\ReportsController;
 use App\Http\Controllers\ReverbExampleController;
 use App\Http\Controllers\UsersController;
 use Illuminate\Support\Facades\Route;
@@ -20,7 +19,7 @@ Route::controller(AuthenticatedSessionController::class)->group(function () {
         Route::get('login', 'create')->name('login');
         Route::post('login', 'store')->name('login.store');
     });
-    Route::delete('logout', 'destroy')->name('logout');
+    Route::post('logout', 'destroy')->name('logout');
 });
 
 Route::middleware('auth')->group(function () {
@@ -38,9 +37,6 @@ Route::middleware('auth')->group(function () {
     // Contacts
     Route::resource('contacts', ContactsController::class)->except(['show']);
     Route::put('contacts/{contact}/restore', [ContactsController::class, 'restore'])->name('contacts.restore');
-
-    // Reports
-    Route::get('reports', [ReportsController::class, 'index'])->name('reports');
 
     // Reverb example
     Route::get('/reverb', [ReverbExampleController::class, 'index'])->name('reverb.index');

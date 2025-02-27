@@ -9,7 +9,7 @@
         "fakerphp/faker": "^1.24",
         "inertiajs/inertia-laravel": "^2.0",
         "laravel-lang/common": "^6.5",
-        "laravel/framework": "^11.43",
+        "laravel/framework": "^12.0",
         "laravel/horizon": "^5.30",
         "laravel/octane": "^2.8",
         "laravel/reverb": "^1.0",
@@ -39,10 +39,7 @@
     "autoload-dev": {
         "psr-4": {
             "Tests\\": "tests/"
-        },
-        "files": [
-            "app/Helpers/functions.php"
-        ]
+        }
     },
     "scripts": {
         "post-autoload-dump": [
@@ -63,6 +60,11 @@
         "dev": [
             "Composer\\Config::disableProcessTimeout",
             "npx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fdba74\" \"php artisan serve\" \"php artisan queue:listen --tries=1\" \"php artisan pail --timeout=0\" \"npm run dev\" --names=server,queue,logs,vite"
+        ],
+        "dev:ssr": [
+            "npm run build",
+            "Composer\\Config::disableProcessTimeout",
+            "npx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fdba74\" \"php artisan serve\" \"php artisan queue:listen --tries=1\" \"php artisan pail --timeout=0\" \"php artisan inertia:start-ssr\" --names=server,queue,logs,ssr"
         ],
         "lint": [
             "pint"
