@@ -8,28 +8,31 @@ import { usePageActions } from '@/contexts/page-context';
 import { BreadcrumbItem, PaginatedData, SharedData, User } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { ChevronRight, Trash } from 'lucide-react';
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface IndexPageProps extends SharedData {
     users: PaginatedData<User>;
 }
 
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'User',
-        count: 2,
-        href: route('users.index'),
-    },
-];
-
 export default function Index() {
     const { t } = useTranslation();
     const { setBreadcrumbs } = usePageActions();
 
+    const breadcrumbs: BreadcrumbItem[] = React.useMemo(
+        () => [
+            {
+                title: 'User',
+                count: 2,
+                href: route('users.index'),
+            },
+        ],
+        [],
+    );
+
     useEffect(() => {
         setBreadcrumbs(breadcrumbs);
-    }, [setBreadcrumbs]);
+    }, [breadcrumbs, setBreadcrumbs]);
 
     const { users } = usePage<IndexPageProps>().props;
     const {

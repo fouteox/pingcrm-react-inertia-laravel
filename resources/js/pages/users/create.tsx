@@ -3,7 +3,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { BreadcrumbItem } from '@/types';
 import { Head, useForm } from '@inertiajs/react';
 import { Loader2 } from 'lucide-react';
-import { FormEvent, useEffect } from 'react';
+import React, { FormEvent, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Form, FormInput, FormLabel, FormMessage } from '@/components/form';
@@ -18,25 +18,28 @@ interface UserFormData {
     [key: string]: string;
 }
 
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Users',
-        count: 2,
-        href: route('users.index'),
-    },
-    {
-        title: 'Create',
-        href: route('users.create'),
-    },
-];
-
 export default function Create() {
     const { t } = useTranslation();
     const { setBreadcrumbs } = usePageActions();
 
+    const breadcrumbs: BreadcrumbItem[] = React.useMemo(
+        () => [
+            {
+                title: 'Users',
+                count: 2,
+                href: route('users.index'),
+            },
+            {
+                title: 'Create',
+                href: route('users.create'),
+            },
+        ],
+        [],
+    );
+
     useEffect(() => {
         setBreadcrumbs(breadcrumbs);
-    }, [setBreadcrumbs]);
+    }, [breadcrumbs, setBreadcrumbs]);
 
     const form = useForm<UserFormData>({
         first_name: '',

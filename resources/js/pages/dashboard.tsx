@@ -1,23 +1,26 @@
 import { usePageActions } from '@/contexts/page-context';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
-import { useEffect } from 'react';
+import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Dashboard',
-        href: route('dashboard'),
-    },
-];
 
 export default function Dashboard() {
     const { t } = useTranslation();
     const { setBreadcrumbs } = usePageActions();
 
+    const breadcrumbs: BreadcrumbItem[] = React.useMemo(
+        () => [
+            {
+                title: 'Dashboard',
+                href: route('dashboard'),
+            },
+        ],
+        [],
+    );
+
     useEffect(() => {
         setBreadcrumbs(breadcrumbs);
-    }, [setBreadcrumbs]);
+    }, [breadcrumbs, setBreadcrumbs]);
 
     return (
         <>

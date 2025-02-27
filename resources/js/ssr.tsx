@@ -1,3 +1,4 @@
+import { LayoutProvider } from '@/contexts/page-context';
 import { applyLayoutToPage } from '@/lib/layout-resolver';
 import { Page } from '@inertiajs/core';
 import { createInertiaApp } from '@inertiajs/react';
@@ -7,7 +8,6 @@ import ReactDOMServer from 'react-dom/server';
 import { I18nextProvider } from 'react-i18next';
 import { type RouteName, route } from 'ziggy-js';
 import { initI18n, setLocale } from './i18n';
-import { LayoutProvider } from '@/contexts/page-context';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Laravel';
 

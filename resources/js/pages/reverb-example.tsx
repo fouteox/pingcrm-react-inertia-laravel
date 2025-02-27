@@ -13,20 +13,23 @@ interface FormData {
     [key: string]: string | number | boolean | File | null;
 }
 
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Reverb Demo',
-        href: route('reverb.index'),
-    },
-];
-
 export default function ReverbExample() {
     const { t } = useTranslation();
     const { setBreadcrumbs } = usePageActions();
 
+    const breadcrumbs: BreadcrumbItem[] = React.useMemo(
+        () => [
+            {
+                title: 'Reverb Demo',
+                href: route('reverb.index'),
+            },
+        ],
+        [],
+    );
+
     useEffect(() => {
         setBreadcrumbs(breadcrumbs);
-    }, [setBreadcrumbs]);
+    }, [breadcrumbs, setBreadcrumbs]);
 
     const { addUuid } = useReverbNotification();
     const form = useForm<FormData>({

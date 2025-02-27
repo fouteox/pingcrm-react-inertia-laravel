@@ -21,25 +21,28 @@ interface OrganizationFormData {
     [key: string]: string;
 }
 
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Organization',
-        count: 2,
-        href: route('organizations.index'),
-    },
-    {
-        title: 'Create',
-        href: route('organizations.create'),
-    },
-];
-
 export default function Create() {
     const { t } = useTranslation();
     const { setBreadcrumbs } = usePageActions();
 
+    const breadcrumbs: BreadcrumbItem[] = React.useMemo(
+        () => [
+            {
+                title: 'Organization',
+                count: 2,
+                href: route('organizations.index'),
+            },
+            {
+                title: 'Create',
+                href: route('organizations.create'),
+            },
+        ],
+        [],
+    );
+
     useEffect(() => {
         setBreadcrumbs(breadcrumbs);
-    }, [setBreadcrumbs]);
+    }, [breadcrumbs, setBreadcrumbs]);
 
     const form = useForm<OrganizationFormData>({
         name: '',

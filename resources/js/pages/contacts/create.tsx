@@ -27,25 +27,28 @@ interface ContactFormData {
     [key: string]: string;
 }
 
-const breadcrumbs: BreadcrumbItem[] = [
-    {
-        title: 'Contact',
-        count: 2,
-        href: route('contacts.index'),
-    },
-    {
-        title: 'Create',
-        href: route('contacts.create'),
-    },
-];
-
 export default function Create() {
     const { t } = useTranslation();
     const { setBreadcrumbs } = usePageActions();
 
+    const breadcrumbs: BreadcrumbItem[] = React.useMemo(
+        () => [
+            {
+                title: 'Contact',
+                count: 2,
+                href: route('contacts.index'),
+            },
+            {
+                title: 'Create',
+                href: route('contacts.create'),
+            },
+        ],
+        [],
+    );
+
     useEffect(() => {
         setBreadcrumbs(breadcrumbs);
-    }, [setBreadcrumbs]);
+    }, [breadcrumbs, setBreadcrumbs]);
 
     const { organizations } = usePage<CreatePageProps>().props;
     const form = useForm<ContactFormData>({

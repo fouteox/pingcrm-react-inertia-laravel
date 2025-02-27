@@ -9,36 +9,39 @@ import { Building, ChevronsLeftRightEllipsis, Contact, LayoutGrid, Users } from 
 import React from 'react';
 
 export function AppSidebar() {
-    const mainNavItems: NavItem[] = React.useMemo(() => [
-        {
-            title: 'Dashboard',
-            url: route('dashboard', {}, false),
-            icon: LayoutGrid,
-        },
-        {
-            title: 'Organization',
-            count: 2,
-            url: route('organizations.index', {}, false),
-            icon: Building,
-        },
-        {
-            title: 'Contact',
-            count: 2,
-            url: route('contacts.index', {}, false),
-            icon: Contact,
-        },
-        {
-            title: 'User',
-            count: 2,
-            url: route('users.index', {}, false),
-            icon: Users,
-        },
-        {
-            title: 'Reverb Demo',
-            url: route('reverb.index', {}, false),
-            icon: ChevronsLeftRightEllipsis,
-        },
-    ], []);
+    const mainNavItems: NavItem[] = React.useMemo(
+        () => [
+            {
+                title: 'Dashboard',
+                url: route('dashboard', {}, false),
+                icon: LayoutGrid,
+            },
+            {
+                title: 'Organization',
+                count: 2,
+                url: route('organizations.index', {}, false),
+                icon: Building,
+            },
+            {
+                title: 'Contact',
+                count: 2,
+                url: route('contacts.index', {}, false),
+                icon: Contact,
+            },
+            {
+                title: 'User',
+                count: 2,
+                url: route('users.index', {}, false),
+                icon: Users,
+            },
+            {
+                title: 'Reverb Demo',
+                url: route('reverb.index', {}, false),
+                icon: ChevronsLeftRightEllipsis,
+            },
+        ],
+        [],
+    );
 
     return (
         <Sidebar collapsible="icon" variant="inset">
