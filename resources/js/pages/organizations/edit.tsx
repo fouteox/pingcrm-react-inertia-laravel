@@ -252,64 +252,62 @@ export default function Edit() {
             <h2 className="mt-12 mb-6 text-lg font-semibold">{t('Contact', { count: 2 })}</h2>
 
             <TableContainer>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>{t('Name')}</TableHead>
-                            <TableHead>{t('City')}</TableHead>
-                            <TableHead colSpan={2}>{t('Phone')}</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {organization.contacts.map(({ id, name, phone, city, deleted_at }) => {
-                            return (
-                                <TableRow key={id}>
-                                    <TableCell className="relative p-2">
-                                        <div className="absolute inset-0 z-10">
-                                            <Link href={route('contacts.edit', id)} prefetch className="block h-full w-full">
-                                                <span className="sr-only">Modifier {name}</span>
-                                            </Link>
-                                        </div>
-                                        <div className="relative z-0 max-w-full overflow-hidden text-ellipsis whitespace-nowrap">
-                                            {name}
-                                            {deleted_at && <Trash className="text-muted-foreground ml-2 h-3 w-3 shrink-0" />}
-                                        </div>
-                                    </TableCell>
-                                    <TableCell className="relative p-2">
-                                        <div className="absolute inset-0 z-10">
-                                            <Link href={route('contacts.edit', id)} prefetch tabIndex={-1} className="block h-full w-full">
-                                                <span className="sr-only">Modifier {name}</span>
-                                            </Link>
-                                        </div>
-                                        <div className="relative z-0 max-w-full overflow-hidden text-ellipsis whitespace-nowrap">{city}</div>
-                                    </TableCell>
-                                    <TableCell className="relative p-2">
-                                        <div className="absolute inset-0 z-10">
-                                            <Link href={route('contacts.edit', id)} prefetch tabIndex={-1} className="block h-full w-full">
-                                                <span className="sr-only">Modifier {name}</span>
-                                            </Link>
-                                        </div>
-                                        <div className="relative z-0 max-w-full overflow-hidden text-ellipsis whitespace-nowrap">{phone}</div>
-                                    </TableCell>
-                                    <TableCell className="w-px">
-                                        <Button asChild variant="ghost" size="icon">
-                                            <Link tabIndex={-1} href={route('contacts.edit', id)} prefetch>
-                                                <ChevronRight className="text-muted-foreground h-4 w-4" />
-                                            </Link>
-                                        </Button>
-                                    </TableCell>
-                                </TableRow>
-                            );
-                        })}
-                        {organization.contacts.length === 0 && (
-                            <TableRow>
-                                <TableCell colSpan={4} className="h-24 text-center">
-                                    {t('No contacts found.')}
+                <TableHeader>
+                    <TableRow>
+                        <TableHead>{t('Name')}</TableHead>
+                        <TableHead>{t('City')}</TableHead>
+                        <TableHead colSpan={2}>{t('Phone')}</TableHead>
+                    </TableRow>
+                </TableHeader>
+                <TableBody>
+                    {organization.contacts.map(({ id, name, phone, city, deleted_at }) => {
+                        return (
+                            <TableRow key={id}>
+                                <TableCell className="relative p-2">
+                                    <div className="absolute inset-0 z-10">
+                                        <Link href={route('contacts.edit', id)} prefetch className="block h-full w-full">
+                                            <span className="sr-only">Modifier {name}</span>
+                                        </Link>
+                                    </div>
+                                    <div className="relative z-0 max-w-full overflow-hidden text-ellipsis whitespace-nowrap">
+                                        {name}
+                                        {deleted_at && <Trash className="text-muted-foreground ml-2 h-3 w-3 shrink-0" />}
+                                    </div>
+                                </TableCell>
+                                <TableCell className="relative p-2">
+                                    <div className="absolute inset-0 z-10">
+                                        <Link href={route('contacts.edit', id)} prefetch tabIndex={-1} className="block h-full w-full">
+                                            <span className="sr-only">Modifier {name}</span>
+                                        </Link>
+                                    </div>
+                                    <div className="relative z-0 max-w-full overflow-hidden text-ellipsis whitespace-nowrap">{city}</div>
+                                </TableCell>
+                                <TableCell className="relative p-2">
+                                    <div className="absolute inset-0 z-10">
+                                        <Link href={route('contacts.edit', id)} prefetch tabIndex={-1} className="block h-full w-full">
+                                            <span className="sr-only">Modifier {name}</span>
+                                        </Link>
+                                    </div>
+                                    <div className="relative z-0 max-w-full overflow-hidden text-ellipsis whitespace-nowrap">{phone}</div>
+                                </TableCell>
+                                <TableCell className="w-px">
+                                    <Button asChild variant="ghost" size="icon">
+                                        <Link tabIndex={-1} href={route('contacts.edit', id)} prefetch>
+                                            <ChevronRight className="text-muted-foreground h-4 w-4" />
+                                        </Link>
+                                    </Button>
                                 </TableCell>
                             </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
+                        );
+                    })}
+                    {organization.contacts.length === 0 && (
+                        <TableRow>
+                            <TableCell colSpan={4} className="h-24 text-center">
+                                {t('No contacts found.')}
+                            </TableCell>
+                        </TableRow>
+                    )}
+                </TableBody>
             </TableContainer>
         </AppLayout>
     );
