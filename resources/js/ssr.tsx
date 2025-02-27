@@ -1,3 +1,4 @@
+import { applyLayoutToPage } from '@/lib/layout-resolver';
 import { Page } from '@inertiajs/core';
 import { createInertiaApp } from '@inertiajs/react';
 import createServer from '@inertiajs/react/server';
@@ -14,7 +15,15 @@ createServer((page: Page) =>
         page,
         render: ReactDOMServer.renderToString,
         title: (title) => `${title} - ${appName}`,
-        resolve: (name) => resolvePageComponent(`./pages/${name}.tsx`, import.meta.glob('./pages/**/*.tsx')),
+        resolve: (name) => {
+            const pageModule = resolvePageComponent(`./pages/${name}.tsx`, import.meta.glob('./pages/**/*.tsx'));
+
+            pageModule.then((module) => {
+                applyLayoutToPage(module, name);
+            });
+
+            return pageModule;
+        },
         setup: ({ App, props }) => {
             /* eslint-disable */
             // @ts-expect-error

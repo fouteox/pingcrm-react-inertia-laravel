@@ -3,7 +3,7 @@ import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuButton, Side
 import { useAppearance, type Appearance } from '@/hooks/use-appearance';
 import { cn } from '@/lib/utils';
 import { ChevronsUpDown, Globe, Monitor, Moon, Sun } from 'lucide-react';
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const LANGUAGES = [
@@ -31,7 +31,7 @@ export function NavFooter() {
     ];
 
     return (
-        <SidebarGroup className='mt-auto group-data-[collapsible=icon]:p-0'>
+        <SidebarGroup className="mt-auto group-data-[collapsible=icon]:p-0">
             <SidebarGroupContent>
                 <SidebarMenu>
                     <SidebarMenuItem>
@@ -43,15 +43,11 @@ export function NavFooter() {
                                     <ChevronsUpDown className="ml-auto size-4" />
                                 </SidebarMenuButton>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent
-                                className="w-(--radix-dropdown-menu-trigger-width) min-w-56"
-                                align="center"
-                                side="top"
-                            >
+                            <DropdownMenuContent className="w-(--radix-dropdown-menu-trigger-width) min-w-56" align="center" side="top">
                                 {LANGUAGES.map((language) => (
                                     <DropdownMenuItem key={language.code} onClick={() => handleLanguageChange(language)}>
                                         <span
-                                            className={`fib fi-${language.flag} mr-2 rounded-sm size-5`}
+                                            className={`fib fi-${language.flag} mr-2 size-5 rounded-sm`}
                                             role="img"
                                             aria-label={`Drapeau ${language.name}`}
                                         />
