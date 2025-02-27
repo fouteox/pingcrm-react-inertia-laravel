@@ -1,6 +1,7 @@
-import AppLayout from '@/layouts/app-layout';
+import { usePageActions } from '@/contexts/page-context';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -12,9 +13,14 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 export default function Dashboard() {
     const { t } = useTranslation();
+    const { setBreadcrumbs } = usePageActions();
+
+    useEffect(() => {
+        setBreadcrumbs(breadcrumbs);
+    }, [setBreadcrumbs]);
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <>
             <Head title={t('Dashboard')} />
 
             <h1 className="mb-8 text-3xl font-bold">{t('Dashboard')}</h1>
@@ -49,6 +55,6 @@ export default function Dashboard() {
                     }),
                 }}
             />
-        </AppLayout>
+        </>
     );
 }

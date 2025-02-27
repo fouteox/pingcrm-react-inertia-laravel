@@ -1,15 +1,15 @@
 import { Button } from '@/components/ui/button';
-import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem, Organization, SharedData } from '@/types';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ChevronRight, Loader2, Trash } from 'lucide-react';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Form, FormInput, FormLabel, FormMessage } from '@/components/form';
 import { TableContainer } from '@/components/table-container';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { usePageActions } from '@/contexts/page-context';
 import { useDeletionControls } from '@/hooks/use-deletion-controls';
 
 interface EditPageProps extends SharedData {
@@ -18,20 +18,28 @@ interface EditPageProps extends SharedData {
 
 export default function Edit() {
     const { t } = useTranslation();
+    const { setBreadcrumbs } = usePageActions();
 
     const { organization } = usePage<EditPageProps>().props;
 
-    const breadcrumbs: BreadcrumbItem[] = [
-        {
-            title: 'Organization',
-            count: 2,
-            href: route('organizations.index'),
-        },
-        {
-            title: organization.name,
-            href: route('organizations.edit', organization.id),
-        },
-    ];
+    const breadcrumbs: BreadcrumbItem[] = React.useMemo(
+        () => [
+            {
+                title: 'Organization',
+                count: 2,
+                href: route('organizations.index'),
+            },
+            {
+                title: organization.name,
+                href: route('organizations.edit', organization.id),
+            },
+        ],
+        [organization.name, organization.id],
+    );
+
+    useEffect(() => {
+        setBreadcrumbs(breadcrumbs);
+    }, [breadcrumbs, setBreadcrumbs]);
 
     const form = useForm({
         name: organization.name || '',
@@ -67,7 +75,7 @@ export default function Edit() {
     });
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <>
             <Head title={form.data.name} />
 
             {organization.deleted_at && showDeleteControls()}
@@ -309,6 +317,6 @@ export default function Edit() {
                     )}
                 </TableBody>
             </TableContainer>
-        </AppLayout>
+        </>
     );
 }

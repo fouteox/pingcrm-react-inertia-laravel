@@ -4,10 +4,11 @@ import SearchFilter from '@/components/search-filter';
 import { TableContainer } from '@/components/table-container';
 import { Button } from '@/components/ui/button';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import AppLayout from '@/layouts/app-layout';
+import { usePageActions } from '@/contexts/page-context';
 import { BreadcrumbItem, Contact, PaginatedData, SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { ChevronRight, Trash } from 'lucide-react';
+import { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface IndexPageProps extends SharedData {
@@ -24,6 +25,11 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 export default function Index() {
     const { t } = useTranslation();
+    const { setBreadcrumbs } = usePageActions();
+
+    useEffect(() => {
+        setBreadcrumbs(breadcrumbs);
+    }, [setBreadcrumbs]);
 
     const { contacts } = usePage<IndexPageProps>().props;
     const {
@@ -32,7 +38,7 @@ export default function Index() {
     } = contacts;
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <>
             <Head title={t('Contact', { count: 2 })} />
 
             <div className="flex h-full w-full flex-col">
@@ -120,6 +126,6 @@ export default function Index() {
                     <InertiaPagination links={links} />
                 </div>
             </div>
-        </AppLayout>
+        </>
     );
 }

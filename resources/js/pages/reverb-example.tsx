@@ -1,9 +1,9 @@
 import { Button } from '@/components/ui/button';
+import { usePageActions } from '@/contexts/page-context';
 import { useReverbNotification } from '@/contexts/ReverbExampleNotificationContext';
-import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem } from '@/types';
 import { Head, useForm } from '@inertiajs/react';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
@@ -22,6 +22,11 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 export default function ReverbExample() {
     const { t } = useTranslation();
+    const { setBreadcrumbs } = usePageActions();
+
+    useEffect(() => {
+        setBreadcrumbs(breadcrumbs);
+    }, [setBreadcrumbs]);
 
     const { addUuid } = useReverbNotification();
     const form = useForm<FormData>({
@@ -48,7 +53,7 @@ export default function ReverbExample() {
     };
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <>
             <Head title={t('Reverb Demo')} />
 
             <h1 className="mb-4 text-xl font-bold">{t('Reverb Demo')}</h1>
@@ -65,6 +70,6 @@ export default function ReverbExample() {
                     {form.processing ? t('Processing') : t('Send')}
                 </Button>
             </form>
-        </AppLayout>
+        </>
     );
 }

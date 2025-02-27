@@ -1,13 +1,13 @@
 import { Button } from '@/components/ui/button';
-import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem, SharedData, User } from '@/types';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { Loader2 } from 'lucide-react';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Form, FormInput, FormLabel, FormMessage } from '@/components/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { usePageActions } from '@/contexts/page-context';
 import { useDeletionControls } from '@/hooks/use-deletion-controls';
 
 interface EditPageProps extends SharedData {
@@ -16,20 +16,28 @@ interface EditPageProps extends SharedData {
 
 export default function Edit() {
     const { t } = useTranslation();
+    const { setBreadcrumbs } = usePageActions();
 
     const { user } = usePage<EditPageProps>().props;
 
-    const breadcrumbs: BreadcrumbItem[] = [
-        {
-            title: 'User',
-            count: 2,
-            href: route('users.index'),
-        },
-        {
-            title: `${user.first_name} ${user.last_name}`,
-            href: route('users.edit', user.id),
-        },
-    ];
+    const breadcrumbs: BreadcrumbItem[] = React.useMemo(
+        () => [
+            {
+                title: 'User',
+                count: 2,
+                href: route('users.index'),
+            },
+            {
+                title: `${user.first_name} ${user.last_name}`,
+                href: route('users.edit', user.id),
+            },
+        ],
+        [user.first_name, user.last_name, user.id],
+    );
+
+    useEffect(() => {
+        setBreadcrumbs(breadcrumbs);
+    }, [breadcrumbs, setBreadcrumbs]);
 
     const form = useForm({
         first_name: user.first_name || '',
@@ -72,7 +80,7 @@ export default function Edit() {
     });
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <>
             <Head title={`${form.data.first_name} ${form.data.last_name}`} />
 
             {!user.can_delete ? (
@@ -200,6 +208,6 @@ export default function Edit() {
                     </div>
                 </Form>
             </div>
-        </AppLayout>
+        </>
     );
 }

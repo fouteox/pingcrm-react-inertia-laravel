@@ -1,10 +1,38 @@
-import AuthLayoutTemplate from '@/layouts/auth/auth-simple-layout';
+import AppLogoIcon from '@/components/app-logo-icon';
+import { usePageContext } from '@/contexts/page-context';
+import { Link } from '@inertiajs/react';
 import { ReactNode } from 'react';
 
-export default function AuthLayout({ children, title, description, ...props }: { children: ReactNode; title: string; description: string }) {
+interface AuthLayoutProps {
+    children: ReactNode;
+    name?: string;
+    title?: string;
+    description?: string;
+}
+
+export default function AuthSimpleLayout({ children }: AuthLayoutProps) {
+    const { authTitle, authDescription } = usePageContext();
+
     return (
-        <AuthLayoutTemplate title={title} description={description} {...props}>
-            {children}
-        </AuthLayoutTemplate>
+        <div className="bg-background flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
+            <div className="w-full max-w-sm">
+                <div className="flex flex-col gap-8">
+                    <div className="flex flex-col items-center gap-4">
+                        <Link href={route('dashboard')} className="flex flex-col items-center gap-2 font-medium">
+                            <div className="mb-1 flex items-center justify-center rounded-md">
+                                <AppLogoIcon className="h-20 w-52 fill-current text-[var(--foreground)] dark:text-white" />
+                            </div>
+                            <span className="sr-only">{authTitle}</span>
+                        </Link>
+
+                        <div className="space-y-2 text-center">
+                            <h1 className="text-xl font-medium">{authTitle}</h1>
+                            <p className="text-muted-foreground text-center text-sm">{authDescription}</p>
+                        </div>
+                    </div>
+                    {children}
+                </div>
+            </div>
+        </div>
     );
 }

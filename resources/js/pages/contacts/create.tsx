@@ -1,13 +1,13 @@
 import { Button } from '@/components/ui/button';
-import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem, Organization, SharedData } from '@/types';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { Loader2 } from 'lucide-react';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Form, FormInput, FormLabel, FormMessage } from '@/components/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { usePageActions } from '@/contexts/page-context';
 
 interface CreatePageProps extends SharedData {
     organizations: Organization[];
@@ -41,6 +41,11 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 export default function Create() {
     const { t } = useTranslation();
+    const { setBreadcrumbs } = usePageActions();
+
+    useEffect(() => {
+        setBreadcrumbs(breadcrumbs);
+    }, [setBreadcrumbs]);
 
     const { organizations } = usePage<CreatePageProps>().props;
     const form = useForm<ContactFormData>({
@@ -62,7 +67,7 @@ export default function Create() {
     }
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <>
             <Head title={t('Create Contact')} />
 
             <div className="max-w-3xl">
@@ -294,6 +299,6 @@ export default function Create() {
                     </div>
                 </Form>
             </div>
-        </AppLayout>
+        </>
     );
 }

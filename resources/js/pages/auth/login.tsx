@@ -4,10 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import AuthLayout from '@/layouts/auth-layout';
+import { usePageActions } from '@/contexts/page-context';
 import { Head, useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
-import { FormEvent } from 'react';
+import { FormEvent, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 interface LoginForm {
@@ -24,6 +24,11 @@ interface LoginProps {
 
 export default function Login({ status, canResetPassword }: LoginProps) {
     const { t } = useTranslation();
+    const { setAuthInfo } = usePageActions();
+
+    useEffect(() => {
+        setAuthInfo(t('Log in to your account'), t('Enter your email and password below to log in'));
+    }, [setAuthInfo, t]);
 
     const { data, setData, post, processing, errors, reset } = useForm<LoginForm>({
         email: 'johndoe@example.com',
@@ -40,7 +45,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
     };
 
     return (
-        <AuthLayout title={t('Log in to your account')} description={t('Enter your email and password below to log in')}>
+        <>
             <Head title={t('Login')} />
 
             <form className="flex flex-col gap-6" onSubmit={submit}>
@@ -95,6 +100,6 @@ export default function Login({ status, canResetPassword }: LoginProps) {
             </form>
 
             {status && <div className="mb-4 text-center text-sm font-medium text-green-600">{status}</div>}
-        </AuthLayout>
+        </>
     );
 }

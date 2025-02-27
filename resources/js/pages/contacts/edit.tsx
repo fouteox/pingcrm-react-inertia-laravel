@@ -1,13 +1,13 @@
 import { Button } from '@/components/ui/button';
-import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem, Contact, Organization, SharedData } from '@/types';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { Loader2 } from 'lucide-react';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Form, FormInput, FormLabel, FormMessage } from '@/components/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { usePageActions } from '@/contexts/page-context';
 import { useDeletionControls } from '@/hooks/use-deletion-controls';
 
 interface EditPageProps extends SharedData {
@@ -17,20 +17,28 @@ interface EditPageProps extends SharedData {
 
 export default function Edit() {
     const { t } = useTranslation();
+    const { setBreadcrumbs } = usePageActions();
 
     const { contact, organizations } = usePage<EditPageProps>().props;
 
-    const breadcrumbs: BreadcrumbItem[] = [
-        {
-            title: 'Contact',
-            count: 2,
-            href: route('contacts.index'),
-        },
-        {
-            title: `${contact.first_name} ${contact.last_name}`,
-            href: route('contacts.edit', contact.id),
-        },
-    ];
+    const breadcrumbs: BreadcrumbItem[] = React.useMemo(
+        () => [
+            {
+                title: 'Contact',
+                count: 2,
+                href: route('contacts.index'),
+            },
+            {
+                title: `${contact.first_name} ${contact.last_name}`,
+                href: route('contacts.edit', contact.id),
+            },
+        ],
+        [contact.first_name, contact.last_name, contact.id],
+    );
+
+    useEffect(() => {
+        setBreadcrumbs(breadcrumbs);
+    }, [breadcrumbs, setBreadcrumbs]);
 
     const form = useForm({
         first_name: contact.first_name || '',
@@ -68,7 +76,7 @@ export default function Edit() {
     });
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <>
             <Head title={`${form.data.first_name} ${form.data.last_name}`} />
 
             {contact.deleted_at && showDeleteControls()}
@@ -304,6 +312,6 @@ export default function Edit() {
                     </div>
                 </Form>
             </div>
-        </AppLayout>
+        </>
     );
 }

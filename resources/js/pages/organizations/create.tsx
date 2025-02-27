@@ -1,13 +1,13 @@
 import { Button } from '@/components/ui/button';
-import AppLayout from '@/layouts/app-layout';
 import { BreadcrumbItem } from '@/types';
 import { Head, useForm } from '@inertiajs/react';
 import { Loader2 } from 'lucide-react';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Form, FormInput, FormLabel, FormMessage } from '@/components/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { usePageActions } from '@/contexts/page-context';
 
 interface OrganizationFormData {
     name: string;
@@ -35,6 +35,11 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 export default function Create() {
     const { t } = useTranslation();
+    const { setBreadcrumbs } = usePageActions();
+
+    useEffect(() => {
+        setBreadcrumbs(breadcrumbs);
+    }, [setBreadcrumbs]);
 
     const form = useForm<OrganizationFormData>({
         name: '',
@@ -53,7 +58,7 @@ export default function Create() {
     }
 
     return (
-        <AppLayout breadcrumbs={breadcrumbs}>
+        <>
             <Head title={t('Create Organization')} />
 
             <div className="max-w-3xl">
@@ -230,6 +235,6 @@ export default function Create() {
                     </div>
                 </Form>
             </div>
-        </AppLayout>
+        </>
     );
 }
