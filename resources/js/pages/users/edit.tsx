@@ -6,6 +6,7 @@ import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 import { Form, FormInput, FormLabel, FormMessage } from '@/components/form';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePageActions } from '@/contexts/page-context';
 import { useDeletionControls } from '@/hooks/use-deletion-controls';
@@ -85,9 +86,11 @@ export default function Edit() {
             <Head title={`${form.data.first_name} ${form.data.last_name}`} />
 
             {!user.can_delete ? (
-                <div className="mb-6 max-w-3xl rounded-sm border border-yellow-500 bg-yellow-400 p-4">
-                    <div className="text-yellow-800">{t('Updating the demo user is not allowed.')}</div>
-                </div>
+                <Alert className="mb-6 max-w-3xl items-center border-yellow-500 bg-yellow-100 text-yellow-800 dark:border-yellow-600/30 dark:bg-yellow-600/10 dark:text-yellow-500">
+                    <AlertDescription className="flex w-full items-center justify-between text-yellow-700 dark:text-yellow-500/90">
+                        {t('Updating the demo user is not allowed.')}
+                    </AlertDescription>
+                </Alert>
             ) : (
                 user.deleted_at && showDeleteControls()
             )}

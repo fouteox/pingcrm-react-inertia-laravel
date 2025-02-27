@@ -32,9 +32,10 @@ export default function Dashboard() {
                 className="mb-6 leading-normal"
                 dangerouslySetInnerHTML={{
                     __html: t('welcome_message', {
-                        inertia_link: '<a href="https://inertiajs.com">Inertia.js</a>',
-                        react_link: '<a href="https://react.dev/">React</a>',
-                        github_link: '<a href="https://github.com/fouteox/pingcrm-react-inertia-laravel">GitHub</a>',
+                        inertia_link: '<a href="https://inertiajs.com" class="underline underline-offset-4">Inertia.js</a>',
+                        react_link: '<a href="https://react.dev/" class="underline underline-offset-4">React</a>',
+                        github_link:
+                            '<a href="https://github.com/fouteox/pingcrm-react-inertia-laravel" class="underline underline-offset-4">GitHub</a>',
                     }),
                 }}
             />
@@ -43,8 +44,8 @@ export default function Dashboard() {
                 className="leading-normal"
                 dangerouslySetInnerHTML={{
                     __html: t('original_react_credit', {
-                        app_link: '<a href="https://github.com/liorocks/pingcrm-react">Application</a>',
-                        author_link: '<a href="https://github.com/liorocks">@liorocks</a>',
+                        app_link: '<a href="https://github.com/liorocks/pingcrm-react" class="underline underline-offset-4">Application</a>',
+                        author_link: '<a href="https://github.com/liorocks" class="underline underline-offset-4">@liorocks</a>',
                     }),
                 }}
             />
@@ -53,8 +54,8 @@ export default function Dashboard() {
                 className="mb-12 leading-normal"
                 dangerouslySetInnerHTML={{
                     __html: t('original_vue_credit', {
-                        app_link: '<a href="https://demo.inertiajs.com/">Application</a>',
-                        author_link: '<a href="https://github.com/reinink">@reinink</a>',
+                        app_link: '<a href="https://demo.inertiajs.com/" class="underline underline-offset-4">Application</a>',
+                        author_link: '<a href="https://github.com/reinink" class="underline underline-offset-4">@reinink</a>',
                     }),
                 }}
             />
