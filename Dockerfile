@@ -125,7 +125,7 @@ RUN bun install --frozen-lockfile
 COPY --link . .
 COPY --link --from=common ${ROOT}/vendor vendor
 
-RUN bun run build
+RUN bun run build:ssr
 
 ###########################################
 
@@ -133,10 +133,10 @@ FROM common AS prod
 
 USER ${USER}
 
-COPY --link --chown=${WWWUSER}:${WWWUSER} . .
-COPY --link --chown=${WWWUSER}:${WWWUSER} --from=build ${ROOT}/public public
-COPY --link --chown=${WWWUSER}:${WWWUSER} --from=build ${ROOT}/bootstrap/ssr bootstrap/ssr
-COPY --link --chown=${WWWUSER}:${WWWUSER} --from=build ${ROOT}/node_modules node_modules
+COPY --link --chown=${WWWUSER}:${WWWGROUP} . .
+COPY --link --chown=${WWWUSER}:${WWWGROUP} --from=build ${ROOT}/public public
+COPY --link --chown=${WWWUSER}:${WWWGROUP} --from=build ${ROOT}/bootstrap/ssr bootstrap/ssr
+COPY --link --chown=${WWWUSER}:${WWWGROUP} --from=build ${ROOT}/node_modules node_modules
 
 RUN mkdir -p ${ROOT}/.infrastructure \
     && mkdir -p ${ROOT}/storage/framework/{sessions,views,cache,testing} ${ROOT}/storage/logs ${ROOT}/bootstrap/cache \
