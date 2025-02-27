@@ -1,4 +1,4 @@
-import { useReverbNotification } from '@/contexts/ReverbExampleNotificationContext';
+import { useReverbNotification } from '@/contexts/reverb-context';
 import { Broadcaster } from 'laravel-echo';
 import { useEffect, useRef } from 'react';
 import { toast } from 'sonner';

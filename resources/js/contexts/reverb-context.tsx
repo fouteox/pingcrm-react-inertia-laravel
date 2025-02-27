@@ -6,7 +6,7 @@ interface ReverbNotificationContextType {
     removeUuid: (uuid: string) => void;
 }
 
-const ReverbExampleNotificationContext = createContext<ReverbNotificationContextType>({
+const ReverbContext = createContext<ReverbNotificationContextType>({
     pendingUuids: new Set(),
     addUuid: () => {},
     removeUuid: () => {},
@@ -32,7 +32,7 @@ export function ReverbExampleNotificationProvider({ children }: { children: Reac
         });
     };
 
-    return <ReverbExampleNotificationContext value={{ pendingUuids, addUuid, removeUuid }}>{children}</ReverbExampleNotificationContext>;
+    return <ReverbContext value={{ pendingUuids, addUuid, removeUuid }}>{children}</ReverbContext>;
 }
 
-export const useReverbNotification = () => useContext(ReverbExampleNotificationContext);
+export const useReverbNotification = () => useContext(ReverbContext);

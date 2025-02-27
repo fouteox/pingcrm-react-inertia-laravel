@@ -1,5 +1,6 @@
 import AppLogo from '@/components/app-logo';
 import { MobileAwareLink } from '@/components/mobile-aware-link';
+import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
@@ -57,6 +58,7 @@ export function AppSidebar() {
             </SidebarContent>
 
             <SidebarFooter>
+                <NavFooter />
                 <NavUser />
             </SidebarFooter>
         </Sidebar>
