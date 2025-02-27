@@ -9,7 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { Form, FormInput, FormLabel, FormMessage } from '@/components/form';
 import { TableContainer } from '@/components/table-container';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useDeletionControls } from '@/hooks/use-deletion-controls';
 
 interface EditPageProps extends SharedData {
