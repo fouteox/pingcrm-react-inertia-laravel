@@ -14,50 +14,18 @@ jobs:
   gather-info:
     runs-on: ubuntu-latest
     outputs:
-      host_uid: ${{ steps.get-info-from-arch.outputs.host_uid || steps.server-info.outputs.host_uid }}
-      host_gid: ${{ steps.get-info-from-arch.outputs.host_gid || steps.server-info.outputs.host_gid }}
-      host_arch: ${{ steps.get-info-from-arch.outputs.host_arch || steps.server-info.outputs.host_arch }}
-      target_platform: ${{ steps.get-info-from-arch.outputs.target_platform || steps.server-info.outputs.target_platform }}
+      host_uid: ${{ steps.server-info.outputs.host_uid }}
+      host_gid: ${{ steps.server-info.outputs.host_gid }}
+      host_arch: ${{ steps.server-info.outputs.host_arch }}
+      target_platform: ${{ steps.server-info.outputs.target_platform }}
 
     steps:
-      - name: Check for required secrets
-        id: check-arch
-        run: |
-          if [ -n "${{ secrets.ARCH }}" ] && [ -n "${{ secrets.HOST_UID }}" ] && [ -n "${{ secrets.HOST_GID }}" ]; then
-            echo "use_arch=true" >> $GITHUB_OUTPUT
-          else
-            echo "use_arch=false" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Get info from ARCH
-        id: get-info-from-arch
-        if: steps.check-arch.outputs.use_arch == 'true'
-        run: |
-          if [ "${{ secrets.ARCH }}" = "arm" ]; then
-            DOCKER_ARCH="arm64"
-          elif [ "${{ secrets.ARCH }}" = "amd" ]; then
-            DOCKER_ARCH="amd64"
-          else
-            echo "Architecture non supportée dans ARCH: ${{ secrets.ARCH }}"
-            exit 1
-          fi
-
-          HOST_UID="${{ secrets.HOST_UID }}"
-          HOST_GID="${{ secrets.HOST_GID }}"
-
-          echo "host_uid=$HOST_UID" >> $GITHUB_OUTPUT
-          echo "host_gid=$HOST_GID" >> $GITHUB_OUTPUT
-          echo "host_arch=$DOCKER_ARCH" >> $GITHUB_OUTPUT
-          echo "target_platform=linux/$DOCKER_ARCH" >> $GITHUB_OUTPUT
-
       - name: Install cloudflared
-        if: steps.check-arch.outputs.use_arch == 'false'
         run: |
           curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
           sudo dpkg -i cloudflared.deb
 
       - name: Setup SSH key
-        if: steps.check-arch.outputs.use_arch == 'false'
         uses: shimataro/ssh-key-action@v2
         with:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
@@ -72,7 +40,6 @@ jobs:
 
       - name: Get target server information
         id: server-info
-        if: steps.check-arch.outputs.use_arch == 'false'
         run: |
           SSH_UID=$(ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "id -u")
           SSH_GID=$(ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "id -g")
