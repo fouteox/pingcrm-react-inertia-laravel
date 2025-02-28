@@ -113,6 +113,7 @@
     "Explanation": "Explanation",
     "Export": "Export",
     "Export :name": "Export :name",
+    "fadogen_presentation": "Want to get a project up and running super fast? Check out {{fadogen_link}}!",
     "form_errors": "There is :count form error.|There are :count form errors.",
     "Failed Dependency": "Failed Dependency",
     "File": "File",

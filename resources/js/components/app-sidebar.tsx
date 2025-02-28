@@ -5,7 +5,7 @@ import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
-import { Building, ChevronsLeftRightEllipsis, Contact, LayoutGrid, Users } from 'lucide-react';
+import { Building, ChevronsLeftRightEllipsis, Contact, LayoutGrid, SparklesIcon, Users } from 'lucide-react';
 import React from 'react';
 
 export function AppSidebar() {
@@ -38,6 +38,11 @@ export function AppSidebar() {
                 title: 'Reverb Demo',
                 url: route('reverb.index', {}, false),
                 icon: ChevronsLeftRightEllipsis,
+            },
+            {
+                title: 'Fadogen',
+                url: route('fadogen', {}, false),
+                icon: SparklesIcon,
             },
         ],
         [],

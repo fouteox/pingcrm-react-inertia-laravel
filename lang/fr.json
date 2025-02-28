@@ -117,6 +117,7 @@
     "Explanation": "Explication",
     "Export": "Exporter",
     "Export :name": "Exporter :name",
+    "fadogen_presentation": "Voulez-vous initialiser un projet ultra rapidement ? Jetez un oeil à {{fadogen_link}} !",
     "form_errors": "Il y a :count erreur dans le formulaire.|Il y a :count erreurs dans le formulaire.",
     "Failed Dependency": "Dépendance échouée",
     "File": "Déposer",

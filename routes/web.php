@@ -10,6 +10,7 @@ use App\Http\Controllers\OrganizationsController;
 use App\Http\Controllers\ReverbExampleController;
 use App\Http\Controllers\UsersController;
 use Illuminate\Support\Facades\Route;
+use Inertia\Inertia;
 
 Route::get('/locales/{locale}/translation.json', FetchTranslationsController::class)->name('i18next.fetch');
 
@@ -41,4 +42,9 @@ Route::middleware('auth')->group(function () {
     // Reverb example
     Route::get('/reverb', [ReverbExampleController::class, 'index'])->name('reverb.index');
     Route::post('/reverb', [ReverbExampleController::class, 'store'])->name('reverb.store')->middleware('throttle:5,1');
+
+    // Fadogen
+    Route::get('/fadogen', function () {
+        return Inertia::render('fadogen');
+    })->name('fadogen');
 });
