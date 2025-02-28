@@ -39,7 +39,6 @@ export default function ReverbExample() {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         const uuid = uuidv4();
-        addUuid(uuid);
 
         form.transform(() => ({
             uuid,
@@ -47,6 +46,9 @@ export default function ReverbExample() {
 
         form.post(route('reverb.store'), {
             preserveScroll: true,
+            onSuccess: () => {
+                addUuid(uuid);
+            },
             onError: (errors) => {
                 if (errors.error) {
                     toast.error(errors.error);
