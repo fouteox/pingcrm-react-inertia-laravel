@@ -149,10 +149,10 @@ jobs:
         run: |
           echo "${{ secrets.ENV_FILE_BASE64 }}" | base64 -d > temp.env
           {
-            DB_DATABASE=$(grep DB_DATABASE temp.env | cut -d '=' -f2-)
-            DB_USERNAME=$(grep DB_USERNAME temp.env | cut -d '=' -f2-)
-            DB_PASSWORD=$(grep DB_PASSWORD temp.env | cut -d '=' -f2-)
-            REDIS_PASSWORD=$(grep REDIS_PASSWORD temp.env | cut -d '=' -f2-)
+            DB_DATABASE=$(grep -E "^DB_DATABASE=" temp.env | cut -d '=' -f2-)
+            DB_USERNAME=$(grep -E "^DB_USERNAME=" temp.env | cut -d '=' -f2-)
+            DB_PASSWORD=$(grep -E "^DB_PASSWORD=" temp.env | cut -d '=' -f2-)
+            REDIS_PASSWORD=$(grep -E "^REDIS_PASSWORD=" temp.env | cut -d '=' -f2-)
           } 2>/dev/null
           shred -u temp.env
 
