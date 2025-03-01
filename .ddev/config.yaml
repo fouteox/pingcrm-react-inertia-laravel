@@ -2,7 +2,7 @@ name: pingcrm
 type: laravel
 docroot: public
 php_version: "8.4"
-webserver_type: nginx-fpm
+webserver_type: generic
 xdebug_enabled: false
 additional_hostnames: []
 additional_fqdns: []

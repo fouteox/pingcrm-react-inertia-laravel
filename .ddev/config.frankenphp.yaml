@@ -1,0 +1,10 @@
+#ddev-generated
+web_extra_daemons:
+  - name: "frankenphp"
+    command: "frankenphp php-cli ${DDEV_COMPOSER_ROOT}/artisan octane:frankenphp --caddyfile=/var/www/html/.ddev/Caddyfile --watch"
+    directory: /var/www/html
+web_extra_exposed_ports:
+  - name: "frankenphp"
+    container_port: 8000
+    http_port: 80
+    https_port: 443
