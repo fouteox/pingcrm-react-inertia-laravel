@@ -37,9 +37,5 @@ final class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Vite::prefetch(concurrency: 3);
-
-        if ($this->app->environment('production') || $this->app->environment('local')) {
-            URL::forceScheme('https');
-        }
     }
 }
