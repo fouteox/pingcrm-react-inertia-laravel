@@ -4,34 +4,39 @@ import laravel from 'laravel-vite-plugin';
 import { resolve } from 'node:path';
 import { defineConfig } from 'vite';
 
-const port = 5173;
-const origin = `${process.env.DDEV_PRIMARY_URL}:${port}`;
+export default defineConfig(() => {
+    const config = {
+        plugins: [
+            laravel({
+                input: 'resources/js/app.tsx',
+                ssr: 'resources/js/ssr.tsx',
+                refresh: true,
+            }),
+            react(),
+            tailwindcss(),
+        ],
+        esbuild: {
+            jsx: 'automatic',
+        },
+        resolve: {
+            alias: {
+                'ziggy-js': resolve(__dirname, 'vendor/tightenco/ziggy'),
+            },
+        },
+    };
 
-export default defineConfig({
-    server: {
-        host: '0.0.0.0',
-        port: port,
-        strictPort: true,
-        origin: origin,
-        cors: {
-            origin: process.env.DDEV_PRIMARY_URL,
-        },
-    },
-    plugins: [
-        laravel({
-            input: 'resources/js/app.tsx',
-            ssr: 'resources/js/ssr.tsx',
-            refresh: true,
-        }),
-        react(),
-        tailwindcss(),
-    ],
-    esbuild: {
-        jsx: 'automatic',
-    },
-    resolve: {
-        alias: {
-            'ziggy-js': resolve(__dirname, 'vendor/tightenco/ziggy'),
-        },
-    },
+    if (process.env.DDEV_PRIMARY_URL) {
+        const port = 5173;
+        config.server = {
+            host: '0.0.0.0',
+            port: port,
+            strictPort: true,
+            origin: `${process.env.DDEV_PRIMARY_URL}:${port}`,
+            cors: {
+                origin: process.env.DDEV_PRIMARY_URL,
+            },
+        };
+    }
+
+    return config;
 });

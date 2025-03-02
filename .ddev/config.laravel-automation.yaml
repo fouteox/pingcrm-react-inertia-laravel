@@ -3,7 +3,7 @@ hooks:
   post-start:
     - exec: >
         if [ ! -f .env ]; then
-          cp .env.example .env;
+          cp .env.ddev .env;
         fi
     - exec: >
         if [ "$DATABASE" = "sqlite" ]; then
