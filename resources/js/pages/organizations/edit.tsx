@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { BreadcrumbItem, Organization, SharedData } from '@/types';
+import { BreadcrumbItem, Organization, OrganizationFormData, SharedData } from '@/types';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { ChevronRight, Loader2, Trash } from 'lucide-react';
 import React, { useEffect } from 'react';
@@ -41,7 +41,7 @@ export default function Edit() {
         setBreadcrumbs(breadcrumbs);
     }, [breadcrumbs, setBreadcrumbs]);
 
-    const form = useForm({
+    const form = useForm<Required<OrganizationFormData>>({
         name: organization.name || '',
         email: organization.email || '',
         phone: organization.phone || '',

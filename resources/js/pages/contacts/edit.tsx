@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { BreadcrumbItem, Contact, Organization, SharedData } from '@/types';
+import { BreadcrumbItem, Contact, ContactFormData, Organization, SharedData } from '@/types';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { Loader2 } from 'lucide-react';
 import React, { useEffect } from 'react';
@@ -40,7 +40,7 @@ export default function Edit() {
         setBreadcrumbs(breadcrumbs);
     }, [breadcrumbs, setBreadcrumbs]);
 
-    const form = useForm({
+    const form = useForm<Required<ContactFormData>>({
         first_name: contact.first_name || '',
         last_name: contact.last_name || '',
         organization_id: contact.organization_id ? contact.organization_id.toString() : '',

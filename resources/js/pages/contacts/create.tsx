@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { BreadcrumbItem, Organization, SharedData } from '@/types';
+import { BreadcrumbItem, ContactFormData, Organization, SharedData } from '@/types';
 import { Head, useForm, usePage } from '@inertiajs/react';
 import { Loader2 } from 'lucide-react';
 import React, { useEffect } from 'react';
@@ -11,20 +11,6 @@ import { usePageActions } from '@/contexts/page-context';
 
 interface CreatePageProps extends SharedData {
     organizations: Organization[];
-}
-
-interface ContactFormData {
-    first_name: string;
-    last_name: string;
-    organization_id: string;
-    email: string;
-    phone: string;
-    address: string;
-    city: string;
-    region: string;
-    country: string;
-    postal_code: string;
-    [key: string]: string;
 }
 
 export default function Create() {
@@ -51,7 +37,7 @@ export default function Create() {
     }, [breadcrumbs, setBreadcrumbs]);
 
     const { organizations } = usePage<CreatePageProps>().props;
-    const form = useForm<ContactFormData>({
+    const form = useForm<Required<ContactFormData>>({
         first_name: '',
         last_name: '',
         organization_id: '',

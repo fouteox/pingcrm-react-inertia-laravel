@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { BreadcrumbItem } from '@/types';
+import { BreadcrumbItem, UserFormData } from '@/types';
 import { Head, useForm } from '@inertiajs/react';
 import { Loader2 } from 'lucide-react';
 import React, { FormEvent, useEffect } from 'react';
@@ -8,15 +8,6 @@ import { useTranslation } from 'react-i18next';
 
 import { Form, FormInput, FormLabel, FormMessage } from '@/components/form';
 import { usePageActions } from '@/contexts/page-context';
-
-interface UserFormData {
-    first_name: string;
-    last_name: string;
-    email: string;
-    password: string;
-    owner: string;
-    [key: string]: string;
-}
 
 export default function Create() {
     const { t } = useTranslation();
@@ -41,7 +32,7 @@ export default function Create() {
         setBreadcrumbs(breadcrumbs);
     }, [breadcrumbs, setBreadcrumbs]);
 
-    const form = useForm<UserFormData>({
+    const form = useForm<Required<UserFormData>>({
         first_name: '',
         last_name: '',
         email: '',

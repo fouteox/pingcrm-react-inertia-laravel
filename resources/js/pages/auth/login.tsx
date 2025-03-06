@@ -10,12 +10,12 @@ import { LoaderCircle } from 'lucide-react';
 import { FormEvent, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
-interface LoginForm {
+type LoginForm = {
     email: string;
     password: string;
     remember: boolean;
     [key: string]: string | boolean;
-}
+};
 
 interface LoginProps {
     status?: string;
@@ -30,7 +30,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
         setAuthInfo(t('Log in to your account'), t('Enter your email and password below to log in'));
     }, [setAuthInfo, t]);
 
-    const { data, setData, post, processing, errors, reset } = useForm<LoginForm>({
+    const { data, setData, post, processing, errors, reset } = useForm<Required<LoginForm>>({
         email: 'johndoe@example.com',
         password: 'secret',
         remember: false,

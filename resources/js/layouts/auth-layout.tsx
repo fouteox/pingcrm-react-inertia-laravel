@@ -1,16 +1,9 @@
 import AppLogoIcon from '@/components/app-logo-icon';
 import { usePageContext } from '@/contexts/page-context';
 import { Link } from '@inertiajs/react';
-import { ReactNode } from 'react';
+import { PropsWithChildren } from 'react';
 
-interface AuthLayoutProps {
-    children: ReactNode;
-    name?: string;
-    title?: string;
-    description?: string;
-}
-
-export default function AuthSimpleLayout({ children }: AuthLayoutProps) {
+export default function AuthSimpleLayout({ children }: PropsWithChildren) {
     const { authTitle, authDescription } = usePageContext();
 
     return (

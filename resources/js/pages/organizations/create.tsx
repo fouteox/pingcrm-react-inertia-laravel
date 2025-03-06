@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button';
-import { BreadcrumbItem } from '@/types';
+import { BreadcrumbItem, OrganizationFormData } from '@/types';
 import { Head, useForm } from '@inertiajs/react';
 import { Loader2 } from 'lucide-react';
 import React, { useEffect } from 'react';
@@ -8,18 +8,6 @@ import { useTranslation } from 'react-i18next';
 import { Form, FormInput, FormLabel, FormMessage } from '@/components/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePageActions } from '@/contexts/page-context';
-
-interface OrganizationFormData {
-    name: string;
-    email: string;
-    phone: string;
-    address: string;
-    city: string;
-    region: string;
-    country: string;
-    postal_code: string;
-    [key: string]: string;
-}
 
 export default function Create() {
     const { t } = useTranslation();
@@ -44,7 +32,7 @@ export default function Create() {
         setBreadcrumbs(breadcrumbs);
     }, [breadcrumbs, setBreadcrumbs]);
 
-    const form = useForm<OrganizationFormData>({
+    const form = useForm<Required<OrganizationFormData>>({
         name: '',
         email: '',
         phone: '',

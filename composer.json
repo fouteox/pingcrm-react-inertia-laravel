@@ -62,7 +62,7 @@
             "npx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fdba74\" \"php artisan horizon\" \"npm run dev\" --names=queue,vite"
         ],
         "dev:ssr": [
-            "npm run build",
+            "npm run build:ssr",
             "Composer\\Config::disableProcessTimeout",
             "npx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fdba74\" \"php artisan horizon\" \"php artisan inertia:start-ssr\" --names=queue,ssr"
         ],

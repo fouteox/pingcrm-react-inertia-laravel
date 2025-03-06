@@ -29,6 +29,15 @@ export interface User {
     [key: string]: unknown; // This allows for additional properties...
 }
 
+export type UserFormData = {
+    first_name: string;
+    last_name: string;
+    email: string;
+    password: string;
+    owner: string;
+    [key: string]: string;
+};
+
 export interface Organization {
     id: number;
     name: string;
@@ -42,6 +51,18 @@ export interface Organization {
     deleted_at: string;
     contacts: Contact[];
 }
+
+export type OrganizationFormData = {
+    name: string;
+    email: string;
+    phone: string;
+    address: string;
+    city: string;
+    region: string;
+    country: string;
+    postal_code: string;
+    [key: string]: string;
+};
 
 export interface Contact {
     id: number;
@@ -59,6 +80,20 @@ export interface Contact {
     organization_id: number;
     organization: Organization;
 }
+
+export type ContactFormData = {
+    first_name: string;
+    last_name: string;
+    organization_id: string;
+    email: string;
+    phone: string;
+    address: string;
+    city: string;
+    region: string;
+    country: string;
+    postal_code: string;
+    [key: string]: string;
+};
 
 export type PaginatedData<T> = {
     data: T[];
