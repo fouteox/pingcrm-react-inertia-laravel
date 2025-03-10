@@ -11,57 +11,8 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  gather-info:
-    runs-on: ubuntu-latest
-    outputs:
-      host_uid: ${{ steps.server-info.outputs.host_uid }}
-      host_gid: ${{ steps.server-info.outputs.host_gid }}
-      host_arch: ${{ steps.server-info.outputs.host_arch }}
-      target_platform: ${{ steps.server-info.outputs.target_platform }}
-
-    steps:
-      - name: Install cloudflared
-        run: |
-          curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
-          sudo dpkg -i cloudflared.deb
-
-      - name: Setup SSH key
-        uses: shimataro/ssh-key-action@v2
-        with:
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          name: id_ed25519
-          known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
-          config: |
-            Host ${{ secrets.SSH_REMOTE_HOSTNAME }}
-              ProxyCommand /usr/local/bin/cloudflared access ssh --hostname %h
-              User ${{ secrets.SSH_USER }}
-              IdentityFile ~/.ssh/id_ed25519
-              StrictHostKeyChecking accept-new
-
-      - name: Get target server information
-        id: server-info
-        run: |
-          SSH_UID=$(ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "id -u")
-          SSH_GID=$(ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "id -g")
-          SSH_ARCH=$(ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "uname -m")
-
-          if [ "$SSH_ARCH" = "aarch64" ]; then
-            DOCKER_ARCH="arm64"
-          elif [ "$SSH_ARCH" = "x86_64" ]; then
-            DOCKER_ARCH="amd64"
-          else
-            echo "Architecture non supportée: $SSH_ARCH"
-            exit 1
-          fi
-
-          echo "host_uid=$SSH_UID" >> $GITHUB_OUTPUT
-          echo "host_gid=$SSH_GID" >> $GITHUB_OUTPUT
-          echo "host_arch=$DOCKER_ARCH" >> $GITHUB_OUTPUT
-          echo "target_platform=linux/$DOCKER_ARCH" >> $GITHUB_OUTPUT
-
   build:
-    needs: gather-info
-    runs-on: ${{ needs.gather-info.outputs.host_arch == 'arm64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
+    runs-on: ${{ vars.SYSTEM_ARCH == 'aarch64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
     permissions:
       contents: read
       packages: write
@@ -99,18 +50,16 @@ jobs:
           context: .
           push: true
           target: prod
-          platforms: ${{ needs.gather-info.outputs.target_platform }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
           build-args: |
-            WWWUSER=${{ needs.gather-info.outputs.host_uid }}
-            WWWGROUP=${{ needs.gather-info.outputs.host_gid }}
-            TARGETARCH=${{ needs.gather-info.outputs.host_arch }}
+            WWWUSER=${{ secrets.SSH_UID }}
+            WWWGROUP=${{ secrets.SSH_GID }}
 
   deploy:
-    needs: [gather-info, build]
+    needs: build
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -138,51 +87,26 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Create project directory and copy compose file
+      - name: Create .env.production file
+        run: echo "${{ secrets.ENV_FILE_BASE64 }}" | base64 -d > .env.production
+
+      - name: Create project directory and copy files
         env:
           REPO_SHORT_NAME: ${{ github.event.repository.name }}
         run: |
           ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "mkdir -p ~/$REPO_SHORT_NAME"
-          scp compose.prod.yaml ${{ secrets.SSH_REMOTE_HOSTNAME }}:~/$REPO_SHORT_NAME/
-
-      - name: Extract database variables
-        run: |
-          echo "${{ secrets.ENV_FILE_BASE64 }}" | base64 -d > temp.env
-          {
-            DB_DATABASE=$(grep -E "^DB_DATABASE=" temp.env | cut -d '=' -f2-)
-            DB_USERNAME=$(grep -E "^DB_USERNAME=" temp.env | cut -d '=' -f2-)
-            DB_PASSWORD=$(grep -E "^DB_PASSWORD=" temp.env | cut -d '=' -f2-)
-            REDIS_PASSWORD=$(grep -E "^REDIS_PASSWORD=" temp.env | cut -d '=' -f2-)
-          } 2>/dev/null
-          shred -u temp.env
-
-          echo "::add-mask::$DB_DATABASE"
-          echo "::add-mask::$DB_USERNAME"
-          echo "::add-mask::$DB_PASSWORD"
-          echo "::add-mask::$REDIS_PASSWORD"
-
-          echo "db_database=$DB_DATABASE" >> $GITHUB_ENV
-          echo "db_username=$DB_USERNAME" >> $GITHUB_ENV
-          echo "db_password=$DB_PASSWORD" >> $GITHUB_ENV
-          echo "redis_password=$REDIS_PASSWORD" >> $GITHUB_ENV
+          scp compose.prod.yaml .env.production ${{ secrets.SSH_REMOTE_HOSTNAME }}:~/$REPO_SHORT_NAME/
 
       - name: Deploy with Docker context
         env:
           REPO_SHORT_NAME: ${{ github.event.repository.name }}
           FULL_IMAGE_NAME: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
         run: |
-          HOST_UID=$(ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "id -u")
-          HOST_GID=$(ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "id -g")
-
           echo "${{ secrets.GITHUB_TOKEN }}" | ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin"
 
           ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "cd ~/$REPO_SHORT_NAME && \
-            export DB_DATABASE='${{ env.db_database }}' && \
-            export DB_USERNAME='${{ env.db_username }}' && \
-            export DB_PASSWORD='${{ env.db_password }}' && \
-            export REDIS_PASSWORD='${{ env.redis_password }}' && \
-            export HOST_UID=$HOST_UID && \
-            export HOST_GID=$HOST_GID && \
+            export HOST_UID=${{ secrets.SSH_UID }} && \
+            export HOST_GID=${{ secrets.SSH_GID }} && \
             export IMAGE_NAME=$FULL_IMAGE_NAME && \
             docker compose -f compose.prod.yaml pull && \
             docker compose -f compose.prod.yaml up -d"

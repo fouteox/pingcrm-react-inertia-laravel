@@ -4,15 +4,16 @@ x-logging: &default-logging
     max-size: "50m"
     max-file: 6
 
+x-network: &default-network
+  internal:
+
 x-base: &base
   depends_on:
     mariadb:
       condition: service_healthy
-    redis:
+    valkey:
       condition: service_healthy
   image: ${IMAGE_NAME:-app}:latest
-  environment:
-    SERVER_NAME: :80
   user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
   ulimits:
     nofile:
@@ -35,19 +36,27 @@ services:
         APP_ENV: 'production' # to load .env.production
         WWWUSER: ${HOST_UID:-1000}
         WWWGROUP: ${HOST_GID:-1000}
-        TARGETARCH: ${HOST_ARCH:-amd64}
+    environment:
+      INERTIA_SSR: true
+      SERVER_NAME: :80
+    networks:
+      - internal
+      - traefik
     healthcheck:
       test: [ "CMD", "curl", "--fail", "localhost:8000/up" ]
       start_period: 5s
       interval: 10s
       retries: 12
-    ports:
-      - "80:8000"
+    labels:
+      traefik.enable: true
+      traefik.http.routers.fadogen.rule: Host(`${APP_HOST}`)
+      traefik.http.services.fadogen.loadbalancer.server.port: 8000
 
   horizon:
     <<: *base
     environment:
       CONTAINER_MODE: horizon
+    networks: *default-network
     depends_on:
       app:
         condition: service_healthy
@@ -56,6 +65,7 @@ services:
     <<: *base
     environment:
       CONTAINER_MODE: reverb
+    networks: *default-network
     depends_on:
       app:
         condition: service_healthy
@@ -64,11 +74,12 @@ services:
     <<: *base
     environment:
       CONTAINER_MODE: scheduler
+    networks: *default-network
     depends_on:
       app:
         condition: service_healthy
 
-  redis:
+  valkey:
     image: valkey/valkey:alpine
     ulimits:
       nofile:
@@ -80,6 +91,7 @@ services:
     volumes:
       - 'stack-valkey:/data'
     logging: *default-logging
+    networks: *default-network
     healthcheck:
       test: [ "CMD", "valkey-cli", "ping" ]
       retries: 3
@@ -110,7 +122,13 @@ services:
       timeout: 5s
       retries: 3
     restart: always
+    networks: *default-network
     logging: *default-logging
+
+networks:
+  internal:
+  traefik:
+    external: true
 
 volumes:
   app_public:
