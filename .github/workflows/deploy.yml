@@ -108,5 +108,5 @@ jobs:
             export HOST_UID=${{ secrets.SSH_UID }} && \
             export HOST_GID=${{ secrets.SSH_GID }} && \
             export IMAGE_NAME=$FULL_IMAGE_NAME && \
-            docker compose -f compose.prod.yaml pull && \
-            docker compose -f compose.prod.yaml up -d"
+            docker compose -f compose.prod.yaml --env-file .env.production pull && \
+            docker compose -f compose.prod.yaml --env-file .env.production up -d"
