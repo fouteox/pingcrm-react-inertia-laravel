@@ -49,8 +49,8 @@ services:
       retries: 12
     labels:
       traefik.enable: true
-      traefik.http.routers.fadogen.rule: Host(`${APP_HOST}`)
-      traefik.http.services.fadogen.loadbalancer.server.port: 8000
+      traefik.http.routers.pingcrm.rule: Host(`${APP_HOST}`)
+      traefik.http.services.pingcrm.loadbalancer.server.port: 8000
 
   horizon:
     <<: *base
