@@ -14,6 +14,8 @@ RUN userdel --remove --force www-data \
     && useradd -ms /bin/bash --no-log-init --no-user-group -g ${WWWGROUP} -u ${WWWUSER} ${USER} \
     && chown -R ${USER}:${USER} ${ROOT} /var/{log,run}
 
+COPY --link --chmod=755 deployment/start-container /usr/local/bin/docker-entrypoint
+
 USER ${USER}
 
 COPY --chown=${USER}:${USER} deployment/supervisord.conf /etc/
