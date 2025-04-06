@@ -1,6 +1,7 @@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
+import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar';
 import { useAppearance, type Appearance } from '@/hooks/use-appearance';
+import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
 import { ChevronsUpDown, Globe, Monitor, Moon, Sun } from 'lucide-react';
 import { useState } from 'react';
@@ -16,6 +17,8 @@ type Language = (typeof LANGUAGES)[number];
 export function NavFooter() {
     const { i18n } = useTranslation();
     const { appearance, updateAppearance } = useAppearance();
+    const { state } = useSidebar();
+    const isMobile = useIsMobile();
 
     const [currentLang, setCurrentLang] = useState<Language>(LANGUAGES.find((lang) => lang.code === i18n.language) ?? LANGUAGES[0]);
 
@@ -43,7 +46,11 @@ export function NavFooter() {
                                     <ChevronsUpDown className="ml-auto size-4" />
                                 </SidebarMenuButton>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent className="w-(--radix-dropdown-menu-trigger-width) min-w-56" align="center" side="top">
+                            <DropdownMenuContent
+                                className="w-(--radix-dropdown-menu-trigger-width) min-w-56"
+                                align="center"
+                                side={isMobile ? 'top' : state === 'collapsed' ? 'left' : 'top'}
+                            >
                                 {LANGUAGES.map((language) => (
                                     <DropdownMenuItem key={language.code} onClick={() => handleLanguageChange(language)}>
                                         <span
