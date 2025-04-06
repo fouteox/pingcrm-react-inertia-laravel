@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
@@ -30,7 +31,8 @@ final class Organization extends Model
         return $this->hasMany(Contact::class);
     }
 
-    public function scopeFilter(Builder $query, array $filters): void
+    #[Scope]
+    public function filter(Builder $query, array $filters): void
     {
         $query
             ->when($filters['search'] ?? null, fn ($query, $search) => $this->applySearchFilter($query, $search))

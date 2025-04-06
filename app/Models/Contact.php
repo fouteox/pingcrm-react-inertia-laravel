@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -38,12 +39,14 @@ final class Contact extends Model
         );
     }
 
-    public function scopeOrderByName(Builder $query): void
+    #[Scope]
+    public function orderByName(Builder $query): void
     {
         $query->orderBy('last_name')->orderBy('first_name');
     }
 
-    public function scopeFilter(Builder $query, array $filters): void
+    #[Scope]
+    public function filter(Builder $query, array $filters): void
     {
         $query
             ->when($filters['search'] ?? null, fn ($query, $search) => $this->applySearchFilter($query, $search))
