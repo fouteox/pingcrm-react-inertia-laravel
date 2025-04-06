@@ -8,15 +8,23 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
     const { t } = useTranslation();
     const page = usePage();
 
+    const getTranslatedTitle = (item: NavItem) => {
+        return t(item.title, item.count !== undefined ? { count: item.count } : undefined);
+    };
+
     return (
         <SidebarGroup className="px-2 py-0">
             <SidebarMenu>
                 {items.map((item) => (
                     <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton asChild isActive={item.url === page.url} tooltip={{ children: t(item.title) }}>
+                        <SidebarMenuButton
+                            asChild
+                            isActive={item.url === page.url}
+                            tooltip={{ children: getTranslatedTitle(item) }}
+                        >
                             <MobileAwareLink href={item.url} prefetch>
                                 {item.icon && <item.icon />}
-                                <span>{t(item.title, item.count !== undefined ? { count: item.count } : undefined)}</span>
+                                <span>{getTranslatedTitle(item)}</span>
                             </MobileAwareLink>
                         </SidebarMenuButton>
                     </SidebarMenuItem>
