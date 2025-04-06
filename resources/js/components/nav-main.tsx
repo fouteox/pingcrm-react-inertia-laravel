@@ -13,7 +13,7 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
             <SidebarMenu>
                 {items.map((item) => (
                     <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton asChild isActive={item.url === page.url}>
+                        <SidebarMenuButton asChild isActive={item.url === page.url} tooltip={{ children: item.title }}>
                             <MobileAwareLink href={item.url} prefetch>
                                 {item.icon && <item.icon />}
                                 <span>{t(item.title, item.count !== undefined ? { count: item.count } : undefined)}</span>
