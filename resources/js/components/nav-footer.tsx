@@ -66,22 +66,42 @@ export function NavFooter() {
                     </SidebarMenuItem>
 
                     <SidebarMenuItem>
-                        <div className="inline-flex w-full gap-1 rounded-md bg-neutral-100 p-1 dark:bg-neutral-800">
-                            {tabs.map(({ value, icon: Icon }) => (
-                                <button
-                                    key={value}
-                                    onClick={() => updateAppearance(value)}
-                                    className={cn(
-                                        'flex flex-1 items-center justify-center rounded-md px-3 py-1 transition-colors',
-                                        appearance === value
-                                            ? 'bg-white shadow-xs dark:bg-neutral-700 dark:text-neutral-100'
-                                            : 'text-neutral-500 hover:bg-neutral-200/60 hover:text-black dark:text-neutral-400 dark:hover:bg-neutral-700/60',
-                                    )}
-                                >
-                                    <Icon className="h-4 w-4" />
-                                </button>
-                            ))}
-                        </div>
+                        {state === 'collapsed' && !isMobile ? (
+                            <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <SidebarMenuButton className="text-neutral-600 hover:text-neutral-800 dark:text-neutral-300 dark:hover:text-neutral-100">
+                                        {appearance === 'light' && <Sun className="h-5 w-5" />}
+                                        {appearance === 'dark' && <Moon className="h-5 w-5" />}
+                                        {appearance === 'system' && <Monitor className="h-5 w-5" />}
+                                    </SidebarMenuButton>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent className="min-w-32" align="center" side={isMobile ? 'top' : 'right'}>
+                                    {tabs.map(({ value, icon: Icon }) => (
+                                        <DropdownMenuItem key={value} onClick={() => updateAppearance(value)}>
+                                            <Icon className="mr-2 h-4 w-4" />
+                                            <span>{value.charAt(0).toUpperCase() + value.slice(1)}</span>
+                                        </DropdownMenuItem>
+                                    ))}
+                                </DropdownMenuContent>
+                            </DropdownMenu>
+                        ) : (
+                            <div className="inline-flex w-full gap-1 rounded-md bg-neutral-100 p-1 dark:bg-neutral-800">
+                                {tabs.map(({ value, icon: Icon }) => (
+                                    <button
+                                        key={value}
+                                        onClick={() => updateAppearance(value)}
+                                        className={cn(
+                                            'flex flex-1 items-center justify-center rounded-md px-3 py-1 transition-colors',
+                                            appearance === value
+                                                ? 'bg-white shadow-xs dark:bg-neutral-700 dark:text-neutral-100'
+                                                : 'text-neutral-500 hover:bg-neutral-200/60 hover:text-black dark:text-neutral-400 dark:hover:bg-neutral-700/60',
+                                        )}
+                                    >
+                                        <Icon className="h-4 w-4" />
+                                    </button>
+                                ))}
+                            </div>
+                        )}
                     </SidebarMenuItem>
                 </SidebarMenu>
             </SidebarGroupContent>
