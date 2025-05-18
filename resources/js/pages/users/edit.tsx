@@ -10,6 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePageActions } from '@/contexts/page-context';
 import { useDeletionControls } from '@/hooks/use-deletion-controls';
+import { destroy, restore, update } from '@/actions/App/Http/Controllers/UsersController';
 
 interface EditPageProps extends SharedData {
     user: User & { password: string; photo: File | null };
@@ -56,21 +57,20 @@ export default function Edit() {
             password: data.password === '' ? undefined : data.password,
         }));
 
-        form.put(route('users.update', user.id), {
+        form.submit(update(user), {
             preserveScroll: true,
         });
     }
 
-    const handleDelete = async (id: number) => {
-        form.delete(route('users.destroy', id));
+    const handleDelete = async () => {
+        form.submit(destroy(user));
     };
 
-    const handleRestore = async (id: number) => {
-        form.put(route('users.restore', id));
+    const handleRestore = async () => {
+        form.submit(restore(user));
     };
 
     const { showDeleteControls } = useDeletionControls({
-        resourceId: user.id,
         isDeleted: !!user.deleted_at,
         resourceType: 'user',
         canDelete: user.can_delete,

@@ -15,6 +15,7 @@
         "laravel/reverb": "^1.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.9",
+        "laravel/wayfinder": "^0.1.6",
         "tightenco/ziggy": "^2.0"
     },
     "require-dev": {

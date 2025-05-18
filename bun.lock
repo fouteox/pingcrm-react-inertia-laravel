@@ -55,6 +55,7 @@
       "devDependencies": {
         "@eslint/js": "^9.27.0",
         "@laravel/echo-react": "^2.1.4",
+        "@laravel/vite-plugin-wayfinder": "^0.1.1",
         "chokidar": "^4.0.3",
         "concurrently": "^9.1.2",
         "eslint": "^9.27.0",
@@ -219,6 +220,8 @@
     "@jridgewell/trace-mapping": ["@jridgewell/trace-mapping@0.3.25", "", { "dependencies": { "@jridgewell/resolve-uri": "^3.1.0", "@jridgewell/sourcemap-codec": "^1.4.14" } }, "sha512-vNk6aEwybGtawWmy/PzwnGDOjCkLWSD2wqvjGGAgOAwCGWySYXfYoxt00IJkTF+8Lb57DwOb3Aa0o9CApepiYQ=="],
 
     "@laravel/echo-react": ["@laravel/echo-react@2.1.4", "", { "peerDependencies": { "pusher-js": "*", "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0", "socket.io-client": "*" } }, "sha512-Ee2rkyHmIYsmtLjlC5g3ZyccWw25B8nyuvitaCbV+g4hgMpYsiq3FIE7TbLVhmADsEb7Xs75zs9fMjCk80/d7Q=="],
+
+    "@laravel/vite-plugin-wayfinder": ["@laravel/vite-plugin-wayfinder@0.1.1", "", {}, "sha512-a5ECmABFXcaE7Mh4LDMvC24/zdR2nwcTg3tmir5h2f/wpD+u75A27ctF9+aRUavdT5j5diED8+6jlKHt1vFiKA=="],
 
     "@nodelib/fs.scandir": ["@nodelib/fs.scandir@2.1.5", "", { "dependencies": { "@nodelib/fs.stat": "2.0.5", "run-parallel": "^1.1.9" } }, "sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g=="],
 

@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { usePageActions } from '@/contexts/page-context';
 import { useDeletionControls } from '@/hooks/use-deletion-controls';
+import { destroy, restore, update } from '@/actions/App/Http/Controllers/OrganizationsController';
 
 interface EditPageProps extends SharedData {
     organization: Organization;
@@ -54,21 +55,20 @@ export default function Edit() {
 
     function onSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
-        form.put(route('organizations.update', organization.id), {
+        form.submit(update(organization), {
             preserveScroll: true,
         });
     }
 
-    const handleDelete = async (id: number) => {
-        form.delete(route('organizations.destroy', id));
+    const handleDelete = async () => {
+        form.submit(destroy(organization));
     };
 
-    const handleRestore = async (id: number) => {
-        form.put(route('organizations.restore', id));
+    const handleRestore = async () => {
+        form.submit(restore(organization));
     };
 
     const { showDeleteControls } = useDeletionControls({
-        resourceId: organization.id,
         isDeleted: !!organization.deleted_at,
         resourceType: 'organization',
         onDelete: handleDelete,

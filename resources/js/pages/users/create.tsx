@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 
 import { Form, FormInput, FormLabel, FormMessage } from '@/components/form';
 import { usePageActions } from '@/contexts/page-context';
+import { store } from '@/actions/App/Http/Controllers/UsersController';
 
 export default function Create() {
     const { t } = useTranslation();
@@ -42,7 +43,7 @@ export default function Create() {
 
     function onSubmit(e: FormEvent<HTMLFormElement>) {
         e.preventDefault();
-        form.post(route('users.store'));
+        form.submit(store());
     }
 
     return (

@@ -2,12 +2,11 @@ import { DeletionControls } from '@/components/deletion-controls';
 import React, { ReactElement } from 'react';
 
 export interface UseDeletionControlsOptions {
-    resourceId: number;
     isDeleted: boolean;
     resourceType: 'contact' | 'organization' | 'user';
     canDelete?: boolean;
-    onDelete: (id: number) => Promise<void>;
-    onRestore: (id: number) => Promise<void>;
+    onDelete: () => Promise<void>;
+    onRestore: () => Promise<void>;
     processing: boolean;
 }
 
@@ -16,7 +15,6 @@ export interface DeletionControlsResult {
 }
 
 export const useDeletionControls = ({
-    resourceId,
     isDeleted,
     resourceType,
     canDelete = true,
@@ -32,9 +30,9 @@ export const useDeletionControls = ({
         }
 
         if (isDeleted) {
-            await onRestore(resourceId);
+            await onRestore();
         } else {
-            await onDelete(resourceId);
+            await onDelete();
         }
     };
 

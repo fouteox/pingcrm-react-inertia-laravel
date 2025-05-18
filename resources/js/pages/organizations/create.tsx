@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { Form, FormInput, FormLabel, FormMessage } from '@/components/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePageActions } from '@/contexts/page-context';
+import { store } from '@/actions/App/Http/Controllers/OrganizationsController';
 
 export default function Create() {
     const { t } = useTranslation();
@@ -45,7 +46,7 @@ export default function Create() {
 
     function onSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
-        form.post(route('organizations.store'));
+        form.submit(store());
     }
 
     return (

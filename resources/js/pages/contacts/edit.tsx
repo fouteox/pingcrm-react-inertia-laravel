@@ -9,6 +9,7 @@ import { Form, FormInput, FormLabel, FormMessage } from '@/components/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePageActions } from '@/contexts/page-context';
 import { useDeletionControls } from '@/hooks/use-deletion-controls';
+import { destroy, restore, update } from '@/actions/App/Http/Controllers/ContactsController';
 
 interface EditPageProps extends SharedData {
     contact: Contact;
@@ -55,21 +56,20 @@ export default function Edit() {
 
     function onSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
-        form.put(route('contacts.update', contact.id), {
+        form.submit(update(contact), {
             preserveScroll: true,
         });
     }
 
-    const handleDelete = async (id: number) => {
-        form.delete(route('contacts.destroy', id));
+    const handleDelete = async () => {
+        form.submit(destroy(contact));
     };
 
-    const handleRestore = async (id: number) => {
-        form.put(route('contacts.restore', id));
+    const handleRestore = async () => {
+        form.submit(restore(contact));
     };
 
     const { showDeleteControls } = useDeletionControls({
-        resourceId: contact.id,
         isDeleted: !!contact.deleted_at,
         resourceType: 'contact',
         onDelete: handleDelete,
