@@ -17,8 +17,8 @@ interface FlashPageProps extends SharedData {
 }
 
 interface NavigationState {
-    currentId: string;
-    lastShownId: string | null;
+    currentVisitId: string;
+    lastShownVisitId: string | null;
 }
 
 type NotificationHandler = (message: string) => void;
@@ -29,14 +29,14 @@ export default function FlashMessages() {
     const numOfErrors = Object.keys(errors).length;
 
     const navigationState = useRef<NavigationState>({
-        currentId: Date.now().toString(),
-        lastShownId: null,
+        currentVisitId: `initial-${Date.now().toString()}`,
+        lastShownVisitId: null,
     });
 
     useEffect(() => {
-        const { currentId, lastShownId } = navigationState.current;
+        const { currentVisitId, lastShownVisitId } = navigationState.current;
 
-        if (currentId !== lastShownId) {
+        if (currentVisitId !== lastShownVisitId) {
             const notifications: [string | undefined | false, NotificationHandler][] = [
                 [flash.success, toast.success],
                 [flash.error || (numOfErrors > 0 && t('form_errors', { count: numOfErrors })), toast.error],
@@ -48,12 +48,16 @@ export default function FlashMessages() {
                 }
             });
 
-            navigationState.current.lastShownId = currentId;
+            navigationState.current.lastShownVisitId = currentVisitId;
         }
 
-        return router.on('start', () => {
-            navigationState.current.currentId = Date.now().toString();
+        const unregisterSuccess = router.on('success', () => {
+            navigationState.current.currentVisitId = `visit-${Date.now().toString()}`;
         });
+
+        return () => {
+            unregisterSuccess();
+        };
     }, [flash, errors, numOfErrors, t]);
 
     return <Toaster />;
