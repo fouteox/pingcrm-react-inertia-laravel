@@ -1,14 +1,18 @@
 import '../css/app.css';
-import './echo';
 
 import { LayoutProvider } from '@/contexts/page-context';
 import { initializeTheme } from '@/hooks/use-appearance';
 import { applyLayoutToPage } from '@/lib/layout-resolver';
 import { createInertiaApp } from '@inertiajs/react';
+import { configureEcho } from '@laravel/echo-react';
 import { resolvePageComponent } from 'laravel-vite-plugin/inertia-helpers';
 import { createRoot, hydrateRoot } from 'react-dom/client';
 import { I18nextProvider } from 'react-i18next';
 import { initI18n, setLocale } from './i18n';
+
+configureEcho({
+    broadcaster: 'reverb',
+});
 
 const appName = import.meta.env.VITE_APP_NAME || 'Ping CRM';
 
