@@ -14,7 +14,6 @@ type LoginForm = {
     email: string;
     password: string;
     remember: boolean;
-    [key: string]: string | boolean;
 };
 
 interface LoginProps {
@@ -88,7 +87,13 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                     </div>
 
                     <div className="flex items-center space-x-3">
-                        <Checkbox id="remember" name="remember" tabIndex={3} />
+                        <Checkbox
+                            id="remember"
+                            name="remember"
+                            tabIndex={3}
+                            checked={data.remember}
+                            onCheckedChange={(checked) => setData('remember', Boolean(checked))}
+                        />
                         <Label htmlFor="remember">{t('Remember me')}</Label>
                     </div>
 

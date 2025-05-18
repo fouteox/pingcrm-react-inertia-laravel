@@ -35,7 +35,6 @@ export type UserFormData = {
     email: string;
     password: string;
     owner: string;
-    [key: string]: string;
 };
 
 export interface Organization {
@@ -61,7 +60,6 @@ export type OrganizationFormData = {
     region: string;
     country: string;
     postal_code: string;
-    [key: string]: string;
 };
 
 export interface Contact {
@@ -92,7 +90,6 @@ export type ContactFormData = {
     region: string;
     country: string;
     postal_code: string;
-    [key: string]: string;
 };
 
 export type PaginatedData<T> = {

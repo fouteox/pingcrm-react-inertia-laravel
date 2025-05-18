@@ -46,7 +46,6 @@ export default function Edit() {
         email: user.email || '',
         password: user.password || '',
         owner: user.owner ? '1' : '0',
-        _method: 'PUT',
     });
 
     function onSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -57,8 +56,7 @@ export default function Edit() {
             password: data.password === '' ? undefined : data.password,
         }));
 
-        form.post(route('users.update', user.id), {
-            method: 'put',
+        form.put(route('users.update', user.id), {
             preserveScroll: true,
         });
     }
