@@ -22,22 +22,23 @@ PingCRM is a demo application built with Laravel 12, Inertia.js v2, React 19, an
 - **[FrankenPHP](https://frankenphp.dev/)**: PHP 8.4
 
 ## Getting Started
-The easiest way to run this project is with DDEV, a Docker-based local development environment.
+You can use either DDEV (Docker) or Herd to run this project for local development.
 
-### Prerequisites
+### Option 1: DDEV (Docker)
+#### Prerequisites
 - [Install DDEV](https://ddev.readthedocs.io/en/stable/#installation)
 
-### Setup
+#### Setup
 1. Clone this repository:
    ```bash
-    git clone https://github.com/fouteox/pingcrm-react-inertia-laravel.git
-    cd pingcrm-react-inertia-laravel
-    ```
+   git clone https://github.com/fouteox/pingcrm-react-inertia-laravel.git
+   cd pingcrm-react-inertia-laravel
+   ```
 
 2. Start the application:
-    ```bash
-    ddev start && ddev launch
-    ```
+   ```bash
+   ddev start && ddev launch
+   ```
 
 That's it! This single command will:
 - Install PHP dependencies (Composer)
@@ -47,6 +48,81 @@ That's it! This single command will:
 - Configure and start the task scheduler
 - Start Reverb for websocket functionality
 - Launch the application in your browser
+
+### Option 2: Herd
+#### Prerequisites
+- [Install Herd](https://herd.laravel.com/)
+- Have a running MariaDB instance (or MySQL)
+- Have Redis installed for queues
+
+#### Installation
+
+You can install the application using either Make (recommended) or manual steps:
+
+##### Option A: Using Make (recommended)
+Make is a build automation tool that helps to automate tasks. It's typically pre-installed on many operating systems. To check if it's installed, run `make --version` in your terminal.
+
+If needed, install Make:
+- On macOS: `brew install make`
+- On Windows: Install via [Chocolatey](https://chocolatey.org/) with `choco install make` or via [Scoop](https://scoop.sh/) with `scoop install make`
+- On Ubuntu/Debian: `sudo apt install make`
+
+Once Make is installed:
+
+1. Clone this repository:
+   ```bash
+   git clone https://github.com/fouteox/pingcrm-react-inertia-laravel.git
+   cd pingcrm-react-inertia-laravel
+   ```
+
+2. Initialize the application with a single command:
+   ```bash
+   make init
+   ```
+
+This command will automatically:
+- Copy the .env.herd file to .env
+- Install PHP dependencies with Composer
+- Generate an application key
+- Run database migrations
+- Seed the database with test data
+- Install JavaScript dependencies (with Bun if available, otherwise with npm)
+
+##### Option B: Manual Installation
+If you prefer not to use Make:
+
+1. Clone this repository:
+   ```bash
+   git clone https://github.com/fouteox/pingcrm-react-inertia-laravel.git
+   cd pingcrm-react-inertia-laravel
+   ```
+
+2. Configure the environment:
+   ```bash
+   cp .env.herd .env
+   composer install
+   php artisan key:generate
+   php artisan migrate --force
+   php artisan db:seed
+   ```
+
+3. Install JavaScript dependencies:
+   ```bash
+   # If you have Bun installed
+   bun install
+   
+   # Otherwise, use npm
+   npm install --legacy-peer-deps
+   ```
+
+#### Launching the Application
+
+After installation (whether using Make or manual steps), launch the application with:
+   ```bash
+   composer run dev
+   ```
+
+This single command will start both Horizon for queue processing and the frontend development server simultaneously.
 
 ## Deployment
 The project includes a GitHub Actions workflow for deploying to your own server using Cloudflare Tunnels. I personally host the live demo version on a Raspberry Pi.
