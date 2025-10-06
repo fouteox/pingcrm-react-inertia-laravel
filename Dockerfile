@@ -1,5 +1,4 @@
 ARG PHP_VERSION=8.4
-ARG BUN_VERSION=1.2.4
 
 FROM fouteox/laravel-php-base:${PHP_VERSION} AS base
 
@@ -25,14 +24,11 @@ COPY --chown=${USER}:${USER} deployment/supervisord.*.conf /etc/supervisor/conf.
 
 FROM base AS common
 
-USER ${USER}
-
 COPY --link --chown=${WWWUSER}:${WWWGROUP} composer.json composer.lock ./
 
 RUN composer install \
     --no-dev \
     --no-interaction \
-    --no-autoloader \
     --no-ansi \
     --no-scripts \
     --audit
@@ -41,26 +37,19 @@ RUN composer install \
 # Build frontend assets
 ###########################################
 
-FROM oven/bun:${BUN_VERSION} AS build
+FROM common AS build
 
-ENV ROOT=/app
-
-WORKDIR ${ROOT}
-
-COPY --link package.json bun.lock* ./
+COPY --link --chown=${WWWUSER}:${WWWGROUP} package*.json bun.lock* ./
 
 RUN bun install --frozen-lockfile
 
-COPY --link . .
-COPY --link --from=common ${ROOT}/vendor vendor
+COPY --link --chown=${WWWUSER}:${WWWGROUP} . .
 
 RUN bun run build:ssr
 
 ###########################################
 
 FROM common AS prod
-
-USER ${USER}
 
 COPY --link --chown=${WWWUSER}:${WWWGROUP} . .
 COPY --link --chown=${WWWUSER}:${WWWGROUP} --from=build ${ROOT}/public public
@@ -70,9 +59,5 @@ COPY --link --chown=${WWWUSER}:${WWWGROUP} --from=build ${ROOT}/node_modules nod
 RUN mkdir -p ${ROOT}/storage/framework/{sessions,views,cache,testing} ${ROOT}/storage/logs ${ROOT}/bootstrap/cache \
     && chmod -R a+rw ${ROOT}/storage ${ROOT}/bootstrap/cache
 
-RUN composer install \
-    --classmap-authoritative \
-    --no-interaction \
-    --no-ansi \
-    --no-dev \
+RUN composer dump-autoload --classmap-authoritative --no-dev --no-scripts \
     && composer clear-cache
