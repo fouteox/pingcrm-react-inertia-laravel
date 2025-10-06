@@ -1,6 +1,14 @@
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+    AlertDialog,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { Dialog, DialogClose, DialogContent, DialogFooter, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Trash } from 'lucide-react';
 import React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -22,13 +30,13 @@ export const DeletionControls: React.FC<DeletionControlsProps> = ({ resourceType
     const resourceName = getResourceName();
 
     return (
-        <Dialog>
+        <AlertDialog>
             {isDeleted ? (
                 <Alert className="mb-6 max-w-3xl items-center border-yellow-500 bg-yellow-100 text-yellow-800 dark:border-yellow-600/30 dark:bg-yellow-600/10 dark:text-yellow-500">
                     <Trash className="text-yellow-800 dark:text-yellow-500" />
                     <AlertDescription className="flex w-full items-center justify-between text-yellow-700 dark:text-yellow-500/90">
                         {t(`This ${resourceType} has been deleted.`)}
-                        <DialogTrigger asChild>
+                        <AlertDialogTrigger asChild>
                             <Button
                                 variant="ghost"
                                 size="sm"
@@ -36,31 +44,36 @@ export const DeletionControls: React.FC<DeletionControlsProps> = ({ resourceType
                             >
                                 {t('Restore')}
                             </Button>
-                        </DialogTrigger>
+                        </AlertDialogTrigger>
                     </AlertDescription>
                 </Alert>
             ) : (
-                <DialogTrigger asChild>
+                <AlertDialogTrigger asChild>
                     <Button variant="destructive">{t(`Delete ${resourceName}`)}</Button>
-                </DialogTrigger>
+                </AlertDialogTrigger>
             )}
 
-            <DialogContent>
-                <DialogTitle>
+            <AlertDialogContent>
+                <AlertDialogTitle>
                     {isDeleted
                         ? t(`Are you sure you want to restore this ${resourceType}?`)
                         : t(`Are you sure you want to delete this ${resourceType}?`)}
-                </DialogTitle>
+                </AlertDialogTitle>
+                <AlertDialogDescription>
+                    {isDeleted
+                        ? t(`This will restore the ${resourceType} and make it visible again.`)
+                        : t(`The ${resourceType} will be moved to trash, but can be restored later.`)}
+                </AlertDialogDescription>
 
-                <DialogFooter className="gap-2">
-                    <DialogClose asChild>
+                <AlertDialogFooter className="gap-2">
+                    <AlertDialogCancel asChild>
                         <Button variant="secondary">{t('Cancel')}</Button>
-                    </DialogClose>
+                    </AlertDialogCancel>
                     <Button variant={isDeleted ? 'default' : 'destructive'} disabled={processing} onClick={onAction}>
                         {isDeleted ? t(`Restore ${resourceName}`) : t(`Delete ${resourceName}`)}
                     </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+                </AlertDialogFooter>
+            </AlertDialogContent>
+        </AlertDialog>
     );
 };

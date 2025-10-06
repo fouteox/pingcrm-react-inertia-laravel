@@ -5,6 +5,7 @@ import { TableContainer } from '@/components/table-container';
 import { Button } from '@/components/ui/button';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { usePageActions } from '@/contexts/page-context';
+import users from '@/routes/users';
 import { BreadcrumbItem, PaginatedData, SharedData, User } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { ChevronRight, Trash } from 'lucide-react';
@@ -24,7 +25,7 @@ export default function Index() {
             {
                 title: 'User',
                 count: 2,
-                href: route('users.index'),
+                href: users.index().url,
             },
         ],
         [],
@@ -34,11 +35,11 @@ export default function Index() {
         setBreadcrumbs(breadcrumbs);
     }, [breadcrumbs, setBreadcrumbs]);
 
-    const { users } = usePage<IndexPageProps>().props;
+    const { users: usersData } = usePage<IndexPageProps>().props;
     const {
         data,
         meta: { links },
-    } = users;
+    } = usersData;
 
     return (
         <>
@@ -49,7 +50,7 @@ export default function Index() {
                     <SearchFilter />
 
                     <div className="flex-shrink-0">
-                        <AnchorLink href={route('users.create')}>
+                        <AnchorLink href={users.create().url}>
                             <span className="md:hidden">{t('Create')}</span>
                             <span className="hidden md:inline">{t('Create User')}</span>
                         </AnchorLink>
@@ -70,7 +71,7 @@ export default function Index() {
                             <TableRow key={id}>
                                 <TableCell className="relative p-2">
                                     <div className="absolute inset-0 z-10">
-                                        <Link href={route('users.edit', id)} prefetch className="block h-full w-full">
+                                        <Link href={users.edit(id)} prefetch className="block h-full w-full">
                                             <span className="sr-only">Modifier {name}</span>
                                         </Link>
                                     </div>
@@ -81,7 +82,7 @@ export default function Index() {
                                 </TableCell>
                                 <TableCell className="relative p-2">
                                     <div className="absolute inset-0 z-10">
-                                        <Link href={route('users.edit', id)} prefetch tabIndex={-1} className="block h-full w-full">
+                                        <Link href={users.edit(id)} prefetch tabIndex={-1} className="block h-full w-full">
                                             <span className="sr-only">Modifier {name}</span>
                                         </Link>
                                     </div>
@@ -89,7 +90,7 @@ export default function Index() {
                                 </TableCell>
                                 <TableCell className="relative p-2">
                                     <div className="absolute inset-0 z-10">
-                                        <Link href={route('users.edit', id)} prefetch tabIndex={-1} className="block h-full w-full">
+                                        <Link href={users.edit(id)} prefetch tabIndex={-1} className="block h-full w-full">
                                             <span className="sr-only">Modifier {name}</span>
                                         </Link>
                                     </div>
@@ -99,7 +100,7 @@ export default function Index() {
                                 </TableCell>
                                 <TableCell className="w-px">
                                     <Button asChild variant="ghost" size="icon">
-                                        <Link tabIndex={-1} href={route('users.edit', id)} prefetch>
+                                        <Link tabIndex={-1} href={users.edit(id)} prefetch>
                                             <ChevronRight className="text-muted-foreground h-4 w-4" />
                                         </Link>
                                     </Button>

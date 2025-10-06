@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { usePageActions } from '@/contexts/page-context';
 import { useReverbNotification } from '@/contexts/reverb-context';
+import reverb from '@/routes/reverb';
 import { BreadcrumbItem } from '@/types';
 import { Head, useForm } from '@inertiajs/react';
 import React, { useEffect } from 'react';
@@ -21,7 +22,7 @@ export default function ReverbExample() {
         () => [
             {
                 title: 'Reverb Demo',
-                href: route('reverb.index'),
+                href: reverb.index().url,
             },
         ],
         [],
@@ -44,7 +45,7 @@ export default function ReverbExample() {
             uuid,
         }));
 
-        form.post(route('reverb.store'), {
+        form.submit(reverb.store(), {
             preserveScroll: true,
             onSuccess: () => {
                 addUuid(uuid);

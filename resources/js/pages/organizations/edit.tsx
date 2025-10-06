@@ -5,13 +5,15 @@ import { ChevronRight, Loader2, Trash } from 'lucide-react';
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { destroy, restore, update } from '@/actions/App/Http/Controllers/OrganizationsController';
 import { Form, FormInput, FormLabel, FormMessage } from '@/components/form';
 import { TableContainer } from '@/components/table-container';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { usePageActions } from '@/contexts/page-context';
 import { useDeletionControls } from '@/hooks/use-deletion-controls';
-import { destroy, restore, update } from '@/actions/App/Http/Controllers/OrganizationsController';
+import contacts from '@/routes/contacts';
+import organizations from '@/routes/organizations';
 
 interface EditPageProps extends SharedData {
     organization: Organization;
@@ -28,11 +30,11 @@ export default function Edit() {
             {
                 title: 'Organization',
                 count: 2,
-                href: route('organizations.index'),
+                href: organizations.index().url,
             },
             {
                 title: organization.name,
-                href: route('organizations.edit', organization.id),
+                href: organizations.edit(organization.id).url,
             },
         ],
         [organization.name, organization.id],
@@ -275,7 +277,7 @@ export default function Edit() {
                             <TableRow key={id}>
                                 <TableCell className="relative p-2">
                                     <div className="absolute inset-0 z-10">
-                                        <Link href={route('contacts.edit', id)} prefetch className="block h-full w-full">
+                                        <Link href={contacts.edit(id)} prefetch className="block h-full w-full">
                                             <span className="sr-only">Modifier {name}</span>
                                         </Link>
                                     </div>
@@ -286,7 +288,7 @@ export default function Edit() {
                                 </TableCell>
                                 <TableCell className="relative p-2">
                                     <div className="absolute inset-0 z-10">
-                                        <Link href={route('contacts.edit', id)} prefetch tabIndex={-1} className="block h-full w-full">
+                                        <Link href={contacts.edit(id)} prefetch tabIndex={-1} className="block h-full w-full">
                                             <span className="sr-only">Modifier {name}</span>
                                         </Link>
                                     </div>
@@ -294,7 +296,7 @@ export default function Edit() {
                                 </TableCell>
                                 <TableCell className="relative p-2">
                                     <div className="absolute inset-0 z-10">
-                                        <Link href={route('contacts.edit', id)} prefetch tabIndex={-1} className="block h-full w-full">
+                                        <Link href={contacts.edit(id)} prefetch tabIndex={-1} className="block h-full w-full">
                                             <span className="sr-only">Modifier {name}</span>
                                         </Link>
                                     </div>
@@ -302,7 +304,7 @@ export default function Edit() {
                                 </TableCell>
                                 <TableCell className="w-px">
                                     <Button asChild variant="ghost" size="icon">
-                                        <Link tabIndex={-1} href={route('contacts.edit', id)} prefetch>
+                                        <Link tabIndex={-1} href={contacts.edit(id)} prefetch>
                                             <ChevronRight className="text-muted-foreground h-4 w-4" />
                                         </Link>
                                     </Button>

@@ -5,6 +5,7 @@ import { TableContainer } from '@/components/table-container';
 import { Button } from '@/components/ui/button';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { usePageActions } from '@/contexts/page-context';
+import contacts from '@/routes/contacts';
 import { BreadcrumbItem, Contact, PaginatedData, SharedData } from '@/types';
 import { Head, Link, usePage } from '@inertiajs/react';
 import { ChevronRight, Trash } from 'lucide-react';
@@ -24,7 +25,7 @@ export default function Index() {
             {
                 title: 'Contact',
                 count: 2,
-                href: route('contacts.index'),
+                href: contacts.index().url,
             },
         ],
         [],
@@ -34,11 +35,11 @@ export default function Index() {
         setBreadcrumbs(breadcrumbs);
     }, [breadcrumbs, setBreadcrumbs]);
 
-    const { contacts } = usePage<IndexPageProps>().props;
+    const { contacts: contactsData } = usePage<IndexPageProps>().props;
     const {
         data,
         meta: { links },
-    } = contacts;
+    } = contactsData;
 
     return (
         <>
@@ -49,7 +50,7 @@ export default function Index() {
                     <SearchFilter />
 
                     <div className="flex-shrink-0">
-                        <AnchorLink href={route('contacts.create')}>
+                        <AnchorLink href={contacts.create().url}>
                             <span className="md:hidden">{t('Create')}</span>
                             <span className="hidden md:inline">{t('Create Contact')}</span>
                         </AnchorLink>
@@ -71,7 +72,7 @@ export default function Index() {
                             <TableRow key={id}>
                                 <TableCell className="relative p-2">
                                     <div className="absolute inset-0 z-10">
-                                        <Link href={route('contacts.edit', id)} prefetch className="block h-full w-full">
+                                        <Link href={contacts.edit(id)} prefetch className="block h-full w-full">
                                             <span className="sr-only">Modifier {name}</span>
                                         </Link>
                                     </div>
@@ -82,7 +83,7 @@ export default function Index() {
                                 </TableCell>
                                 <TableCell className="relative p-2">
                                     <div className="absolute inset-0 z-10">
-                                        <Link href={route('contacts.edit', id)} prefetch tabIndex={1} className="block h-full w-full">
+                                        <Link href={contacts.edit(id)} prefetch tabIndex={1} className="block h-full w-full">
                                             <span className="sr-only">Modifier {name}</span>
                                         </Link>
                                     </div>
@@ -92,7 +93,7 @@ export default function Index() {
                                 </TableCell>
                                 <TableCell className="relative p-2">
                                     <div className="absolute inset-0 z-10">
-                                        <Link href={route('contacts.edit', id)} prefetch tabIndex={-1} className="block h-full w-full">
+                                        <Link href={contacts.edit(id)} prefetch tabIndex={-1} className="block h-full w-full">
                                             <span className="sr-only">Modifier {name}</span>
                                         </Link>
                                     </div>
@@ -100,7 +101,7 @@ export default function Index() {
                                 </TableCell>
                                 <TableCell className="relative p-2">
                                     <div className="absolute inset-0 z-10">
-                                        <Link href={route('contacts.edit', id)} prefetch tabIndex={-1} className="block h-full w-full">
+                                        <Link href={contacts.edit(id)} prefetch tabIndex={-1} className="block h-full w-full">
                                             <span className="sr-only">Modifier {name}</span>
                                         </Link>
                                     </div>
@@ -108,7 +109,7 @@ export default function Index() {
                                 </TableCell>
                                 <TableCell className="w-px">
                                     <Button asChild variant="ghost" size="icon">
-                                        <Link tabIndex={-1} href={route('contacts.edit', id)} prefetch>
+                                        <Link tabIndex={-1} href={contacts.edit(id)} prefetch>
                                             <ChevronRight className="text-muted-foreground h-4 w-4" />
                                         </Link>
                                     </Button>

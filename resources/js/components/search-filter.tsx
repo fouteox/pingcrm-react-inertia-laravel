@@ -60,7 +60,7 @@ export default function SearchFilter() {
 
         const query = pickBy(newValues);
 
-        router.get(route(route().current() as string), query, {
+        router.get(window.location.pathname, query, {
             replace: true,
             preserveState: true,
         });

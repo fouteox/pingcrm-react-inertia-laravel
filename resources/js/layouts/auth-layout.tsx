@@ -1,5 +1,6 @@
 import AppLogoIcon from '@/components/app-logo-icon';
 import { usePageContext } from '@/contexts/page-context';
+import { dashboard } from '@/routes';
 import { Link } from '@inertiajs/react';
 import { PropsWithChildren } from 'react';
 
@@ -11,7 +12,7 @@ export default function AuthSimpleLayout({ children }: PropsWithChildren) {
             <div className="w-full max-w-sm">
                 <div className="flex flex-col gap-8">
                     <div className="flex flex-col items-center gap-4">
-                        <Link href={route('dashboard')} className="flex flex-col items-center gap-2 font-medium">
+                        <Link href={dashboard()} className="flex flex-col items-center gap-2 font-medium">
                             <div className="mb-1 flex items-center justify-center rounded-md">
                                 <AppLogoIcon className="h-20 w-52 fill-current text-[var(--foreground)] dark:text-white" />
                             </div>

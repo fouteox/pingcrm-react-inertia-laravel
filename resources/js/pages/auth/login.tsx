@@ -1,10 +1,10 @@
 import InputError from '@/components/input-error';
-import TextLink from '@/components/text-link';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { usePageActions } from '@/contexts/page-context';
+import login from '@/routes/login';
 import { Head, useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 import { FormEvent, useEffect } from 'react';
@@ -18,10 +18,9 @@ type LoginForm = {
 
 interface LoginProps {
     status?: string;
-    canResetPassword: boolean;
 }
 
-export default function Login({ status, canResetPassword }: LoginProps) {
+export default function Login({ status }: LoginProps) {
     const { t } = useTranslation();
     const { setAuthInfo } = usePageActions();
 
@@ -29,16 +28,16 @@ export default function Login({ status, canResetPassword }: LoginProps) {
         setAuthInfo(t('Log in to your account'), t('Enter your email and password below to log in'));
     }, [setAuthInfo, t]);
 
-    const { data, setData, post, processing, errors, reset } = useForm<Required<LoginForm>>({
+    const { data, setData, submit, processing, errors, reset } = useForm<Required<LoginForm>>({
         email: 'johndoe@example.com',
         password: 'secret',
         remember: false,
     });
 
-    const submit = (e: FormEvent<HTMLFormElement>) => {
+    const onSubmit = (e: FormEvent<HTMLFormElement>) => {
         e.preventDefault();
 
-        post(route('login'), {
+        submit(login.store(), {
             onFinish: () => reset('password'),
         });
     };
@@ -47,7 +46,7 @@ export default function Login({ status, canResetPassword }: LoginProps) {
         <>
             <Head title={t('Login')} />
 
-            <form className="flex flex-col gap-6" onSubmit={submit}>
+            <form className="flex flex-col gap-6" onSubmit={onSubmit}>
                 <div className="grid gap-6">
                     <div className="grid gap-2">
                         <Label htmlFor="email">{t('Email')}</Label>
@@ -67,11 +66,6 @@ export default function Login({ status, canResetPassword }: LoginProps) {
                     <div className="grid gap-2">
                         <div className="flex items-center">
                             <Label htmlFor="password">{t('Password')}</Label>
-                            {canResetPassword && (
-                                <TextLink href={route('password.request')} className="ml-auto text-sm" tabIndex={5}>
-                                    {t('Forgot password?')}
-                                </TextLink>
-                            )}
                         </div>
                         <Input
                             id="password"

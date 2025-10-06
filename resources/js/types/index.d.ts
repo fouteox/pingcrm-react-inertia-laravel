@@ -1,5 +1,5 @@
+import { InertiaLinkProps } from '@inertiajs/react';
 import { LucideIcon } from 'lucide-react';
-import { Config } from 'ziggy-js';
 
 export interface BreadcrumbItem {
     title: string;
@@ -10,7 +10,7 @@ export interface BreadcrumbItem {
 export interface NavItem {
     title: string;
     count?: number;
-    url: string;
+    href: NonNullable<InertiaLinkProps['href']>;
     icon?: LucideIcon | null;
     isActive?: boolean;
 }
@@ -127,7 +127,6 @@ interface TranslationStore {
 export interface SharedData {
     name: string;
     auth: Auth;
-    ziggy: Config & { location: string };
     locale: string;
     translations: TranslationStore | null;
     [key: string]: unknown;

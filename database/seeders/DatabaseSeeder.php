@@ -20,14 +20,18 @@ final class DatabaseSeeder extends Seeder
     {
         $account = Account::create(['name' => 'Acme Corporation']);
 
-        User::factory()->create([
-            'account_id' => $account->id,
-            'first_name' => 'John',
-            'last_name' => 'Doe',
-            'email' => 'johndoe@example.com',
-            'password' => Hash::make('secret'),
-            'owner' => true,
-        ]);
+        User::firstOrCreate(
+            ['email' => 'johndoe@example.com'],
+            [
+                'account_id' => $account->id,
+                'first_name' => 'John',
+                'last_name' => 'Doe',
+                'password' => Hash::make('secret'),
+                'owner' => true,
+                'name' => 'Test User',
+                'email_verified_at' => now(),
+            ]
+        );
 
         User::factory(5)->create(['account_id' => $account->id]);
 

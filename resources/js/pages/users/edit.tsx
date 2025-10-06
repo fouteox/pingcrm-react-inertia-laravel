@@ -5,12 +5,13 @@ import { Loader2 } from 'lucide-react';
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { destroy, restore, update } from '@/actions/App/Http/Controllers/UsersController';
 import { Form, FormInput, FormLabel, FormMessage } from '@/components/form';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePageActions } from '@/contexts/page-context';
 import { useDeletionControls } from '@/hooks/use-deletion-controls';
-import { destroy, restore, update } from '@/actions/App/Http/Controllers/UsersController';
+import users from '@/routes/users';
 
 interface EditPageProps extends SharedData {
     user: User & { password: string; photo: File | null };
@@ -27,11 +28,11 @@ export default function Edit() {
             {
                 title: 'User',
                 count: 2,
-                href: route('users.index'),
+                href: users.index().url,
             },
             {
                 title: `${user.first_name} ${user.last_name}`,
-                href: route('users.edit', user.id),
+                href: users.edit(user.id).url,
             },
         ],
         [user.first_name, user.last_name, user.id],

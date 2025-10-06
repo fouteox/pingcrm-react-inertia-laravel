@@ -1,4 +1,5 @@
 import { usePageActions } from '@/contexts/page-context';
+import { fadogen } from '@/routes';
 import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import React, { useEffect } from 'react';
@@ -12,7 +13,7 @@ export default function Dashboard() {
         () => [
             {
                 title: 'Fadogen',
-                href: route('fadogen'),
+                href: fadogen().url,
             },
         ],
         [],

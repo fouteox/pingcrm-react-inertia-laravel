@@ -57,67 +57,22 @@ That's it! This single command will:
 
 #### Installation
 
-You can install the application using either Make (recommended) or manual steps:
-
-##### Option A: Using Make (recommended)
-Make is a build automation tool that helps to automate tasks. It's typically pre-installed on many operating systems. To check if it's installed, run `make --version` in your terminal.
-
-If needed, install Make:
-- On macOS: `brew install make`
-- On Windows: Install via [Chocolatey](https://chocolatey.org/) with `choco install make` or via [Scoop](https://scoop.sh/) with `scoop install make`
-- On Ubuntu/Debian: `sudo apt install make`
-
-Once Make is installed:
-
 1. Clone this repository:
    ```bash
    git clone https://github.com/fouteox/pingcrm-react-inertia-laravel.git
    cd pingcrm-react-inertia-laravel
    ```
 
-2. Initialize the application with a single command:
+2. Install PHP dependencies:
    ```bash
-   make init
+   composer run setup
    ```
 
-This command will automatically:
-- Copy the .env.herd file to .env
-- Install PHP dependencies with Composer
-- Generate an application key
-- Run database migrations
-- Seed the database with test data
-- Install JavaScript dependencies (with Bun if available, otherwise with npm)
-
-##### Option B: Manual Installation
-If you prefer not to use Make:
-
-1. Clone this repository:
-   ```bash
-   git clone https://github.com/fouteox/pingcrm-react-inertia-laravel.git
-   cd pingcrm-react-inertia-laravel
-   ```
-
-2. Configure the environment:
-   ```bash
-   cp .env.herd .env
-   composer install
-   php artisan key:generate
-   php artisan migrate --force
-   php artisan db:seed
-   ```
-
-3. Install JavaScript dependencies:
-   ```bash
-   # If you have Bun installed
-   bun install
-   
-   # Otherwise, use npm
-   npm install --legacy-peer-deps
-   ```
+This will automatically set up your environment file, generate an application key, run database migrations, seed the database, and install JavaScript dependencies.
 
 #### Launching the Application
 
-After installation (whether using Make or manual steps), launch the application with:
+After installation, launch the application with:
    ```bash
    composer run dev
    ```

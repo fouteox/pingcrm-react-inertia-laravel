@@ -15,8 +15,7 @@
         "laravel/reverb": "^1.0",
         "laravel/sanctum": "^4.0",
         "laravel/tinker": "^2.9",
-        "laravel/wayfinder": "^0.1.6",
-        "tightenco/ziggy": "^2.0"
+        "laravel/wayfinder": "^0.1.6"
     },
     "require-dev": {
         "laravel/breeze": "^2.3",
@@ -58,14 +57,23 @@
             "@php -r \"file_exists('database/database.sqlite') || touch('database/database.sqlite');\"",
             "@php artisan migrate --graceful --ansi"
         ],
+        "setup": [
+            "composer install",
+            "@php -r \"file_exists('.env') || copy('.env.herd', '.env');\"",
+            "@php artisan key:generate",
+            "@php artisan migrate --force",
+            "@php artisan db:seed --force",
+            "bun install",
+            "bun run build"
+        ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
-            "which bun > /dev/null && bunx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fdba74\" \"php artisan horizon\" \"bun run dev\" || npx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fdba74\" \"php artisan horizon\" \"npm run dev\" --names=queue,vite"
+            "bunx concurrently -c \"#c4b5fd,#fdba74\" \"php artisan horizon\" \"bun run dev\" --names=horizon,vite --kill-others"
         ],
         "dev:ssr": [
-            "which bun > /dev/null && bun run build:ssr || npm run build:ssr",
+            "bun run build:ssr",
             "Composer\\Config::disableProcessTimeout",
-            "which bun > /dev/null && bunx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fdba74\" \"php artisan horizon\" \"php artisan inertia:start-ssr\" || npx concurrently -c \"#93c5fd,#c4b5fd,#fb7185,#fdba74\" \"php artisan horizon\" \"php artisan inertia:start-ssr\" --names=queue,ssr"
+            "bunx concurrently -c \"#c4b5fd,#fdba74\" \"php artisan horizon\" \"php artisan inertia:start-ssr\" --names=horizon,ssr --kill-others"
         ],
         "lint": [
             "pint"

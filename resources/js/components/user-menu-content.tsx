@@ -2,8 +2,10 @@ import { MobileAwareLink } from '@/components/mobile-aware-link';
 import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { UserInfo } from '@/components/user-info';
 import { useMobileNavigation } from '@/hooks/use-mobile-navigation';
+import { logout } from '@/routes';
+import users from '@/routes/users';
 import { type SharedData, type User } from '@/types';
-import { Link, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { LogOut, Settings } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
@@ -16,6 +18,11 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
     const cleanup = useMobileNavigation();
     const { auth } = usePage<SharedData>().props;
 
+    const handleLogout = () => {
+        cleanup();
+        router.flushAll();
+    };
+
     return (
         <>
             <DropdownMenuLabel className="p-0 font-normal">
@@ -26,7 +33,7 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
                 <DropdownMenuItem asChild>
-                    <MobileAwareLink className="block w-full" href={route('users.edit', auth.user.id)} as="button" prefetch onClick={cleanup}>
+                    <MobileAwareLink className="block w-full" href={users.edit(auth.user.id)} as="button" prefetch onClick={cleanup}>
                         <Settings className="mr-2" />
                         {t('My Profile')}
                     </MobileAwareLink>
@@ -34,7 +41,7 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-                <Link className="block w-full" method="post" href={route('logout')} as="button" onClick={cleanup}>
+                <Link className="block w-full" href={logout()} as="button" onClick={handleLogout}>
                     <LogOut className="mr-2" />
                     {t('Logout')}
                 </Link>

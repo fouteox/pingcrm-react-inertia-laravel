@@ -17,8 +17,8 @@ export function NavMain({ items = [] }: { items: NavItem[] }) {
             <SidebarMenu>
                 {items.map((item) => (
                     <SidebarMenuItem key={item.title}>
-                        <SidebarMenuButton asChild isActive={item.url === page.url} tooltip={{ children: getTranslatedTitle(item) }}>
-                            <MobileAwareLink href={item.url} prefetch>
+                        <SidebarMenuButton asChild isActive={item.href === page.url} tooltip={{ children: getTranslatedTitle(item) }}>
+                            <MobileAwareLink href={item.href} prefetch>
                                 {item.icon && <item.icon />}
                                 <span>{getTranslatedTitle(item)}</span>
                             </MobileAwareLink>

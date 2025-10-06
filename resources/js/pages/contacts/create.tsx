@@ -5,10 +5,11 @@ import { Loader2 } from 'lucide-react';
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { store } from '@/actions/App/Http/Controllers/ContactsController';
 import { Form, FormInput, FormLabel, FormMessage } from '@/components/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePageActions } from '@/contexts/page-context';
-import { store } from '@/actions/App/Http/Controllers/ContactsController';
+import contacts from '@/routes/contacts';
 
 interface CreatePageProps extends SharedData {
     organizations: Organization[];
@@ -23,11 +24,11 @@ export default function Create() {
             {
                 title: 'Contact',
                 count: 2,
-                href: route('contacts.index'),
+                href: contacts.index().url,
             },
             {
                 title: 'Create',
-                href: route('contacts.create'),
+                href: contacts.create().url,
             },
         ],
         [],

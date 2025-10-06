@@ -5,10 +5,11 @@ import { Loader2 } from 'lucide-react';
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { store } from '@/actions/App/Http/Controllers/OrganizationsController';
 import { Form, FormInput, FormLabel, FormMessage } from '@/components/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePageActions } from '@/contexts/page-context';
-import { store } from '@/actions/App/Http/Controllers/OrganizationsController';
+import organizations from '@/routes/organizations';
 
 export default function Create() {
     const { t } = useTranslation();
@@ -19,11 +20,11 @@ export default function Create() {
             {
                 title: 'Organization',
                 count: 2,
-                href: route('organizations.index'),
+                href: organizations.index().url,
             },
             {
                 title: 'Create',
-                href: route('organizations.create'),
+                href: organizations.create().url,
             },
         ],
         [],

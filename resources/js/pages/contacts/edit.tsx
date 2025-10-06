@@ -5,11 +5,12 @@ import { Loader2 } from 'lucide-react';
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { destroy, restore, update } from '@/actions/App/Http/Controllers/ContactsController';
 import { Form, FormInput, FormLabel, FormMessage } from '@/components/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePageActions } from '@/contexts/page-context';
 import { useDeletionControls } from '@/hooks/use-deletion-controls';
-import { destroy, restore, update } from '@/actions/App/Http/Controllers/ContactsController';
+import contacts from '@/routes/contacts';
 
 interface EditPageProps extends SharedData {
     contact: Contact;
@@ -27,11 +28,11 @@ export default function Edit() {
             {
                 title: 'Contact',
                 count: 2,
-                href: route('contacts.index'),
+                href: contacts.index().url,
             },
             {
                 title: `${contact.first_name} ${contact.last_name}`,
-                href: route('contacts.edit', contact.id),
+                href: contacts.edit(contact.id).url,
             },
         ],
         [contact.first_name, contact.last_name, contact.id],

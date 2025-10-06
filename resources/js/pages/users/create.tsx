@@ -6,9 +6,10 @@ import { Loader2 } from 'lucide-react';
 import React, { FormEvent, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
+import { store } from '@/actions/App/Http/Controllers/UsersController';
 import { Form, FormInput, FormLabel, FormMessage } from '@/components/form';
 import { usePageActions } from '@/contexts/page-context';
-import { store } from '@/actions/App/Http/Controllers/UsersController';
+import users from '@/routes/users';
 
 export default function Create() {
     const { t } = useTranslation();
@@ -19,11 +20,11 @@ export default function Create() {
             {
                 title: 'Users',
                 count: 2,
-                href: route('users.index'),
+                href: users.index().url,
             },
             {
                 title: 'Create',
-                href: route('users.create'),
+                href: users.create().url,
             },
         ],
         [],
