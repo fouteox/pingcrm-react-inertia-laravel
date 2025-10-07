@@ -28,7 +28,6 @@ final class DatabaseSeeder extends Seeder
                 'last_name' => 'Doe',
                 'password' => Hash::make('secret'),
                 'owner' => true,
-                'name' => 'Test User',
                 'email_verified_at' => now(),
             ]
         );
