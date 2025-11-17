@@ -146,6 +146,8 @@ services:
       - 'mariadb_data:/var/lib/mysql'
       - 'mariadb_custom_conf:/etc/mysql/conf.d'
       - 'mariadb_shared:/shared'
+    networks: *default-network
+    logging: *default-logging
     healthcheck:
       test: [ "CMD", "healthcheck.sh", "--connect", "--innodb_initialized" ]
       start_period: 10s
@@ -153,7 +155,6 @@ services:
       timeout: 5s
       retries: 3
     restart: always
-    logging: *default-logging
 
 networks:
   internal:
