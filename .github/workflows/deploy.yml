@@ -99,8 +99,9 @@ jobs:
           name: id_ed25519
           known_hosts: unnecessary
           config: |
-            Host ${{ secrets.SSH_REMOTE_HOSTNAME }}
+            Host ${{ secrets.SSH_HOST }}
               User ${{ secrets.SSH_USER }}
+              Port ${{ secrets.SSH_PORT }}
               IdentityFile ~/.ssh/id_ed25519
               StrictHostKeyChecking accept-new
 
@@ -114,17 +115,17 @@ jobs:
         env:
           REPO_SHORT_NAME: ${{ github.event.repository.name }}
         run: |
-          ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "mkdir -p ~/$REPO_SHORT_NAME"
-          scp compose.prod.yaml .env.production ${{ secrets.SSH_REMOTE_HOSTNAME }}:~/$REPO_SHORT_NAME/
+          ssh ${{ secrets.SSH_HOST }} "mkdir -p ~/$REPO_SHORT_NAME"
+          scp compose.prod.yaml .env.production ${{ secrets.SSH_HOST }}:~/$REPO_SHORT_NAME/
 
       - name: Deploy with Docker context
         env:
           REPO_SHORT_NAME: ${{ github.event.repository.name }}
           FULL_IMAGE_NAME: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
         run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin"
+          echo "${{ secrets.GITHUB_TOKEN }}" | ssh ${{ secrets.SSH_HOST }} "docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin"
 
-          ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "cd ~/$REPO_SHORT_NAME && \
+          ssh ${{ secrets.SSH_HOST }} "cd ~/$REPO_SHORT_NAME && \
             export IMAGE_NAME=$FULL_IMAGE_NAME && \
             docker compose -f compose.prod.yaml --env-file .env.production pull && \
             docker compose -f compose.prod.yaml --env-file .env.production up -d"
