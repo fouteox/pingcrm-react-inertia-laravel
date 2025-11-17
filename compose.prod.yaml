@@ -23,8 +23,8 @@ x-base: &base
   security_opt:
     - no-new-privileges:true
   volumes:
-    - 'app_public:/app/storage/app/public'
-    - 'app_logs:/app/storage/logs'
+    - 'storage_public:/var/www/html/storage/app/public'
+    - 'storage_logs:/var/www/html/storage/logs'
   logging: *default-logging
   restart: always
 
@@ -36,6 +36,7 @@ services:
     command: ["php", "/var/www/html/artisan", "octane:start", "--server=frankenphp", "--port=8000"]
     stop_signal: SIGTERM
     environment:
+      AUTORUN_ENABLED: true
       INERTIA_SSR_URL: http://ssr:13714
       INERTIA_SSR_ENSURE_BUNDLE_EXISTS: false
     networks:
@@ -160,8 +161,8 @@ networks:
     external: true
 
 volumes:
-  app_public:
-  app_logs:
+  storage_public:
+  storage_logs:
   stack-valkey:
   mariadb_data:
   mariadb_custom_conf:
