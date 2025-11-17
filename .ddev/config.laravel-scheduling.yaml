@@ -1,5 +1,0 @@
-#ddev-generated
-web_extra_daemons:
-  - name: scheduling
-    command: "cd ${DDEV_COMPOSER_ROOT} && php artisan schedule:work"
-    directory: /var/www/html

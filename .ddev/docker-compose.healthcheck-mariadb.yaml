@@ -1,5 +1,0 @@
-#ddev-generated
-services:
-  db:
-    healthcheck:
-      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]

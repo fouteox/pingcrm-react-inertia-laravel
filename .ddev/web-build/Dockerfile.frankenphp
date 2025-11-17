@@ -1,3 +1,0 @@
-#ddev-generated
-RUN curl -s https://frankenphp.dev/install.sh | sh
-RUN mv frankenphp /usr/local/bin/

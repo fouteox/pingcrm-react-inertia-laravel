@@ -12,6 +12,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^9.38.0",
+    "@fadogen/vite-plugin": "^0.0.1",
     "@laravel/echo-react": "^2.2.4",
     "@laravel/vite-plugin-wayfinder": "^0.1.7",
     "chokidar": "^4.0.3",

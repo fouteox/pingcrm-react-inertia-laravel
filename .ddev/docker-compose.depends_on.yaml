@@ -1,6 +1,0 @@
-#ddev-generated
-services:
-  web:
-    depends_on:
-      db:
-        condition: service_healthy

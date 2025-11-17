@@ -68,12 +68,12 @@
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
-            "bunx concurrently -c \"#c4b5fd,#fdba74\" \"php artisan horizon\" \"bun run dev\" --names=horizon,vite --kill-others"
+            "npx concurrently -c \"#c4b5fd,#fdba74\" \"php artisan horizon\" \"npm run dev\" --names=horizon,vite --kill-others"
         ],
         "dev:ssr": [
-            "bun run build:ssr",
+            "npm run build:ssr",
             "Composer\\Config::disableProcessTimeout",
-            "bunx concurrently -c \"#c4b5fd,#fdba74\" \"php artisan horizon\" \"php artisan inertia:start-ssr\" --names=horizon,ssr --kill-others"
+            "npx concurrently -c \"#c4b5fd,#fdba74\" \"php artisan horizon\" \"php artisan inertia:start-ssr\" --names=horizon,ssr --kill-others"
         ],
         "lint": [
             "pint"

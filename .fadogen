@@ -1,0 +1,4 @@
+# Fadogen Project Configuration
+
+[php]
+version = "8.4"

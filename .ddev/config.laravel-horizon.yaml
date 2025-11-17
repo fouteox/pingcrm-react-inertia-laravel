@@ -1,5 +1,0 @@
-#ddev-generated
-web_extra_daemons:
-  - name: horizon
-    command: "cd ${DDEV_COMPOSER_ROOT} && php artisan horizon"
-    directory: /var/www/html

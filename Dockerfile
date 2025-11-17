@@ -1,63 +1,65 @@
 ARG PHP_VERSION=8.4
 
-FROM fouteox/laravel-php-base:${PHP_VERSION} AS base
+############################################
+# Base Stage
+############################################
+FROM serversideup/php:beta-${PHP_VERSION}-frankenphp AS base
 
-ARG WWWUSER=1000
-ARG WWWGROUP=1000
+USER root
 
-ENV USER=www-data \
-    ROOT=/app
+RUN install-php-extensions bcmath
 
-RUN userdel --remove --force www-data \
-    && groupadd --force -g ${WWWGROUP} ${USER} \
-    && useradd -ms /bin/bash --no-log-init --no-user-group -g ${WWWGROUP} -u ${WWWUSER} ${USER} \
-    && chown -R ${USER}:${USER} ${ROOT} /var/{log,run}
+############################################
+# Builder Stage
+############################################
+FROM base AS builder
 
-COPY --link --chmod=755 deployment/start-container /usr/local/bin/docker-entrypoint
+COPY --from=oven/bun:1 /usr/local/bin/bun /usr/local/bin/bun
 
-USER ${USER}
-
-COPY --chown=${USER}:${USER} deployment/supervisord.conf /etc/
-COPY --chown=${USER}:${USER} deployment/supervisord.*.conf /etc/supervisor/conf.d/
-
-###########################################
-
-FROM base AS common
-
-COPY --link --chown=${WWWUSER}:${WWWGROUP} composer.json composer.lock ./
+COPY --link composer.json composer.lock ./
 
 RUN composer install \
     --no-dev \
     --no-interaction \
+    --no-autoloader \
     --no-ansi \
     --no-scripts \
     --audit
 
-###########################################
-# Build frontend assets
-###########################################
-
-FROM common AS build
-
-COPY --link --chown=${WWWUSER}:${WWWGROUP} package*.json bun.lock* ./
+COPY --link package*.json ./
 
 RUN bun install --frozen-lockfile
 
-COPY --link --chown=${WWWUSER}:${WWWGROUP} . .
+COPY --link . .
+
+RUN composer dump-autoload --classmap-authoritative --no-dev
 
 RUN bun run build:ssr
 
-###########################################
+############################################
+# App Image
+############################################
+FROM base AS app
 
-FROM common AS prod
+COPY --link --chown=33:33 --from=builder /var/www/html/vendor ./vendor
 
-COPY --link --chown=${WWWUSER}:${WWWGROUP} . .
-COPY --link --chown=${WWWUSER}:${WWWGROUP} --from=build ${ROOT}/public public
-COPY --link --chown=${WWWUSER}:${WWWGROUP} --from=build ${ROOT}/bootstrap/ssr bootstrap/ssr
-COPY --link --chown=${WWWUSER}:${WWWGROUP} --from=build ${ROOT}/node_modules node_modules
+COPY --link --chown=33:33 . .
 
-RUN mkdir -p ${ROOT}/storage/framework/{sessions,views,cache,testing} ${ROOT}/storage/logs ${ROOT}/bootstrap/cache \
-    && chmod -R a+rw ${ROOT}/storage ${ROOT}/bootstrap/cache
+COPY --link --chown=33:33 --from=builder /var/www/html/public/build ./public/build
 
-RUN composer dump-autoload --classmap-authoritative --no-dev --no-scripts \
-    && composer clear-cache
+USER www-data
+
+############################################
+# SSR Image
+############################################
+FROM node:24-alpine AS ssr
+
+WORKDIR /app
+
+COPY --from=builder /var/www/html/bootstrap/ssr ./bootstrap/ssr
+
+COPY --from=builder /var/www/html/node_modules ./node_modules
+
+EXPOSE 13714
+
+CMD ["node", "bootstrap/ssr/ssr.js"]

@@ -3,18 +3,19 @@ x-logging: &default-logging
   options:
     max-size: "50m"
     max-file: 6
-
 x-network: &default-network
   internal:
-
 x-base: &base
   depends_on:
     mariadb:
       condition: service_healthy
     valkey:
       condition: service_healthy
+    ssr:
+      condition: service_healthy
   image: ${IMAGE_NAME:-app}:latest
-  user: "${HOST_UID:-1000}:${HOST_GID:-1000}"
+  env_file:
+    - .env.production
   ulimits:
     nofile:
       soft: 20000
@@ -24,7 +25,6 @@ x-base: &base
   volumes:
     - 'app_public:/app/storage/app/public'
     - 'app_logs:/app/storage/logs'
-    - 'app_cache:/app/bootstrap/cache'
   logging: *default-logging
   restart: always
 
@@ -32,60 +32,87 @@ services:
   app:
     <<: *base
     build:
-      args:
-        APP_ENV: 'production' # to load .env.production
-        WWWUSER: ${HOST_UID:-1000}
-        WWWGROUP: ${HOST_GID:-1000}
+      target: app
+    command: ["php", "/var/www/html/artisan", "octane:start", "--server=frankenphp", "--port=8000"]
+    stop_signal: SIGTERM
     environment:
-      INERTIA_SSR: true
-      SERVER_NAME: :80
+      INERTIA_SSR_URL: http://ssr:13714
+      INERTIA_SSR_ENSURE_BUNDLE_EXISTS: false
     networks:
       - internal
-      - traefik
+      - proxy
     healthcheck:
-      test: [ "CMD", "curl", "--fail", "localhost:8000/up" ]
-      start_period: 5s
-      interval: 10s
-      retries: 12
+      test: ["CMD", "healthcheck-octane"]
+      start_period: 10s
     labels:
       traefik.enable: true
       traefik.http.routers.pingcrm.rule: Host(`${APP_HOST}`)
       traefik.http.services.pingcrm.loadbalancer.server.port: 8000
+      # Health check
+      traefik.http.services.pingcrm.loadbalancer.healthcheck.path: "/up"
+      traefik.http.services.pingcrm.loadbalancer.healthcheck.interval: "30s"
+      traefik.http.services.pingcrm.loadbalancer.healthcheck.timeout: "5s"
+      traefik.http.services.pingcrm.loadbalancer.healthcheck.scheme: "http"
 
   horizon:
     <<: *base
-    environment:
-      CONTAINER_MODE: horizon
+    command: ["php", "/var/www/html/artisan", "horizon"]
+    stop_signal: SIGTERM
     networks: *default-network
     depends_on:
       app:
         condition: service_healthy
-
-  reverb:
-    <<: *base
-    environment:
-      CONTAINER_MODE: reverb
-    networks: *default-network
-    depends_on:
-      app:
-        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "healthcheck-horizon"]
+      start_period: 10s
 
   scheduler:
     <<: *base
-    environment:
-      CONTAINER_MODE: scheduler
+    command: ["php", "/var/www/html/artisan", "schedule:work"]
+    stop_signal: SIGTERM
     networks: *default-network
     depends_on:
       app:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "healthcheck-schedule"]
+      start_period: 10s
+
+  reverb:
+    <<: *base
+    command: ["php", "/var/www/html/artisan", "reverb:start", "--port=8080"]
+    stop_signal: SIGTERM
+    networks: *default-network
+    depends_on:
+      app:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "healthcheck-reverb"]
+      start_period: 10s
+
+  ssr:
+    image: ${IMAGE_NAME:-app}:ssr
+    build:
+      target: ssr
+    security_opt:
+      - no-new-privileges:true
+    networks: *default-network
+    logging: *default-logging
+    restart: always
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:13714/health"]
+      start_period: 5s
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   valkey:
-    image: valkey/valkey:alpine
+    image: 'valkey/valkey:alpine'
     ulimits:
       nofile:
         soft: 20000
         hard: 40000
-    command: [ "valkey-server", "--requirepass", "${REDIS_PASSWORD:-cipassword}", "--maxmemory", "2gb" ]
+    command: [ "valkey-server", "--requirepass", "${REDIS_PASSWORD}", "--maxmemory", "2gb" ]
     security_opt:
       - no-new-privileges:true
     volumes:
@@ -108,9 +135,9 @@ services:
       - no-new-privileges:true
     environment:
       MARIADB_RANDOM_ROOT_PASSWORD: "1"
-      MARIADB_DATABASE: "${DB_DATABASE:-cidatabase}"
-      MARIADB_USER: "${DB_USERNAME:-ciuser}"
-      MARIADB_PASSWORD: "${DB_PASSWORD:-cipassword}"
+      MARIADB_DATABASE: "${DB_DATABASE}"
+      MARIADB_USER: "${DB_USERNAME}"
+      MARIADB_PASSWORD: "${DB_PASSWORD}"
     volumes:
       - 'mariadb_data:/var/lib/mysql'
       - 'mariadb_custom_conf:/etc/mysql/conf.d'
@@ -122,18 +149,16 @@ services:
       timeout: 5s
       retries: 3
     restart: always
-    networks: *default-network
     logging: *default-logging
 
 networks:
   internal:
-  traefik:
+  proxy:
     external: true
 
 volumes:
   app_public:
   app_logs:
-  app_cache:
   stack-valkey:
   mariadb_data:
   mariadb_custom_conf:
