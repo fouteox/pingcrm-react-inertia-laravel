@@ -47,6 +47,15 @@ COPY --link --chown=33:33 . .
 
 COPY --link --chown=33:33 --from=builder /var/www/html/public/build ./public/build
 
+RUN mkdir -p \
+    storage/logs \
+    storage/app/public \
+    storage/framework/cache \
+    storage/framework/sessions \
+    storage/framework/views \
+    bootstrap/cache \
+    && chown -R www-data:www-data storage bootstrap/cache
+
 USER www-data
 
 ############################################
