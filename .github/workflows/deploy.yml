@@ -19,7 +19,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Create .env.production file
         run: echo "${{ secrets.ENV_FILE_BASE64 }}" | base64 -d > .env.production
@@ -34,29 +34,55 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Extract metadata for Docker
-        id: meta
+      - name: Extract metadata for App image
+        id: meta-app
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=sha,format=short
-            type=ref,event=branch
+            type=sha,format=short,suffix=-app
+            type=ref,event=branch,suffix=-app
             latest
 
-      - name: Build and push Docker image
+      - name: Build and push App image
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          target: prod
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          build-args: |
-            WWWUSER=${{ secrets.SSH_UID }}
-            WWWGROUP=${{ secrets.SSH_GID }}
+          target: app
+          tags: ${{ steps.meta-app.outputs.tags }}
+          labels: ${{ steps.meta-app.outputs.labels }}
+          cache-from: |
+            type=gha,scope=app
+            type=gha,scope=shared
+          cache-to: |
+            type=gha,mode=max,scope=app
+            type=gha,mode=max,scope=shared
+
+      - name: Extract metadata for SSR image
+        id: meta-ssr
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,format=short,suffix=-ssr
+            type=ref,event=branch,suffix=-ssr
+            ssr
+
+      - name: Build and push SSR image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          target: ssr
+          tags: ${{ steps.meta-ssr.outputs.tags }}
+          labels: ${{ steps.meta-ssr.outputs.labels }}
+          cache-from: |
+            type=gha,scope=ssr
+            type=gha,scope=shared
+          cache-to: |
+            type=gha,mode=max,scope=ssr
+            type=gha,mode=max,scope=shared
 
   deploy:
     needs: build
@@ -66,26 +92,20 @@ jobs:
       packages: write
 
     steps:
-      - name: Install cloudflared
-        run: |
-          curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
-          sudo dpkg -i cloudflared.deb
-
       - name: Setup SSH configuration
         uses: shimataro/ssh-key-action@v2
         with:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           name: id_ed25519
-          known_hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
+          known_hosts: unnecessary
           config: |
             Host ${{ secrets.SSH_REMOTE_HOSTNAME }}
-              ProxyCommand /usr/local/bin/cloudflared access ssh --hostname %h
               User ${{ secrets.SSH_USER }}
               IdentityFile ~/.ssh/id_ed25519
               StrictHostKeyChecking accept-new
 
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
 
       - name: Create .env.production file
         run: echo "${{ secrets.ENV_FILE_BASE64 }}" | base64 -d > .env.production
@@ -105,8 +125,6 @@ jobs:
           echo "${{ secrets.GITHUB_TOKEN }}" | ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin"
 
           ssh ${{ secrets.SSH_REMOTE_HOSTNAME }} "cd ~/$REPO_SHORT_NAME && \
-            export HOST_UID=${{ secrets.SSH_UID }} && \
-            export HOST_GID=${{ secrets.SSH_GID }} && \
             export IMAGE_NAME=$FULL_IMAGE_NAME && \
             docker compose -f compose.prod.yaml --env-file .env.production pull && \
             docker compose -f compose.prod.yaml --env-file .env.production up -d"
