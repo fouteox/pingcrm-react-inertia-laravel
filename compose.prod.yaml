@@ -86,13 +86,22 @@ services:
     <<: *base
     command: ["php", "/var/www/html/artisan", "reverb:start", "--port=8080"]
     stop_signal: SIGTERM
-    networks: *default-network
+    networks:
+      - internal
+      - proxy
     depends_on:
       app:
         condition: service_healthy
     healthcheck:
       test: ["CMD", "healthcheck-reverb"]
       start_period: 10s
+    labels:
+      traefik.enable: true
+      traefik.http.routers.reverb.rule: Host(`${APP_HOST}`) && (PathPrefix(`/app`) || PathPrefix(`/apps`))
+      traefik.http.routers.reverb.entrypoints: websecure
+      traefik.http.routers.reverb.tls: true
+      traefik.http.routers.reverb.tls.certresolver: letsencrypt-cloudflare
+      traefik.http.services.reverb.loadbalancer.server.port: 8080
 
   ssr:
     image: ${IMAGE_NAME:-app}:ssr
