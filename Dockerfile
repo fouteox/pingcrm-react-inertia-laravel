@@ -3,7 +3,7 @@ ARG PHP_VERSION=8.4
 ############################################
 # Base Stage
 ############################################
-FROM serversideup/php:beta-${PHP_VERSION}-frankenphp AS base
+FROM serversideup/php:${PHP_VERSION}-frankenphp AS base
 
 USER root
 
