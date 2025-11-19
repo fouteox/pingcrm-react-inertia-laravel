@@ -115,7 +115,7 @@ services:
     logging: *default-logging
     restart: always
     healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:13714/health"]
+      test: ["CMD", "node", "-e", "fetch('http://localhost:13714/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
       start_period: 5s
       interval: 30s
       timeout: 10s
