@@ -68,7 +68,7 @@ USER www-data
 ############################################
 # SSR Image
 ############################################
-FROM node:24-alpine AS ssr
+FROM node:24-bookworm-slim AS ssr
 
 WORKDIR /app
 
