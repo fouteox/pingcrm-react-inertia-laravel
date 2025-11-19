@@ -92,7 +92,28 @@ jobs:
       packages: write
 
     steps:
-      - name: Setup SSH configuration
+      - name: Install cloudflared
+        if: secrets.USE_CLOUDFLARE_TUNNEL == 'true'
+        run: |
+          curl -L --output cloudflared.deb https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64.deb
+          sudo dpkg -i cloudflared.deb
+
+      - name: Setup SSH configuration (Cloudflare tunnel)
+        if: secrets.USE_CLOUDFLARE_TUNNEL == 'true'
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          name: id_ed25519
+          known_hosts: unnecessary
+          config: |
+            Host ${{ secrets.SSH_HOST }}
+              ProxyCommand /usr/local/bin/cloudflared access ssh --hostname %h
+              User ${{ secrets.SSH_USER }}
+              IdentityFile ~/.ssh/id_ed25519
+              StrictHostKeyChecking accept-new
+
+      - name: Setup SSH configuration (Direct)
+        if: secrets.USE_CLOUDFLARE_TUNNEL != 'true'
         uses: shimataro/ssh-key-action@v2
         with:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
