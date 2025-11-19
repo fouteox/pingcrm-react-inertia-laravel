@@ -47,6 +47,8 @@ COPY --link --chown=33:33 . .
 
 COPY --link --chown=33:33 --from=builder /var/www/html/public/build ./public/build
 
+COPY --chmod=755 ./docker/entrypoint.d/ /etc/entrypoint.d/
+
 RUN mkdir -p \
     storage/logs \
     storage/app/public \
