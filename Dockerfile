@@ -14,7 +14,12 @@ RUN install-php-extensions bcmath
 ############################################
 FROM base AS builder
 
-COPY --from=oven/bun:1 /usr/local/bin/bun /usr/local/bin/bun
+COPY --from=node:24-bookworm-slim /usr/local/bin/node /usr/local/bin/node
+COPY --from=node:24-bookworm-slim /usr/local/lib/node_modules /usr/local/lib/node_modules
+COPY --from=node:24-bookworm-slim /usr/local/include/node /usr/local/include/node
+
+RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
+    ln -s /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
 
 COPY --link composer.json composer.lock ./
 
@@ -28,13 +33,13 @@ RUN composer install \
 
 COPY --link package*.json ./
 
-RUN bun install --frozen-lockfile
+RUN npm ci
 
 COPY --link . .
 
 RUN composer dump-autoload --classmap-authoritative --no-dev
 
-RUN bun run build:ssr
+RUN npm run build:ssr
 
 ############################################
 # App Image
