@@ -131,6 +131,8 @@ services:
     command: [ "valkey-server", "--requirepass", "${REDIS_PASSWORD}", "--maxmemory", "2gb" ]
     security_opt:
       - no-new-privileges:true
+    environment:
+      REDIS_PASSWORD: "${REDIS_PASSWORD}"
     volumes:
       - 'stack-valkey:/data'
       - 'backup_dumps:/dumps'
@@ -171,7 +173,7 @@ services:
       timeout: 5s
       retries: 3
     labels:
-      - docker-volume-backup.archive-pre=/bin/sh -c 'mariadb-dump -u $$DB_USERNAME -p$$DB_PASSWORD --single-transaction $$DB_DATABASE > /dumps/mariadb.sql'
+      - docker-volume-backup.archive-pre=/bin/sh -c 'mariadb-dump -u $$MARIADB_USER -p$$MARIADB_PASSWORD --single-transaction $$MARIADB_DATABASE > /dumps/mariadb.sql'
     restart: always
 
   backup:
