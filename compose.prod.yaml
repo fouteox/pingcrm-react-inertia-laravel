@@ -133,12 +133,15 @@ services:
       - no-new-privileges:true
     volumes:
       - 'stack-valkey:/data'
+      - 'backup_dumps:/dumps'
     logging: *default-logging
     networks: *default-network
     healthcheck:
-      test: [ "CMD", "valkey-cli", "ping" ]
+      test: [ "CMD", "valkey-cli", "-a", "${REDIS_PASSWORD}", "ping" ]
       retries: 3
       timeout: 5s
+    labels:
+      - docker-volume-backup.archive-pre=/bin/sh -c 'valkey-cli -a $$REDIS_PASSWORD BGSAVE && sleep 2 && cp /data/dump.rdb /dumps/valkey.rdb'
     restart: always
 
   mariadb:
@@ -158,6 +161,7 @@ services:
       - 'mariadb_data:/var/lib/mysql'
       - 'mariadb_custom_conf:/etc/mysql/conf.d'
       - 'mariadb_shared:/shared'
+      - 'backup_dumps:/dumps'
     networks: *default-network
     logging: *default-logging
     healthcheck:
@@ -166,6 +170,31 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+    labels:
+      - docker-volume-backup.archive-pre=/bin/sh -c 'mariadb-dump -u $$DB_USERNAME -p$$DB_PASSWORD --single-transaction $$DB_DATABASE > /dumps/mariadb.sql'
+    restart: always
+
+  backup:
+    image: offen/docker-volume-backup:v2
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      AWS_S3_BUCKET_NAME: "${BACKUP_S3_BUCKET}"
+      AWS_S3_PATH: "${BACKUP_S3_PATH:-backups}"
+      AWS_ACCESS_KEY_ID: "${BACKUP_AWS_ACCESS_KEY_ID}"
+      AWS_SECRET_ACCESS_KEY: "${BACKUP_AWS_SECRET_ACCESS_KEY}"
+      AWS_ENDPOINT: "${BACKUP_AWS_ENDPOINT:-}"
+      BACKUP_CRON_EXPRESSION: "0 3 * * *"
+      BACKUP_RETENTION_DAYS: "${BACKUP_RETENTION_DAYS:-7}"
+      BACKUP_FILENAME: "$${BACKUP_PREFIX}-backup-%Y-%m-%dT%H-%M-%S.tar.gz"
+      BACKUP_FILENAME_EXPAND: "true"
+      BACKUP_PREFIX: "${BACKUP_PREFIX:-app}"
+    volumes:
+      - backup_dumps:/backup/dumps:ro
+      - storage_logs:/backup/logs:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    networks: *default-network
+    logging: *default-logging
     restart: always
 
 networks:
@@ -180,3 +209,4 @@ volumes:
   mariadb_data:
   mariadb_custom_conf:
   mariadb_shared:
+  backup_dumps:
