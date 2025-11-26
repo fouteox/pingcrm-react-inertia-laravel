@@ -182,15 +182,12 @@ services:
       - no-new-privileges:true
     environment:
       AWS_S3_BUCKET_NAME: "${BACKUP_S3_BUCKET}"
-      AWS_S3_PATH: "${BACKUP_S3_PATH:-backups}"
+      AWS_S3_PATH: "${BACKUP_S3_PATH}"
       AWS_ACCESS_KEY_ID: "${BACKUP_AWS_ACCESS_KEY_ID}"
       AWS_SECRET_ACCESS_KEY: "${BACKUP_AWS_SECRET_ACCESS_KEY}"
-      AWS_ENDPOINT: "${BACKUP_AWS_ENDPOINT:-}"
+      AWS_ENDPOINT: "${BACKUP_AWS_ENDPOINT}"
       BACKUP_CRON_EXPRESSION: "0 3 * * *"
       BACKUP_RETENTION_DAYS: "${BACKUP_RETENTION_DAYS:-7}"
-      BACKUP_FILENAME: "$${BACKUP_PREFIX}-backup-%Y-%m-%dT%H-%M-%S.tar.gz"
-      BACKUP_FILENAME_EXPAND: "true"
-      BACKUP_PREFIX: "${BACKUP_PREFIX:-app}"
     volumes:
       - backup_dumps:/backup/dumps:ro
       - storage_logs:/backup/logs:ro
