@@ -147,19 +147,14 @@ jobs:
           FULL_IMAGE_NAME: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
         run: |
           ssh ${{ secrets.SSH_HOST }} << DEPLOY_SCRIPT
-            set -ex
-            echo "=== [1/10] Starting deployment script ==="
+            set -e
             cd ~/${REPO_SHORT_NAME}
             source .env.production
             PROJECT_NAME="\${COMPOSE_PROJECT_NAME:-${REPO_SHORT_NAME}}"
-            echo "PROJECT_NAME=\$PROJECT_NAME"
 
-            echo "=== [2/10] Detecting services ==="
             DB_SERVICE="\${DB_CONNECTION}"
             CACHE_SERVICE="\${REDIS_HOST:-}"
-            echo "DB_SERVICE=\$DB_SERVICE, CACHE_SERVICE=\$CACHE_SERVICE"
 
-            # Map to volume names
             case "\$DB_SERVICE" in
               pgsql) DB_VOLUME="stack-pgsql" ;;
               mysql) DB_VOLUME="stack-mysql" ;;
@@ -171,32 +166,24 @@ jobs:
               valkey) CACHE_VOLUME="stack-valkey" ;;
               *) CACHE_VOLUME="" ;;
             esac
-            echo "DB_VOLUME=\$DB_VOLUME, CACHE_VOLUME=\$CACHE_VOLUME"
 
-            echo "=== [3/10] Checking first deployment ==="
             FIRST_DEPLOY="no"
             if [ -n "\$DB_VOLUME" ] && ! docker volume inspect "\${PROJECT_NAME}_\${DB_VOLUME}" > /dev/null 2>&1; then
               FIRST_DEPLOY="yes"
-              echo "First deployment detected"
             fi
-            echo "FIRST_DEPLOY=\$FIRST_DEPLOY"
 
-            echo "=== [4/10] Login and pull images ==="
+            echo "==> Pulling images..."
             echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
             export IMAGE_NAME=${FULL_IMAGE_NAME}
             docker compose -f compose.prod.yaml --env-file .env.production pull
 
-            echo "=== [5/10] Start data services ==="
+            echo "==> Starting data services..."
             SERVICES=""
             [ -n "\$DB_SERVICE" ] && [ "\$DB_SERVICE" != "sqlite" ] && SERVICES="\$DB_SERVICE"
             [ -n "\$CACHE_SERVICE" ] && SERVICES="\$SERVICES \$CACHE_SERVICE"
-            echo "Starting services: \$SERVICES"
             [ -n "\$SERVICES" ] && docker compose -f compose.prod.yaml --env-file .env.production up -d --wait \$SERVICES
 
-            echo "=== [6/10] Check backup restoration ==="
             if [ "\$FIRST_DEPLOY" = "yes" ] && [ -n "\${BACKUP_S3_BUCKET:-}" ]; then
-              echo "Checking for existing backups..."
-
               BACKUP_EXISTS="no"
               if docker run --rm \
                 -e AWS_ACCESS_KEY_ID="\${BACKUP_AWS_ACCESS_KEY_ID}" \
@@ -205,20 +192,17 @@ jobs:
                 amazon/aws-cli s3 ls "s3://\${BACKUP_S3_BUCKET}/\${BACKUP_S3_PATH}/" 2>/dev/null | grep -q '\.tar\.gz'; then
                 BACKUP_EXISTS="yes"
               fi
-              echo "BACKUP_EXISTS=\$BACKUP_EXISTS"
 
               if [ "\$BACKUP_EXISTS" = "yes" ]; then
-                echo "=== [7/10] Download backup ==="
+                echo "==> Downloading backup..."
                 LATEST_BACKUP=\$(docker run --rm \
                   -e AWS_ACCESS_KEY_ID="\${BACKUP_AWS_ACCESS_KEY_ID}" \
                   -e AWS_SECRET_ACCESS_KEY="\${BACKUP_AWS_SECRET_ACCESS_KEY}" \
                   -e AWS_ENDPOINT_URL="https://\${BACKUP_AWS_ENDPOINT}" \
                   amazon/aws-cli s3 ls "s3://\${BACKUP_S3_BUCKET}/\${BACKUP_S3_PATH}/" \
                   | grep '\.tar\.gz' | sort | tail -n 1 | awk '{print \$4}')
-                echo "LATEST_BACKUP=\$LATEST_BACKUP"
 
                 if [ -n "\$LATEST_BACKUP" ]; then
-                  echo "Downloading \$LATEST_BACKUP..."
                   docker run --rm \
                     -v "\${PROJECT_NAME}_backup_dumps:/restore" \
                     -e AWS_ACCESS_KEY_ID="\${BACKUP_AWS_ACCESS_KEY_ID}" \
@@ -226,99 +210,55 @@ jobs:
                     -e AWS_ENDPOINT_URL="https://\${BACKUP_AWS_ENDPOINT}" \
                     amazon/aws-cli s3 cp "s3://\${BACKUP_S3_BUCKET}/\${BACKUP_S3_PATH}/\${LATEST_BACKUP}" /restore/backup.tar.gz
 
-                  echo "Extracting backup..."
                   docker run --rm \
                     -v "\${PROJECT_NAME}_backup_dumps:/restore" \
                     alpine sh -c "tar -xzf /restore/backup.tar.gz -C /restore --strip-components=2 backup/dumps/ && rm /restore/backup.tar.gz"
-                  echo "Backup extracted successfully"
                 fi
 
-                echo "=== [8/10] Restore database ==="
+                echo "==> Restoring database..."
                 case "\$DB_SERVICE" in
                   pgsql)
                     if docker compose -f compose.prod.yaml --env-file .env.production exec -T pgsql test -f /dumps/pgsql.dump < /dev/null 2>/dev/null; then
-                      echo "Restoring PostgreSQL..."
                       docker compose -f compose.prod.yaml --env-file .env.production exec -T pgsql \
                         pg_restore -U "\${DB_USERNAME}" -d "\${DB_DATABASE}" -c --if-exists /dumps/pgsql.dump < /dev/null || true
-                      echo "PostgreSQL restore done"
                     fi
                     ;;
                   mysql)
                     if docker compose -f compose.prod.yaml --env-file .env.production exec -T mysql test -f /dumps/mysql.sql < /dev/null 2>/dev/null; then
-                      echo "Restoring MySQL..."
                       docker compose -f compose.prod.yaml --env-file .env.production exec -T mysql \
                         sh -c 'mysql -u"\$MYSQL_USER" -p"\$MYSQL_PASSWORD" "\$MYSQL_DATABASE" < /dumps/mysql.sql' < /dev/null || true
-                      echo "MySQL restore done"
                     fi
                     ;;
                   mariadb)
                     if docker compose -f compose.prod.yaml --env-file .env.production exec -T mariadb test -f /dumps/mariadb.sql < /dev/null 2>/dev/null; then
-                      echo "Restoring MariaDB..."
                       docker compose -f compose.prod.yaml --env-file .env.production exec -T mariadb \
                         sh -c 'mariadb -u"\$MARIADB_USER" -p"\$MARIADB_PASSWORD" "\$MARIADB_DATABASE" < /dumps/mariadb.sql' < /dev/null || true
-                      echo "MariaDB restore done"
                     fi
                     ;;
                 esac
 
-                echo "=== [9/10] Restore cache ==="
+                echo "==> Restoring cache..."
                 if [ -n "\$CACHE_SERVICE" ]; then
-                  echo "Checking for cache dump file..."
                   if docker run --rm -v "\${PROJECT_NAME}_backup_dumps:/dumps:ro" alpine test -f /dumps/\${CACHE_SERVICE}.rdb 2>/dev/null; then
-                    echo "Cache dump found, restoring \$CACHE_SERVICE..."
-
-                    echo "Stopping \$CACHE_SERVICE to prevent dump overwrite..."
                     docker compose -f compose.prod.yaml --env-file .env.production stop \$CACHE_SERVICE || true
-
-                    echo "Copying dump to data volume..."
                     docker run --rm \
                       -v "\${PROJECT_NAME}_backup_dumps:/source:ro" \
                       -v "\${PROJECT_NAME}_\${CACHE_VOLUME}:/data" \
                       alpine cp /source/\${CACHE_SERVICE}.rdb /data/dump.rdb || true
-
-                    echo "Starting \$CACHE_SERVICE..."
                     docker compose -f compose.prod.yaml --env-file .env.production start \$CACHE_SERVICE || true
 
-                    echo "Waiting for \$CACHE_SERVICE to be ready..."
-                    CACHE_READY=0
                     for i in 1 2 3 4 5 6 7 8 9 10; do
                       if docker compose -f compose.prod.yaml --env-file .env.production exec -T \$CACHE_SERVICE sh -c "REDISCLI_AUTH=\\\$REDIS_PASSWORD valkey-cli ping 2>/dev/null" < /dev/null | grep -q PONG; then
-                        CACHE_READY=1
                         break
                       fi
-                      echo "Waiting... attempt \$i/10"
                       sleep 2
                     done
-
-                    if [ "\$CACHE_READY" = "1" ]; then
-                      echo "Cache service ready!"
-                    else
-                      echo "Warning: Cache service may not be fully ready"
-                    fi
-                  else
-                    echo "No cache dump found at /dumps/\${CACHE_SERVICE}.rdb"
                   fi
-                else
-                  echo "No cache service configured"
                 fi
-                echo "=== Cache restoration complete ==="
-              else
-                echo "No backup found in S3/R2 - starting with fresh database"
               fi
-            else
-              echo "Skipping backup restoration (FIRST_DEPLOY=\$FIRST_DEPLOY, BACKUP_S3_BUCKET=\${BACKUP_S3_BUCKET:-not set})"
             fi
 
-            echo "=== All restoration steps completed ==="
-            echo "Current directory: \$(pwd)"
-            echo "Docker compose file exists: \$(test -f compose.prod.yaml && echo yes || echo no)"
-            echo "Env file exists: \$(test -f .env.production && echo yes || echo no)"
-
-            echo "=== [10/10] Start all services ==="
+            echo "==> Starting all services..."
             docker compose -f compose.prod.yaml --env-file .env.production up -d --wait
-            UP_EXIT_CODE=\$?
-            echo "docker compose up exit code: \$UP_EXIT_CODE"
-
-            echo "=== Deployment complete! ==="
-            docker compose -f compose.prod.yaml --env-file .env.production ps
+            echo "==> Deployment complete!"
           DEPLOY_SCRIPT
