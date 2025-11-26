@@ -202,17 +202,34 @@ jobs:
               fi
 
               if [ "\$BACKUP_EXISTS" = "yes" ]; then
-                echo "Backup found - restoring..."
+                echo "Backup found - downloading latest..."
 
-                # Download and extract archive from R2/S3
-                docker run --rm \
-                  -v "\${PROJECT_NAME}_backup_dumps:/backup/dumps" \
-                  -e AWS_ENDPOINT_URL="\${BACKUP_AWS_ENDPOINT}" \
+                # Get the latest backup filename
+                LATEST_BACKUP=\$(docker run --rm \
                   -e AWS_ACCESS_KEY_ID="\${BACKUP_AWS_ACCESS_KEY_ID}" \
                   -e AWS_SECRET_ACCESS_KEY="\${BACKUP_AWS_SECRET_ACCESS_KEY}" \
-                  -e AWS_S3_BUCKET_NAME="\${BACKUP_S3_BUCKET}" \
-                  -e AWS_S3_PATH="\${BACKUP_S3_PATH}" \
-                  offen/docker-volume-backup:v2 restore --latest
+                  -e AWS_ENDPOINT_URL="https://\${BACKUP_AWS_ENDPOINT}" \
+                  amazon/aws-cli s3 ls "s3://\${BACKUP_S3_BUCKET}/\${BACKUP_S3_PATH}/" \
+                  | grep '\.tar\.gz' | sort | tail -n 1 | awk '{print \$4}')
+
+                if [ -n "\$LATEST_BACKUP" ]; then
+                  echo "Downloading \$LATEST_BACKUP..."
+
+                  # Download archive to volume
+                  docker run --rm \
+                    -v "\${PROJECT_NAME}_backup_dumps:/restore" \
+                    -e AWS_ACCESS_KEY_ID="\${BACKUP_AWS_ACCESS_KEY_ID}" \
+                    -e AWS_SECRET_ACCESS_KEY="\${BACKUP_AWS_SECRET_ACCESS_KEY}" \
+                    -e AWS_ENDPOINT_URL="https://\${BACKUP_AWS_ENDPOINT}" \
+                    amazon/aws-cli s3 cp "s3://\${BACKUP_S3_BUCKET}/\${BACKUP_S3_PATH}/\${LATEST_BACKUP}" /restore/backup.tar.gz
+
+                  # Extract archive (strip /backup/dumps/ prefix) and cleanup
+                  docker run --rm \
+                    -v "\${PROJECT_NAME}_backup_dumps:/restore" \
+                    alpine sh -c "tar -xzf /restore/backup.tar.gz -C /restore --strip-components=2 backup/dumps/ && rm /restore/backup.tar.gz"
+
+                  echo "Backup extracted successfully"
+                fi
 
                 # Restore database
                 case "\$DB_SERVICE" in
