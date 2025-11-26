@@ -196,7 +196,7 @@ jobs:
               if docker run --rm \
                 -e AWS_ACCESS_KEY_ID="\${BACKUP_AWS_ACCESS_KEY_ID}" \
                 -e AWS_SECRET_ACCESS_KEY="\${BACKUP_AWS_SECRET_ACCESS_KEY}" \
-                -e AWS_ENDPOINT_URL="\${BACKUP_AWS_ENDPOINT}" \
+                -e AWS_ENDPOINT_URL="https://\${BACKUP_AWS_ENDPOINT}" \
                 amazon/aws-cli s3 ls "s3://\${BACKUP_S3_BUCKET}/\${BACKUP_S3_PATH}/" 2>/dev/null | grep -q '\.tar\.gz'; then
                 BACKUP_EXISTS="yes"
               fi
