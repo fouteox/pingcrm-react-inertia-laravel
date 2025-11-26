@@ -263,19 +263,45 @@ jobs:
 
                 echo "=== [9/10] Restore cache ==="
                 if [ -n "\$CACHE_SERVICE" ]; then
-                  if docker compose -f compose.prod.yaml --env-file .env.production exec -T \$CACHE_SERVICE test -f /dumps/\${CACHE_SERVICE}.rdb 2>/dev/null; then
-                    echo "Restoring \$CACHE_SERVICE..."
-                    docker compose -f compose.prod.yaml --env-file .env.production exec -T \$CACHE_SERVICE sh -c "cp /dumps/\${CACHE_SERVICE}.rdb /data/dump.rdb" || true
-                    echo "Copied rdb file, now restarting..."
-                    docker compose -f compose.prod.yaml --env-file .env.production restart \$CACHE_SERVICE || true
-                    echo "Cache service restarted"
+                  echo "Checking for cache dump file..."
+                  if docker run --rm -v "\${PROJECT_NAME}_backup_dumps:/dumps:ro" alpine test -f /dumps/\${CACHE_SERVICE}.rdb 2>/dev/null; then
+                    echo "Cache dump found, restoring \$CACHE_SERVICE..."
+
+                    echo "Stopping \$CACHE_SERVICE to prevent dump overwrite..."
+                    docker compose -f compose.prod.yaml --env-file .env.production stop \$CACHE_SERVICE || true
+
+                    echo "Copying dump to data volume..."
+                    docker run --rm \
+                      -v "\${PROJECT_NAME}_backup_dumps:/source:ro" \
+                      -v "\${PROJECT_NAME}_\${CACHE_VOLUME}:/data" \
+                      alpine cp /source/\${CACHE_SERVICE}.rdb /data/dump.rdb || true
+
+                    echo "Starting \$CACHE_SERVICE..."
+                    docker compose -f compose.prod.yaml --env-file .env.production start \$CACHE_SERVICE || true
+
+                    echo "Waiting for \$CACHE_SERVICE to be ready..."
+                    CACHE_READY=0
+                    for i in 1 2 3 4 5 6 7 8 9 10; do
+                      if docker compose -f compose.prod.yaml --env-file .env.production exec -T \$CACHE_SERVICE sh -c "REDISCLI_AUTH=\\\$REDIS_PASSWORD valkey-cli ping 2>/dev/null" | grep -q PONG; then
+                        CACHE_READY=1
+                        break
+                      fi
+                      echo "Waiting... attempt \$i/10"
+                      sleep 2
+                    done
+
+                    if [ "\$CACHE_READY" = "1" ]; then
+                      echo "Cache service ready!"
+                    else
+                      echo "Warning: Cache service may not be fully ready"
+                    fi
                   else
-                    echo "No cache dump found"
+                    echo "No cache dump found at /dumps/\${CACHE_SERVICE}.rdb"
                   fi
                 else
                   echo "No cache service configured"
                 fi
-                echo "Backup restoration complete"
+                echo "=== Cache restoration complete ==="
               else
                 echo "No backup found in S3/R2 - starting with fresh database"
               fi
@@ -283,7 +309,16 @@ jobs:
               echo "Skipping backup restoration (FIRST_DEPLOY=\$FIRST_DEPLOY, BACKUP_S3_BUCKET=\${BACKUP_S3_BUCKET:-not set})"
             fi
 
+            echo "=== All restoration steps completed ==="
+            echo "Current directory: \$(pwd)"
+            echo "Docker compose file exists: \$(test -f compose.prod.yaml && echo yes || echo no)"
+            echo "Env file exists: \$(test -f .env.production && echo yes || echo no)"
+
             echo "=== [10/10] Start all services ==="
             docker compose -f compose.prod.yaml --env-file .env.production up -d --wait
+            UP_EXIT_CODE=\$?
+            echo "docker compose up exit code: \$UP_EXIT_CODE"
+
             echo "=== Deployment complete! ==="
+            docker compose -f compose.prod.yaml --env-file .env.production ps
           DEPLOY_SCRIPT
