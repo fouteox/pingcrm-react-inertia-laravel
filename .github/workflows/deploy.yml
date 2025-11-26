@@ -139,7 +139,7 @@ jobs:
             # Aliases
             DC="docker compose -f compose.prod.yaml --env-file .env.production"
             PROJECT="\${COMPOSE_PROJECT_NAME:-${REPO_SHORT_NAME}}"
-            aws_s3() { docker run --rm "\$@" -e AWS_ACCESS_KEY_ID="\${BACKUP_AWS_ACCESS_KEY_ID}" -e AWS_SECRET_ACCESS_KEY="\${BACKUP_AWS_SECRET_ACCESS_KEY}" -e AWS_ENDPOINT_URL="https://\${BACKUP_AWS_ENDPOINT}" amazon/aws-cli; }
+            aws_s3() { docker run --rm -e AWS_ACCESS_KEY_ID="\${BACKUP_AWS_ACCESS_KEY_ID}" -e AWS_SECRET_ACCESS_KEY="\${BACKUP_AWS_SECRET_ACCESS_KEY}" -e AWS_ENDPOINT_URL="https://\${BACKUP_AWS_ENDPOINT}" amazon/aws-cli "\$@"; }
 
             # Service detection
             DB="\${DB_CONNECTION}"
@@ -176,7 +176,11 @@ jobs:
                 echo "==> Downloading backup..."
                 LATEST=\$(aws_s3 s3 ls "s3://\${BACKUP_S3_BUCKET}/\${BACKUP_S3_PATH}/" | grep '\.tar\.gz' | sort | tail -1 | awk '{print \$4}')
                 [ -n "\$LATEST" ] && {
-                  aws_s3 -v "\${PROJECT}_backup_dumps:/restore" s3 cp "s3://\${BACKUP_S3_BUCKET}/\${BACKUP_S3_PATH}/\$LATEST" /restore/backup.tar.gz
+                  docker run --rm -v "\${PROJECT}_backup_dumps:/restore" \
+                    -e AWS_ACCESS_KEY_ID="\${BACKUP_AWS_ACCESS_KEY_ID}" \
+                    -e AWS_SECRET_ACCESS_KEY="\${BACKUP_AWS_SECRET_ACCESS_KEY}" \
+                    -e AWS_ENDPOINT_URL="https://\${BACKUP_AWS_ENDPOINT}" \
+                    amazon/aws-cli s3 cp "s3://\${BACKUP_S3_BUCKET}/\${BACKUP_S3_PATH}/\$LATEST" /restore/backup.tar.gz
                   docker run --rm -v "\${PROJECT}_backup_dumps:/restore" alpine sh -c "tar -xzf /restore/backup.tar.gz -C /restore --strip-components=2 backup/dumps/ && rm /restore/backup.tar.gz"
                 }
 
