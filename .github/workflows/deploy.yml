@@ -200,9 +200,10 @@ jobs:
                     ;;
                 esac
 
-                # Cache: copy dump then start (cache not started yet)
+                # Cache: create volume via compose, copy dump, then start
                 if [ -n "\$CACHE" ]; then
                   echo "==> Restoring cache..."
+                  \$DC create \$CACHE 2>/dev/null || true
                   docker run --rm -v "\${PROJECT}_backup_dumps:/source:ro" -v "\${PROJECT}_\${CACHE_VOL}:/data" alpine cp /source/\${CACHE}.rdb /data/dump.rdb 2>/dev/null || true
                   \$DC up -d --wait \$CACHE
                 fi
