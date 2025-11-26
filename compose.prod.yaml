@@ -160,9 +160,7 @@ services:
       MARIADB_USER: "${DB_USERNAME}"
       MARIADB_PASSWORD: "${DB_PASSWORD}"
     volumes:
-      - 'mariadb_data:/var/lib/mysql'
-      - 'mariadb_custom_conf:/etc/mysql/conf.d'
-      - 'mariadb_shared:/shared'
+      - 'stack-mariadb:/var/lib/mysql'
       - 'backup_dumps:/dumps'
     networks: *default-network
     logging: *default-logging
@@ -205,7 +203,5 @@ volumes:
   storage_public:
   storage_logs:
   stack-valkey:
-  mariadb_data:
-  mariadb_custom_conf:
-  mariadb_shared:
+  stack-mariadb:
   backup_dumps:

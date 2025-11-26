@@ -141,14 +141,101 @@ jobs:
           ssh ${{ secrets.SSH_HOST }} "mkdir -p ~/$REPO_SHORT_NAME"
           scp compose.prod.yaml .env.production ${{ secrets.SSH_HOST }}:~/$REPO_SHORT_NAME/
 
-      - name: Deploy with Docker context
+      - name: Deploy with Docker Compose
         env:
           REPO_SHORT_NAME: ${{ github.event.repository.name }}
           FULL_IMAGE_NAME: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
         run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | ssh ${{ secrets.SSH_HOST }} "docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin"
+          ssh ${{ secrets.SSH_HOST }} << DEPLOY_SCRIPT
+            set -e
+            cd ~/${REPO_SHORT_NAME}
+            source .env.production
+            PROJECT_NAME="\${COMPOSE_PROJECT_NAME:-${REPO_SHORT_NAME}}"
 
-          ssh ${{ secrets.SSH_HOST }} "cd ~/$REPO_SHORT_NAME && \
-            export IMAGE_NAME=$FULL_IMAGE_NAME && \
-            docker compose -f compose.prod.yaml --env-file .env.production pull && \
-            docker compose -f compose.prod.yaml --env-file .env.production up -d"
+            # Detect services from environment
+            DB_SERVICE="\${DB_CONNECTION}"
+            CACHE_SERVICE="\${REDIS_HOST:-}"
+
+            # Map to volume names
+            case "\$DB_SERVICE" in
+              pgsql) DB_VOLUME="stack-pgsql" ;;
+              mysql) DB_VOLUME="stack-mysql" ;;
+              mariadb) DB_VOLUME="stack-mariadb" ;;
+              *) DB_VOLUME="" ;;
+            esac
+            case "\$CACHE_SERVICE" in
+              redis) CACHE_VOLUME="stack-redis" ;;
+              valkey) CACHE_VOLUME="stack-valkey" ;;
+              *) CACHE_VOLUME="" ;;
+            esac
+
+            # Detect first deployment (database volume doesn't exist)
+            FIRST_DEPLOY="no"
+            if [ -n "\$DB_VOLUME" ] && ! docker volume inspect "\${PROJECT_NAME}_\${DB_VOLUME}" > /dev/null 2>&1; then
+              FIRST_DEPLOY="yes"
+              echo "First deployment detected"
+            fi
+
+            # Login and pull images
+            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+            export IMAGE_NAME=${FULL_IMAGE_NAME}
+            docker compose -f compose.prod.yaml --env-file .env.production pull
+
+            # Start data services only
+            SERVICES=""
+            [ -n "\$DB_SERVICE" ] && [ "\$DB_SERVICE" != "sqlite" ] && SERVICES="\$DB_SERVICE"
+            [ -n "\$CACHE_SERVICE" ] && SERVICES="\$SERVICES \$CACHE_SERVICE"
+            [ -n "\$SERVICES" ] && docker compose -f compose.prod.yaml --env-file .env.production up -d --wait \$SERVICES
+
+            # Restore if first deployment and backup is configured
+            if [ "\$FIRST_DEPLOY" = "yes" ] && [ -n "\${BACKUP_S3_BUCKET:-}" ]; then
+              echo "Attempting backup restoration..."
+
+              # Download archive from R2/S3
+              docker run --rm \
+                -v "\${PROJECT_NAME}_backup_dumps:/backup/dumps" \
+                -e AWS_ENDPOINT_URL="\${BACKUP_AWS_ENDPOINT}" \
+                -e AWS_ACCESS_KEY_ID="\${BACKUP_AWS_ACCESS_KEY_ID}" \
+                -e AWS_SECRET_ACCESS_KEY="\${BACKUP_AWS_SECRET_ACCESS_KEY}" \
+                -e AWS_S3_BUCKET_NAME="\${BACKUP_S3_BUCKET}" \
+                -e AWS_S3_PATH="\${BACKUP_S3_PATH}" \
+                offen/docker-volume-backup:v2 restore --latest || echo "No backup found"
+
+              # Restore database
+              case "\$DB_SERVICE" in
+                pgsql)
+                  if docker compose -f compose.prod.yaml exec -T pgsql test -f /dumps/pgsql.dump 2>/dev/null; then
+                    echo "Restoring PostgreSQL..."
+                    docker compose -f compose.prod.yaml exec -T pgsql \
+                      pg_restore -U "\${DB_USERNAME}" -d "\${DB_DATABASE}" -c --if-exists /dumps/pgsql.dump || true
+                  fi
+                  ;;
+                mysql)
+                  if docker compose -f compose.prod.yaml exec -T mysql test -f /dumps/mysql.sql 2>/dev/null; then
+                    echo "Restoring MySQL..."
+                    docker compose -f compose.prod.yaml exec -T mysql \
+                      sh -c 'mysql -u"\$MYSQL_USER" -p"\$MYSQL_PASSWORD" "\$MYSQL_DATABASE" < /dumps/mysql.sql' || true
+                  fi
+                  ;;
+                mariadb)
+                  if docker compose -f compose.prod.yaml exec -T mariadb test -f /dumps/mariadb.sql 2>/dev/null; then
+                    echo "Restoring MariaDB..."
+                    docker compose -f compose.prod.yaml exec -T mariadb \
+                      sh -c 'mariadb -u"\$MARIADB_USER" -p"\$MARIADB_PASSWORD" "\$MARIADB_DATABASE" < /dumps/mariadb.sql' || true
+                  fi
+                  ;;
+              esac
+
+              # Restore cache
+              if [ -n "\$CACHE_SERVICE" ]; then
+                if docker compose -f compose.prod.yaml exec -T \$CACHE_SERVICE test -f /dumps/\${CACHE_SERVICE}.rdb 2>/dev/null; then
+                  echo "Restoring \$CACHE_SERVICE..."
+                  docker compose -f compose.prod.yaml exec -T \$CACHE_SERVICE sh -c "cp /dumps/\${CACHE_SERVICE}.rdb /data/dump.rdb"
+                  docker compose -f compose.prod.yaml restart \$CACHE_SERVICE
+                fi
+              fi
+            fi
+
+            # Start all remaining services
+            docker compose -f compose.prod.yaml --env-file .env.production up -d --wait
+          DEPLOY_SCRIPT
