@@ -189,50 +189,66 @@ jobs:
 
             # Restore if first deployment and backup is configured
             if [ "\$FIRST_DEPLOY" = "yes" ] && [ -n "\${BACKUP_S3_BUCKET:-}" ]; then
-              echo "Attempting backup restoration..."
+              echo "Checking for existing backups..."
 
-              # Download archive from R2/S3
-              docker run --rm \
-                -v "\${PROJECT_NAME}_backup_dumps:/backup/dumps" \
-                -e AWS_ENDPOINT_URL="\${BACKUP_AWS_ENDPOINT}" \
+              # Check if any backup archives exist in S3/R2
+              BACKUP_EXISTS="no"
+              if docker run --rm \
                 -e AWS_ACCESS_KEY_ID="\${BACKUP_AWS_ACCESS_KEY_ID}" \
                 -e AWS_SECRET_ACCESS_KEY="\${BACKUP_AWS_SECRET_ACCESS_KEY}" \
-                -e AWS_S3_BUCKET_NAME="\${BACKUP_S3_BUCKET}" \
-                -e AWS_S3_PATH="\${BACKUP_S3_PATH}" \
-                offen/docker-volume-backup:v2 restore --latest || echo "No backup found"
+                -e AWS_ENDPOINT_URL="\${BACKUP_AWS_ENDPOINT}" \
+                amazon/aws-cli s3 ls "s3://\${BACKUP_S3_BUCKET}/\${BACKUP_S3_PATH}/" 2>/dev/null | grep -q '\.tar\.gz'; then
+                BACKUP_EXISTS="yes"
+              fi
 
-              # Restore database
-              case "\$DB_SERVICE" in
-                pgsql)
-                  if docker compose -f compose.prod.yaml exec -T pgsql test -f /dumps/pgsql.dump 2>/dev/null; then
-                    echo "Restoring PostgreSQL..."
-                    docker compose -f compose.prod.yaml exec -T pgsql \
-                      pg_restore -U "\${DB_USERNAME}" -d "\${DB_DATABASE}" -c --if-exists /dumps/pgsql.dump || true
-                  fi
-                  ;;
-                mysql)
-                  if docker compose -f compose.prod.yaml exec -T mysql test -f /dumps/mysql.sql 2>/dev/null; then
-                    echo "Restoring MySQL..."
-                    docker compose -f compose.prod.yaml exec -T mysql \
-                      sh -c 'mysql -u"\$MYSQL_USER" -p"\$MYSQL_PASSWORD" "\$MYSQL_DATABASE" < /dumps/mysql.sql' || true
-                  fi
-                  ;;
-                mariadb)
-                  if docker compose -f compose.prod.yaml exec -T mariadb test -f /dumps/mariadb.sql 2>/dev/null; then
-                    echo "Restoring MariaDB..."
-                    docker compose -f compose.prod.yaml exec -T mariadb \
-                      sh -c 'mariadb -u"\$MARIADB_USER" -p"\$MARIADB_PASSWORD" "\$MARIADB_DATABASE" < /dumps/mariadb.sql' || true
-                  fi
-                  ;;
-              esac
+              if [ "\$BACKUP_EXISTS" = "yes" ]; then
+                echo "Backup found - restoring..."
 
-              # Restore cache
-              if [ -n "\$CACHE_SERVICE" ]; then
-                if docker compose -f compose.prod.yaml exec -T \$CACHE_SERVICE test -f /dumps/\${CACHE_SERVICE}.rdb 2>/dev/null; then
-                  echo "Restoring \$CACHE_SERVICE..."
-                  docker compose -f compose.prod.yaml exec -T \$CACHE_SERVICE sh -c "cp /dumps/\${CACHE_SERVICE}.rdb /data/dump.rdb"
-                  docker compose -f compose.prod.yaml restart \$CACHE_SERVICE
+                # Download and extract archive from R2/S3
+                docker run --rm \
+                  -v "\${PROJECT_NAME}_backup_dumps:/backup/dumps" \
+                  -e AWS_ENDPOINT_URL="\${BACKUP_AWS_ENDPOINT}" \
+                  -e AWS_ACCESS_KEY_ID="\${BACKUP_AWS_ACCESS_KEY_ID}" \
+                  -e AWS_SECRET_ACCESS_KEY="\${BACKUP_AWS_SECRET_ACCESS_KEY}" \
+                  -e AWS_S3_BUCKET_NAME="\${BACKUP_S3_BUCKET}" \
+                  -e AWS_S3_PATH="\${BACKUP_S3_PATH}" \
+                  offen/docker-volume-backup:v2 restore --latest
+
+                # Restore database
+                case "\$DB_SERVICE" in
+                  pgsql)
+                    if docker compose -f compose.prod.yaml exec -T pgsql test -f /dumps/pgsql.dump 2>/dev/null; then
+                      echo "Restoring PostgreSQL..."
+                      docker compose -f compose.prod.yaml exec -T pgsql \
+                        pg_restore -U "\${DB_USERNAME}" -d "\${DB_DATABASE}" -c --if-exists /dumps/pgsql.dump || true
+                    fi
+                    ;;
+                  mysql)
+                    if docker compose -f compose.prod.yaml exec -T mysql test -f /dumps/mysql.sql 2>/dev/null; then
+                      echo "Restoring MySQL..."
+                      docker compose -f compose.prod.yaml exec -T mysql \
+                        sh -c 'mysql -u"\$MYSQL_USER" -p"\$MYSQL_PASSWORD" "\$MYSQL_DATABASE" < /dumps/mysql.sql' || true
+                    fi
+                    ;;
+                  mariadb)
+                    if docker compose -f compose.prod.yaml exec -T mariadb test -f /dumps/mariadb.sql 2>/dev/null; then
+                      echo "Restoring MariaDB..."
+                      docker compose -f compose.prod.yaml exec -T mariadb \
+                        sh -c 'mariadb -u"\$MARIADB_USER" -p"\$MARIADB_PASSWORD" "\$MARIADB_DATABASE" < /dumps/mariadb.sql' || true
+                    fi
+                    ;;
+                esac
+
+                # Restore cache
+                if [ -n "\$CACHE_SERVICE" ]; then
+                  if docker compose -f compose.prod.yaml exec -T \$CACHE_SERVICE test -f /dumps/\${CACHE_SERVICE}.rdb 2>/dev/null; then
+                    echo "Restoring \$CACHE_SERVICE..."
+                    docker compose -f compose.prod.yaml exec -T \$CACHE_SERVICE sh -c "cp /dumps/\${CACHE_SERVICE}.rdb /data/dump.rdb"
+                    docker compose -f compose.prod.yaml restart \$CACHE_SERVICE
+                  fi
                 fi
+              else
+                echo "No backup found in S3/R2 - starting with fresh database"
               fi
             fi
 
