@@ -236,26 +236,26 @@ jobs:
                 echo "=== [8/10] Restore database ==="
                 case "\$DB_SERVICE" in
                   pgsql)
-                    if docker compose -f compose.prod.yaml --env-file .env.production exec -T pgsql test -f /dumps/pgsql.dump 2>/dev/null; then
+                    if docker compose -f compose.prod.yaml --env-file .env.production exec -T pgsql test -f /dumps/pgsql.dump < /dev/null 2>/dev/null; then
                       echo "Restoring PostgreSQL..."
                       docker compose -f compose.prod.yaml --env-file .env.production exec -T pgsql \
-                        pg_restore -U "\${DB_USERNAME}" -d "\${DB_DATABASE}" -c --if-exists /dumps/pgsql.dump || true
+                        pg_restore -U "\${DB_USERNAME}" -d "\${DB_DATABASE}" -c --if-exists /dumps/pgsql.dump < /dev/null || true
                       echo "PostgreSQL restore done"
                     fi
                     ;;
                   mysql)
-                    if docker compose -f compose.prod.yaml --env-file .env.production exec -T mysql test -f /dumps/mysql.sql 2>/dev/null; then
+                    if docker compose -f compose.prod.yaml --env-file .env.production exec -T mysql test -f /dumps/mysql.sql < /dev/null 2>/dev/null; then
                       echo "Restoring MySQL..."
                       docker compose -f compose.prod.yaml --env-file .env.production exec -T mysql \
-                        sh -c 'mysql -u"\$MYSQL_USER" -p"\$MYSQL_PASSWORD" "\$MYSQL_DATABASE" < /dumps/mysql.sql' || true
+                        sh -c 'mysql -u"\$MYSQL_USER" -p"\$MYSQL_PASSWORD" "\$MYSQL_DATABASE" < /dumps/mysql.sql' < /dev/null || true
                       echo "MySQL restore done"
                     fi
                     ;;
                   mariadb)
-                    if docker compose -f compose.prod.yaml --env-file .env.production exec -T mariadb test -f /dumps/mariadb.sql 2>/dev/null; then
+                    if docker compose -f compose.prod.yaml --env-file .env.production exec -T mariadb test -f /dumps/mariadb.sql < /dev/null 2>/dev/null; then
                       echo "Restoring MariaDB..."
                       docker compose -f compose.prod.yaml --env-file .env.production exec -T mariadb \
-                        sh -c 'mariadb -u"\$MARIADB_USER" -p"\$MARIADB_PASSWORD" "\$MARIADB_DATABASE" < /dumps/mariadb.sql' || true
+                        sh -c 'mariadb -u"\$MARIADB_USER" -p"\$MARIADB_PASSWORD" "\$MARIADB_DATABASE" < /dumps/mariadb.sql' < /dev/null || true
                       echo "MariaDB restore done"
                     fi
                     ;;
@@ -282,7 +282,7 @@ jobs:
                     echo "Waiting for \$CACHE_SERVICE to be ready..."
                     CACHE_READY=0
                     for i in 1 2 3 4 5 6 7 8 9 10; do
-                      if docker compose -f compose.prod.yaml --env-file .env.production exec -T \$CACHE_SERVICE sh -c "REDISCLI_AUTH=\\\$REDIS_PASSWORD valkey-cli ping 2>/dev/null" | grep -q PONG; then
+                      if docker compose -f compose.prod.yaml --env-file .env.production exec -T \$CACHE_SERVICE sh -c "REDISCLI_AUTH=\\\$REDIS_PASSWORD valkey-cli ping 2>/dev/null" < /dev/null | grep -q PONG; then
                         CACHE_READY=1
                         break
                       fi
@@ -302,15 +302,12 @@ jobs:
                   echo "No cache service configured"
                 fi
                 echo "=== Cache restoration complete ==="
-                echo "DEBUG: Finished cache section, about to close BACKUP_EXISTS block"
               else
                 echo "No backup found in S3/R2 - starting with fresh database"
               fi
-              echo "DEBUG: Closed BACKUP_EXISTS if block"
             else
               echo "Skipping backup restoration (FIRST_DEPLOY=\$FIRST_DEPLOY, BACKUP_S3_BUCKET=\${BACKUP_S3_BUCKET:-not set})"
             fi
-            echo "DEBUG: Closed FIRST_DEPLOY if block"
 
             echo "=== All restoration steps completed ==="
             echo "Current directory: \$(pwd)"
