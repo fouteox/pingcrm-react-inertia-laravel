@@ -302,12 +302,15 @@ jobs:
                   echo "No cache service configured"
                 fi
                 echo "=== Cache restoration complete ==="
+                echo "DEBUG: Finished cache section, about to close BACKUP_EXISTS block"
               else
                 echo "No backup found in S3/R2 - starting with fresh database"
               fi
+              echo "DEBUG: Closed BACKUP_EXISTS if block"
             else
               echo "Skipping backup restoration (FIRST_DEPLOY=\$FIRST_DEPLOY, BACKUP_S3_BUCKET=\${BACKUP_S3_BUCKET:-not set})"
             fi
+            echo "DEBUG: Closed FIRST_DEPLOY if block"
 
             echo "=== All restoration steps completed ==="
             echo "Current directory: \$(pwd)"
