@@ -59,17 +59,17 @@ services:
         delay: 10s
         max_attempts: 3
         window: 120s
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.pingcrm.rule=Host(`${APP_HOST}`)"
-#      - "traefik.http.routers.pingcrm.entrypoints=websecure"
-#      - "traefik.http.routers.pingcrm.tls=true"
-#      - "traefik.http.routers.pingcrm.tls.certresolver=letsencrypt-cloudflare"
-      - "traefik.http.services.pingcrm.loadbalancer.server.port=8000"
-      - "traefik.http.services.pingcrm.loadbalancer.healthcheck.path=/up"
-      - "traefik.http.services.pingcrm.loadbalancer.healthcheck.interval=30s"
-      - "traefik.http.services.pingcrm.loadbalancer.healthcheck.timeout=5s"
-      - "traefik.http.services.pingcrm.loadbalancer.healthcheck.scheme=http"
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.pingcrm.rule=Host(`${APP_HOST}`)"
+#        - "traefik.http.routers.pingcrm.entrypoints=websecure"
+#        - "traefik.http.routers.pingcrm.tls=true"
+#        - "traefik.http.routers.pingcrm.tls.certresolver=letsencrypt-cloudflare"
+        - "traefik.http.services.pingcrm.loadbalancer.server.port=8000"
+        - "traefik.http.services.pingcrm.loadbalancer.healthcheck.path=/up"
+        - "traefik.http.services.pingcrm.loadbalancer.healthcheck.interval=30s"
+        - "traefik.http.services.pingcrm.loadbalancer.healthcheck.timeout=5s"
+        - "traefik.http.services.pingcrm.loadbalancer.healthcheck.scheme=http"
 
   horizon:
     <<: *base
@@ -143,13 +143,13 @@ services:
         delay: 10s
         max_attempts: 3
         window: 120s
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.reverb.rule=Host(`${APP_HOST}`) && (PathPrefix(`/app`) || PathPrefix(`/apps`))"
-#      - "traefik.http.routers.reverb.entrypoints=websecure"
-#      - "traefik.http.routers.reverb.tls=true"
-#      - "traefik.http.routers.reverb.tls.certresolver=letsencrypt-cloudflare"
-      - "traefik.http.services.reverb.loadbalancer.server.port=8080"
+      labels:
+        - "traefik.enable=true"
+        - "traefik.http.routers.reverb.rule=Host(`${APP_HOST}`) && (PathPrefix(`/app`) || PathPrefix(`/apps`))"
+#        - "traefik.http.routers.reverb.entrypoints=websecure"
+#        - "traefik.http.routers.reverb.tls=true"
+#        - "traefik.http.routers.reverb.tls.certresolver=letsencrypt-cloudflare"
+        - "traefik.http.services.reverb.loadbalancer.server.port=8080"
 
   ssr:
     image: ${IMAGE_NAME:-app}:ssr
