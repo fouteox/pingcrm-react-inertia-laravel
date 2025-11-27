@@ -32,11 +32,11 @@ services:
     command: ["php", "/var/www/html/artisan", "octane:start", "--server=frankenphp", "--port=8000"]
     stop_signal: SIGTERM
     environment:
-      AUTORUN_ENABLED: true
-      AUTORUN_LARAVEL_MIGRATION_MODE: fresh
-      AUTORUN_LARAVEL_MIGRATION_SEED: true
-      INERTIA_SSR_URL: http://ssr:13714
-      INERTIA_SSR_ENSURE_BUNDLE_EXISTS: false
+      AUTORUN_ENABLED: "true"
+      AUTORUN_LARAVEL_MIGRATION_MODE: "fresh"
+      AUTORUN_LARAVEL_MIGRATION_SEED: "true"
+      INERTIA_SSR_URL: "http://ssr:13714"
+      INERTIA_SSR_ENSURE_BUNDLE_EXISTS: "false"
       PHP_OPCACHE_ENABLE: "1"
     networks:
       - internal
