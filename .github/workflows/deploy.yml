@@ -27,21 +27,9 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Load env variables for build
+      - name: Load env file for build
         run: |
-          echo "${{ secrets.ENV_FILE_BASE64 }}" | base64 -d > .env.production
-
-          while IFS= read -r line || [[ -n "$line" ]]; do
-            [[ -z "$line" || "$line" == \#* ]] && continue
-            if [[ $line =~ ^(VITE_|REVERB_|APP_NAME|APP_HOST).*= ]]; then
-              key="${line%%=*}"
-              value="${line#*=}"
-              value=$(echo "$value" | sed -e 's/^"//' -e 's/"$//')
-              echo "$key=$value" >> $GITHUB_ENV
-            fi
-          done < .env.production
-
-          rm .env.production
+          echo "${{ secrets.ENV_FILE_BASE64 }}" | base64 -d > .env.build
 
       - name: Build and push App image
         uses: docker/build-push-action@v5
@@ -54,12 +42,8 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}-app
           cache-from: type=gha,scope=app
           cache-to: type=gha,mode=max,scope=app
-          build-args: |
-            VITE_APP_NAME=${{ env.APP_NAME }}
-            VITE_REVERB_APP_KEY=${{ env.REVERB_APP_KEY }}
-            VITE_REVERB_HOST=${{ env.APP_HOST }}
-            VITE_REVERB_PORT=443
-            VITE_REVERB_SCHEME=https
+          secret-files: |
+            dotenv=./.env.build
 
       - name: Build and push SSR image
         uses: docker/build-push-action@v5
@@ -72,12 +56,11 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}-ssr
           cache-from: type=gha,scope=ssr
           cache-to: type=gha,mode=max,scope=ssr
-          build-args: |
-            VITE_APP_NAME=${{ env.APP_NAME }}
-            VITE_REVERB_APP_KEY=${{ env.REVERB_APP_KEY }}
-            VITE_REVERB_HOST=${{ env.APP_HOST }}
-            VITE_REVERB_PORT=443
-            VITE_REVERB_SCHEME=https
+          secret-files: |
+            dotenv=./.env.build
+
+      - name: Cleanup build env
+        run: rm -f .env.build
 
   deploy:
     needs: build
