@@ -6,27 +6,23 @@ x-logging: &default-logging
 x-network: &default-network
   internal:
 x-base: &base
-  depends_on:
-    mariadb:
-      condition: service_healthy
-    valkey:
-      condition: service_healthy
-    ssr:
-      condition: service_healthy
   image: ${IMAGE_NAME:-app}:latest
-  env_file:
-    - .env.production
+  secrets:
+    - source: laravel_env
+      target: /var/www/html/.env
+      uid: "33"
+      gid: "33"
+      mode: 0440
   ulimits:
     nofile:
       soft: 20000
       hard: 40000
-  security_opt:
-    - no-new-privileges:true
   volumes:
+    - 'storage_private:/var/www/html/storage/app/private/'
     - 'storage_public:/var/www/html/storage/app/public'
+    - 'storage_sessions:/var/www/html/storage/framework/sessions'
     - 'storage_logs:/var/www/html/storage/logs'
   logging: *default-logging
-  restart: always
 
 services:
   app:
@@ -48,6 +44,21 @@ services:
     healthcheck:
       test: ["CMD", "healthcheck-octane"]
       start_period: 10s
+    deploy:
+      replicas: 1
+      update_config:
+        failure_action: rollback
+        parallelism: 1
+        delay: 5s
+        order: start-first
+      rollback_config:
+        parallelism: 0
+        order: stop-first
+      restart_policy:
+        condition: any
+        delay: 10s
+        max_attempts: 3
+        window: 120s
     labels:
       traefik.enable: true
       traefik.http.routers.pingcrm.rule: Host(`${APP_HOST}`)
@@ -66,9 +77,20 @@ services:
     command: ["php", "/var/www/html/artisan", "horizon"]
     stop_signal: SIGTERM
     networks: *default-network
-    depends_on:
-      app:
-        condition: service_healthy
+    deploy:
+      update_config:
+        failure_action: rollback
+        parallelism: 1
+        delay: 5s
+        order: stop-first
+      rollback_config:
+        parallelism: 0
+        order: stop-first
+      restart_policy:
+        condition: any
+        delay: 10s
+        max_attempts: 3
+        window: 120s
     healthcheck:
       test: ["CMD", "healthcheck-horizon"]
       start_period: 10s
@@ -78,9 +100,21 @@ services:
     command: ["php", "/var/www/html/artisan", "schedule:work"]
     stop_signal: SIGTERM
     networks: *default-network
-    depends_on:
-      app:
-        condition: service_healthy
+    deploy:
+      replicas: 1
+      update_config:
+        failure_action: rollback
+        parallelism: 1
+        delay: 5s
+        order: stop-first
+      rollback_config:
+        parallelism: 0
+        order: stop-first
+      restart_policy:
+        condition: any
+        delay: 10s
+        max_attempts: 3
+        window: 120s
     healthcheck:
       test: ["CMD", "healthcheck-schedule"]
       start_period: 10s
@@ -92,12 +126,24 @@ services:
     networks:
       - internal
       - proxy
-    depends_on:
-      app:
-        condition: service_healthy
     healthcheck:
       test: ["CMD", "healthcheck-reverb"]
       start_period: 10s
+    deploy:
+      replicas: 1
+      update_config:
+        failure_action: rollback
+        parallelism: 1
+        delay: 5s
+        order: start-first
+      rollback_config:
+        parallelism: 0
+        order: stop-first
+      restart_policy:
+        condition: any
+        delay: 10s
+        max_attempts: 3
+        window: 120s
     labels:
       traefik.enable: true
       traefik.http.routers.reverb.rule: Host(`${APP_HOST}`) && (PathPrefix(`/app`) || PathPrefix(`/apps`))
@@ -110,17 +156,23 @@ services:
     image: ${IMAGE_NAME:-app}:ssr
     build:
       target: ssr
-    security_opt:
-      - no-new-privileges:true
     networks: *default-network
     logging: *default-logging
-    restart: always
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://localhost:13714/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
       start_period: 5s
       interval: 30s
       timeout: 10s
       retries: 3
+    deploy:
+      replicas: 1
+      update_config:
+        failure_action: rollback
+        order: start-first
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 3
 
   valkey:
     image: 'valkey/valkey:alpine'
@@ -129,8 +181,6 @@ services:
         soft: 20000
         hard: 40000
     command: [ "valkey-server", "--requirepass", "${REDIS_PASSWORD}", "--maxmemory", "2gb" ]
-    security_opt:
-      - no-new-privileges:true
     environment:
       REDIS_PASSWORD: "${REDIS_PASSWORD}"
     volumes:
@@ -142,9 +192,14 @@ services:
       test: [ "CMD", "valkey-cli", "-a", "${REDIS_PASSWORD}", "ping" ]
       retries: 3
       timeout: 5s
+    deploy:
+      replicas: 1
+      update_config:
+        parallelism: 1
+        delay: 5s
+        order: start-first
     labels:
       - docker-volume-backup.archive-pre=/bin/sh -c 'valkey-cli -a $$REDIS_PASSWORD BGSAVE && sleep 2 && cp /data/dump.rdb /dumps/valkey.rdb'
-    restart: always
 
   mariadb:
     image: mariadb:11.4
@@ -152,8 +207,6 @@ services:
       nofile:
         soft: 20000
         hard: 40000
-    security_opt:
-      - no-new-privileges:true
     environment:
       MARIADB_RANDOM_ROOT_PASSWORD: "1"
       MARIADB_DATABASE: "${DB_DATABASE}"
@@ -170,14 +223,15 @@ services:
       interval: 10s
       timeout: 5s
       retries: 3
+    deploy:
+      placement:
+        constraints:
+          - node.role==manager
     labels:
       - docker-volume-backup.archive-pre=/bin/sh -c 'mariadb-dump -u $$MARIADB_USER -p$$MARIADB_PASSWORD --single-transaction $$MARIADB_DATABASE > /dumps/mariadb.sql'
-    restart: always
 
   backup:
     image: offen/docker-volume-backup:v2
-    security_opt:
-      - no-new-privileges:true
     environment:
       AWS_S3_BUCKET_NAME: "${BACKUP_S3_BUCKET}"
       AWS_S3_PATH: "${BACKUP_S3_PATH}"
@@ -192,7 +246,10 @@ services:
       - /var/run/docker.sock:/var/run/docker.sock:ro
     networks: *default-network
     logging: *default-logging
-    restart: always
+    deploy:
+      placement:
+        constraints:
+          - node.role==manager
 
 networks:
   internal:
@@ -200,8 +257,15 @@ networks:
     external: true
 
 volumes:
+  storage_private:
   storage_public:
+  storage_sessions:
   storage_logs:
   stack-valkey:
   stack-mariadb:
   backup_dumps:
+
+secrets:
+  laravel_env:
+    file: .env.production
+    name: laravel_env_${ENV_HASH:-latest}
