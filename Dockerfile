@@ -39,6 +39,12 @@ COPY --link . .
 
 RUN composer dump-autoload --classmap-authoritative --no-dev
 
+ARG VITE_APP_NAME
+ARG VITE_REVERB_APP_KEY
+ARG VITE_REVERB_HOST
+ARG VITE_REVERB_PORT
+ARG VITE_REVERB_SCHEME
+
 RUN npm run build:ssr
 
 ############################################

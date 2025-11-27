@@ -33,8 +33,9 @@ return Application::configure(basePath: dirname(__DIR__))
         ]);
 
         $middleware->trustProxies(at: [
-            '172.16.0.0/12',
-            '192.168.0.0/16',
+            '10.0.0.0/8',      // Docker Swarm overlay networks
+            '172.16.0.0/12',   // Docker bridge networks
+            '192.168.0.0/16',  // Private networks
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
