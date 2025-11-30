@@ -193,12 +193,15 @@ services:
       timeout: 5s
     deploy:
       replicas: 1
+      placement:
+        constraints:
+          - node.role==manager
       update_config:
         parallelism: 1
         delay: 5s
         order: start-first
-    labels:
-      - docker-volume-backup.archive-pre=/bin/sh -c 'valkey-cli -a $$REDIS_PASSWORD BGSAVE && sleep 2 && cp /data/dump.rdb /dumps/valkey.rdb'
+      labels:
+        - docker-volume-backup.archive-pre=/bin/sh -c 'valkey-cli -a $$REDIS_PASSWORD BGSAVE && sleep 2 && cp /data/dump.rdb /dumps/valkey.rdb'
 
   mariadb:
     image: mariadb:11.4
@@ -226,8 +229,8 @@ services:
       placement:
         constraints:
           - node.role==manager
-    labels:
-      - docker-volume-backup.archive-pre=/bin/sh -c 'mariadb-dump -u $$MARIADB_USER -p$$MARIADB_PASSWORD --single-transaction $$MARIADB_DATABASE > /dumps/mariadb.sql'
+      labels:
+        - docker-volume-backup.archive-pre=/bin/sh -c 'mariadb-dump -u $$MARIADB_USER -p$$MARIADB_PASSWORD --single-transaction $$MARIADB_DATABASE > /dumps/mariadb.sql'
 
   backup:
     image: offen/docker-volume-backup:v2
@@ -257,6 +260,9 @@ services:
       placement:
         constraints:
           - node.role==manager
+      resources:
+        limits:
+          memory: 256M
 
 networks:
   internal:
