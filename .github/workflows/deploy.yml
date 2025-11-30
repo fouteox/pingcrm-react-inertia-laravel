@@ -12,6 +12,7 @@ env:
 
 jobs:
   build:
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
     runs-on: ${{ vars.SYSTEM_ARCH == 'aarch64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
     permissions:
       contents: read
@@ -60,6 +61,7 @@ jobs:
             dotenv=./.env.build
 
       - name: Cleanup build env
+        if: always()
         run: rm -f .env.build
 
   deploy:
@@ -124,68 +126,199 @@ jobs:
 
       - name: Check first deploy & restore backup
         run: |
-          # Check if DB volume exists (indicates not first deploy)
-          if docker -H ssh://deploy-target volume inspect ${STACK_NAME}_stack-mariadb > /dev/null 2>&1; then
-            echo "Existing deployment detected"
+          # Service detection from env and compose
+          DB="${DB_CONNECTION:-}"
+
+          # Auto-detect cache service from compose (valkey, redis, dragonfly, memcached)
+          CACHE=$(docker compose -f compose.prod.yaml config --format json | jq -r '[.services | keys[] | select(. == "valkey" or . == "redis" or . == "dragonfly" or . == "memcached")] | first // empty')
+          [ -n "$CACHE" ] && echo "Cache detected: $CACHE" || echo "No cache service detected"
+
+          # Determine if we need DB restore
+          RESTORE_DB="yes"
+          if [ -z "$DB" ]; then
+            echo "No database configured (DB_CONNECTION is empty)"
+            RESTORE_DB="no"
+          elif [ "$DB" = "sqlite" ]; then
+            echo "SQLite detected, no DB volume to restore"
+            RESTORE_DB="no"
+          fi
+
+          # Volume name for DB (if applicable)
+          DB_VOL="stack-${DB}"
+
+          # First deploy check - use DB volume if DB exists, otherwise use cache volume
+          if [ "$RESTORE_DB" = "yes" ]; then
+            if docker -H ssh://deploy-target volume inspect ${STACK_NAME}_${DB_VOL} > /dev/null 2>&1; then
+              echo "Existing deployment detected (DB volume exists)"
+              exit 0
+            fi
+          elif [ -n "$CACHE" ]; then
+            if docker -H ssh://deploy-target volume inspect ${STACK_NAME}_stack-${CACHE} > /dev/null 2>&1; then
+              echo "Existing deployment detected (cache volume exists)"
+              exit 0
+            fi
+          else
+            echo "No DB or cache to restore, skipping"
             exit 0
           fi
 
           echo "First deploy detected"
 
-          # Extract MariaDB image from compose file (single source of truth)
-          MARIADB_IMAGE=$(docker compose -f compose.prod.yaml config --format json | jq -r '.services.mariadb.image')
-          echo "Using MariaDB image: $MARIADB_IMAGE"
+          # Validate DB service exists in compose (only if restoring DB)
+          if [ "$RESTORE_DB" = "yes" ]; then
+            DB_IMAGE=$(docker compose -f compose.prod.yaml config --format json | jq -r ".services.${DB}.image")
+            if [ "$DB_IMAGE" = "null" ] || [ -z "$DB_IMAGE" ]; then
+              echo "ERROR: Service '${DB}' not found in compose.prod.yaml"
+              echo "Make sure DB_CONNECTION matches a service name in compose.prod.yaml"
+              exit 1
+            fi
+            echo "Using ${DB} image: $DB_IMAGE"
+          fi
 
-          # Skip if no S3 backup configured
-          [[ -z "${BACKUP_S3_BUCKET:-}" ]] && exit 0
+          # === BACKUP DOWNLOAD (rclone - supports S3, Dropbox) ===
+          RESTORE_VOL="${STACK_NAME}_backup_dumps"
 
-          # Download latest backup
-          LATEST=$(docker -H ssh://deploy-target run --rm \
-            -e AWS_ACCESS_KEY_ID="${BACKUP_AWS_ACCESS_KEY_ID}" \
-            -e AWS_SECRET_ACCESS_KEY="${BACKUP_AWS_SECRET_ACCESS_KEY}" \
-            -e AWS_ENDPOINT_URL="https://${BACKUP_AWS_ENDPOINT}" \
-            amazon/aws-cli s3 ls "s3://${BACKUP_S3_BUCKET}/${BACKUP_S3_PATH}/" 2>/dev/null \
-            | grep '\.tar\.gz' | sort | tail -1 | awk '{print $4}') || true
+          # Helper: run rclone on remote with config from stdin
+          rclone_cmd() {
+            local args="$*"
+            ssh deploy-target "cat > /tmp/rclone.conf && docker run --rm \
+              -v /tmp/rclone.conf:/config/rclone/rclone.conf:ro \
+              -v ${RESTORE_VOL}:/restore rclone/rclone ${args} ; rm -f /tmp/rclone.conf"
+          }
+
+          # Generate rclone config based on detected provider (uses BACKUP_* vars from .env)
+          if [[ -n "${BACKUP_S3_BUCKET:-}" ]]; then
+            echo "Provider: S3"
+            RCLONE_CFG="[backup]
+            type = s3
+            provider = Other
+            access_key_id = ${BACKUP_AWS_ACCESS_KEY_ID}
+            secret_access_key = ${BACKUP_AWS_SECRET_ACCESS_KEY}
+            endpoint = https://${BACKUP_AWS_ENDPOINT:-s3.amazonaws.com}"
+            REMOTE_PATH="${BACKUP_S3_BUCKET}/${BACKUP_S3_PATH:-}"
+
+          elif [[ -n "${BACKUP_DROPBOX_REFRESH_TOKEN:-}" ]]; then
+            echo "Provider: Dropbox"
+            RCLONE_CFG="[backup]
+            type = dropbox
+            client_id = ${BACKUP_DROPBOX_APP_KEY}
+            client_secret = ${BACKUP_DROPBOX_APP_SECRET}
+            token = {\"refresh_token\":\"${BACKUP_DROPBOX_REFRESH_TOKEN}\",\"token_type\":\"bearer\"}"
+            REMOTE_PATH="${BACKUP_DROPBOX_REMOTE_PATH#/}"
+
+          else
+            echo "No backup provider configured"
+            exit 0
+          fi
+
+          # Find latest backup (strip leading whitespace from config)
+          LATEST=$(echo "$RCLONE_CFG" | sed 's/^[[:space:]]*//' | rclone_cmd lsf "backup:${REMOTE_PATH}/" --files-only 2>/dev/null \
+            | grep '\.tar\.gz' | sort | tail -1) || true
 
           [[ -z "$LATEST" ]] && { echo "No backup found"; exit 0; }
 
           echo "Restoring from: $LATEST"
 
-          # Download and extract backup
-          docker -H ssh://deploy-target run --rm \
-            -v ${STACK_NAME}_backup_dumps:/restore \
-            -e AWS_ACCESS_KEY_ID="${BACKUP_AWS_ACCESS_KEY_ID}" \
-            -e AWS_SECRET_ACCESS_KEY="${BACKUP_AWS_SECRET_ACCESS_KEY}" \
-            -e AWS_ENDPOINT_URL="https://${BACKUP_AWS_ENDPOINT}" \
-            amazon/aws-cli s3 cp "s3://${BACKUP_S3_BUCKET}/${BACKUP_S3_PATH}/$LATEST" /restore/backup.tar.gz
+          # Download backup
+          echo "$RCLONE_CFG" | sed 's/^[[:space:]]*//' | rclone_cmd copy "backup:${REMOTE_PATH}/$LATEST" /restore/
+          docker -H ssh://deploy-target run --rm -v ${RESTORE_VOL}:/restore alpine mv "/restore/$LATEST" /restore/backup.tar.gz
 
           docker -H ssh://deploy-target run --rm \
             -v ${STACK_NAME}_backup_dumps:/restore \
             alpine sh -c "tar -xzf /restore/backup.tar.gz -C /restore --strip-components=2 backup/dumps/ && rm /restore/backup.tar.gz"
 
-          # Restore MariaDB
-          docker -H ssh://deploy-target run -d --name temp-mariadb \
-            -v ${STACK_NAME}_stack-mariadb:/var/lib/mysql \
-            -v ${STACK_NAME}_backup_dumps:/dumps \
-            -e MARIADB_ALLOW_EMPTY_ROOT_PASSWORD=yes \
-            -e MARIADB_DATABASE="${DB_DATABASE}" \
-            -e MARIADB_USER="${DB_USERNAME}" \
-            -e MARIADB_PASSWORD="${DB_PASSWORD}" \
-            "$MARIADB_IMAGE"
+          # Helper function: wait for DB with timeout
+          wait_for_db() {
+            local check_cmd="$1"
+            local timeout=60
+            local elapsed=0
+            echo "Waiting for database (timeout: ${timeout}s)..."
+            until docker -H ssh://deploy-target exec temp-db sh -c "$check_cmd" 2>/dev/null; do
+              sleep 2
+              elapsed=$((elapsed + 2))
+              if [ $elapsed -ge $timeout ]; then
+                echo "ERROR: Database failed to start within ${timeout}s"
+                docker -H ssh://deploy-target logs temp-db 2>&1 | tail -20
+                docker -H ssh://deploy-target rm -f temp-db 2>/dev/null || true
+                exit 1
+              fi
+            done
+            echo "Database ready after ${elapsed}s"
+          }
 
-          echo "Waiting for MariaDB..."
-          until docker -H ssh://deploy-target exec temp-mariadb mariadb-admin ping --silent 2>/dev/null; do sleep 2; done
+          # Restore database (only if needed)
+          if [ "$RESTORE_DB" = "yes" ]; then
+            case "$DB" in
+              pgsql)
+                docker -H ssh://deploy-target run -d --name temp-db \
+                  -v ${STACK_NAME}_${DB_VOL}:/var/lib/postgresql/data \
+                  -v ${STACK_NAME}_backup_dumps:/dumps \
+                  -e POSTGRES_DB="${DB_DATABASE}" \
+                  -e POSTGRES_USER="${DB_USERNAME}" \
+                  -e POSTGRES_PASSWORD="${DB_PASSWORD}" \
+                  "$DB_IMAGE"
 
-          docker -H ssh://deploy-target exec temp-mariadb sh -c \
-            'mariadb -u"$MARIADB_USER" -p"$MARIADB_PASSWORD" "$MARIADB_DATABASE" < /dumps/mariadb.sql' || true
+                wait_for_db "pg_isready -U ${DB_USERNAME}"
 
-          docker -H ssh://deploy-target rm -f temp-mariadb
+                docker -H ssh://deploy-target exec temp-db sh -c \
+                  'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c --if-exists /dumps/pgsql.dump 2>/dev/null || psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" < /dumps/pgsql.sql' || true
+                ;;
 
-          # Restore Valkey (just copy dump.rdb)
-          docker -H ssh://deploy-target run --rm \
-            -v ${STACK_NAME}_backup_dumps:/source:ro \
-            -v ${STACK_NAME}_stack-valkey:/data \
-            alpine cp /source/valkey.rdb /data/dump.rdb 2>/dev/null || true
+              mysql)
+                docker -H ssh://deploy-target run -d --name temp-db \
+                  -v ${STACK_NAME}_${DB_VOL}:/var/lib/mysql \
+                  -v ${STACK_NAME}_backup_dumps:/dumps \
+                  -e MYSQL_RANDOM_ROOT_PASSWORD=yes \
+                  -e MYSQL_DATABASE="${DB_DATABASE}" \
+                  -e MYSQL_USER="${DB_USERNAME}" \
+                  -e MYSQL_PASSWORD="${DB_PASSWORD}" \
+                  "$DB_IMAGE"
+
+                wait_for_db "mysqladmin ping --silent"
+
+                docker -H ssh://deploy-target exec temp-db sh -c \
+                  'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" < /dumps/mysql.sql' || true
+                ;;
+
+              mariadb)
+                docker -H ssh://deploy-target run -d --name temp-db \
+                  -v ${STACK_NAME}_${DB_VOL}:/var/lib/mysql \
+                  -v ${STACK_NAME}_backup_dumps:/dumps \
+                  -e MARIADB_ALLOW_EMPTY_ROOT_PASSWORD=yes \
+                  -e MARIADB_DATABASE="${DB_DATABASE}" \
+                  -e MARIADB_USER="${DB_USERNAME}" \
+                  -e MARIADB_PASSWORD="${DB_PASSWORD}" \
+                  "$DB_IMAGE"
+
+                wait_for_db "mariadb-admin ping --silent"
+
+                docker -H ssh://deploy-target exec temp-db sh -c \
+                  'mariadb -u"$MARIADB_USER" -p"$MARIADB_PASSWORD" "$MARIADB_DATABASE" < /dumps/mariadb.sql' || true
+                ;;
+
+              *)
+                echo "ERROR: Unsupported database type: ${DB}"
+                echo "Supported: pgsql, mysql, mariadb"
+                exit 1
+                ;;
+            esac
+
+            # Cleanup temp DB container
+            docker -H ssh://deploy-target rm -f temp-db 2>/dev/null || true
+          fi
+
+          # Restore cache (valkey/redis use same format)
+          if [ -n "$CACHE" ]; then
+            echo "Restoring cache: $CACHE"
+            docker -H ssh://deploy-target run --rm \
+              -v ${STACK_NAME}_backup_dumps:/source:ro \
+              -v ${STACK_NAME}_stack-${CACHE}:/data \
+              alpine cp /source/${CACHE}.rdb /data/dump.rdb 2>/dev/null || \
+            docker -H ssh://deploy-target run --rm \
+              -v ${STACK_NAME}_backup_dumps:/source:ro \
+              -v ${STACK_NAME}_stack-${CACHE}:/data \
+              alpine cp /source/redis.rdb /data/dump.rdb 2>/dev/null || true
+          fi
 
       - name: Deploy stack
         run: |
@@ -205,4 +338,5 @@ jobs:
             | xargs -r docker -H ssh://deploy-target secret rm || true
 
       - name: Cleanup .env.production
+        if: always()
         run: rm -f .env.production
