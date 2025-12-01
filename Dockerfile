@@ -39,6 +39,7 @@ COPY --link . .
 
 RUN composer dump-autoload --classmap-authoritative --no-dev
 
+ARG ENV_HASH
 RUN --mount=type=secret,id=dotenv \
     set -a && . /run/secrets/dotenv && set +a && \
     npm run build:ssr
