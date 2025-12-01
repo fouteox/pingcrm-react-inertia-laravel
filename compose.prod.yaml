@@ -43,10 +43,10 @@ services:
       - proxy
     healthcheck:
       test: ["CMD", "healthcheck-octane"]
-      start_period: 10s
-      interval: 5s
-      timeout: 5s
-      retries: 2
+      start_period: 90s
+      interval: 10s
+      timeout: 10s
+      retries: 3
     deploy:
       replicas: 1
       update_config:
@@ -55,7 +55,7 @@ services:
         delay: 5s
         order: start-first
       rollback_config:
-        parallelism: 0
+        parallelism: 1
         order: stop-first
       restart_policy:
         condition: any
@@ -65,10 +65,11 @@ services:
       labels:
         - "traefik.enable=true"
         - "traefik.swarm.lbswarm=true"
+        - "traefik.swarm.network=proxy"
         - "traefik.http.routers.pingcrm.rule=Host(`${APP_HOST}`)"
-#        - "traefik.http.routers.pingcrm.entrypoints=websecure"
-#        - "traefik.http.routers.pingcrm.tls=true"
-#        - "traefik.http.routers.pingcrm.tls.certresolver=letsencrypt-cloudflare"
+        - "traefik.http.routers.pingcrm.entrypoints=websecure"
+        - "traefik.http.routers.pingcrm.tls=true"
+        - "traefik.http.routers.pingcrm.tls.certresolver=letsencrypt-cloudflare"
         - "traefik.http.services.pingcrm.loadbalancer.server.port=8000"
 
   horizon:
@@ -83,7 +84,7 @@ services:
         delay: 5s
         order: stop-first
       rollback_config:
-        parallelism: 0
+        parallelism: 1
         order: stop-first
       restart_policy:
         condition: any
@@ -110,7 +111,7 @@ services:
         delay: 5s
         order: stop-first
       rollback_config:
-        parallelism: 0
+        parallelism: 1
         order: stop-first
       restart_policy:
         condition: any
@@ -145,7 +146,7 @@ services:
         delay: 5s
         order: start-first
       rollback_config:
-        parallelism: 0
+        parallelism: 1
         order: stop-first
       restart_policy:
         condition: any
@@ -155,10 +156,11 @@ services:
       labels:
         - "traefik.enable=true"
         - "traefik.swarm.lbswarm=true"
+        - "traefik.swarm.network=proxy"
         - "traefik.http.routers.reverb.rule=Host(`${APP_HOST}`) && (PathPrefix(`/app`) || PathPrefix(`/apps`))"
-#        - "traefik.http.routers.reverb.entrypoints=websecure"
-#        - "traefik.http.routers.reverb.tls=true"
-#        - "traefik.http.routers.reverb.tls.certresolver=letsencrypt-cloudflare"
+        - "traefik.http.routers.reverb.entrypoints=websecure"
+        - "traefik.http.routers.reverb.tls=true"
+        - "traefik.http.routers.reverb.tls.certresolver=letsencrypt-cloudflare"
         - "traefik.http.services.reverb.loadbalancer.server.port=8080"
 
   ssr:
