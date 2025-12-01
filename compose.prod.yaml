@@ -44,6 +44,9 @@ services:
     healthcheck:
       test: ["CMD", "healthcheck-octane"]
       start_period: 10s
+      interval: 5s
+      timeout: 5s
+      retries: 2
     deploy:
       replicas: 1
       update_config:
@@ -61,15 +64,12 @@ services:
         window: 120s
       labels:
         - "traefik.enable=true"
+        - "traefik.swarm.lbswarm=true"
         - "traefik.http.routers.pingcrm.rule=Host(`${APP_HOST}`)"
 #        - "traefik.http.routers.pingcrm.entrypoints=websecure"
 #        - "traefik.http.routers.pingcrm.tls=true"
 #        - "traefik.http.routers.pingcrm.tls.certresolver=letsencrypt-cloudflare"
         - "traefik.http.services.pingcrm.loadbalancer.server.port=8000"
-        - "traefik.http.services.pingcrm.loadbalancer.healthcheck.path=/up"
-        - "traefik.http.services.pingcrm.loadbalancer.healthcheck.interval=30s"
-        - "traefik.http.services.pingcrm.loadbalancer.healthcheck.timeout=5s"
-        - "traefik.http.services.pingcrm.loadbalancer.healthcheck.scheme=http"
 
   horizon:
     <<: *base
@@ -93,6 +93,9 @@ services:
     healthcheck:
       test: ["CMD", "healthcheck-horizon"]
       start_period: 10s
+      interval: 5s
+      timeout: 5s
+      retries: 2
 
   scheduler:
     <<: *base
@@ -117,6 +120,9 @@ services:
     healthcheck:
       test: ["CMD", "healthcheck-schedule"]
       start_period: 10s
+      interval: 5s
+      timeout: 5s
+      retries: 2
 
   reverb:
     <<: *base
@@ -128,6 +134,9 @@ services:
     healthcheck:
       test: ["CMD", "healthcheck-reverb"]
       start_period: 10s
+      interval: 5s
+      timeout: 5s
+      retries: 2
     deploy:
       replicas: 1
       update_config:
@@ -145,6 +154,7 @@ services:
         window: 120s
       labels:
         - "traefik.enable=true"
+        - "traefik.swarm.lbswarm=true"
         - "traefik.http.routers.reverb.rule=Host(`${APP_HOST}`) && (PathPrefix(`/app`) || PathPrefix(`/apps`))"
 #        - "traefik.http.routers.reverb.entrypoints=websecure"
 #        - "traefik.http.routers.reverb.tls=true"
@@ -160,9 +170,9 @@ services:
     healthcheck:
       test: ["CMD", "node", "-e", "fetch('http://localhost:13714/health').then(r => process.exit(r.ok ? 0 : 1)).catch(() => process.exit(1))"]
       start_period: 5s
-      interval: 30s
-      timeout: 10s
-      retries: 3
+      interval: 5s
+      timeout: 5s
+      retries: 2
     deploy:
       replicas: 1
       update_config:
