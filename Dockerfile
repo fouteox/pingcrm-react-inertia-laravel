@@ -41,6 +41,7 @@ RUN composer dump-autoload --classmap-authoritative --no-dev
 
 ARG ENV_HASH
 RUN --mount=type=secret,id=dotenv \
+    echo "Build with ENV_HASH=${ENV_HASH}" && \
     set -a && . /run/secrets/dotenv && set +a && \
     npm run build:ssr
 
