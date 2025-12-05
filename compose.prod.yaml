@@ -69,7 +69,7 @@ services:
         - "traefik.http.routers.pingcrm.rule=Host(`${APP_HOST}`)"
         - "traefik.http.routers.pingcrm.entrypoints=websecure"
         - "traefik.http.routers.pingcrm.tls=true"
-        - "traefik.http.routers.pingcrm.tls.certresolver=letsencrypt-cloudflare"
+        - "traefik.http.routers.pingcrm.tls.certresolver=letsencrypt-${DNS_PROVIDER}"
         - "traefik.http.services.pingcrm.loadbalancer.server.port=8000"
 
   horizon:
@@ -160,7 +160,7 @@ services:
         - "traefik.http.routers.reverb.rule=Host(`${APP_HOST}`) && (PathPrefix(`/app`) || PathPrefix(`/apps`))"
         - "traefik.http.routers.reverb.entrypoints=websecure"
         - "traefik.http.routers.reverb.tls=true"
-        - "traefik.http.routers.reverb.tls.certresolver=letsencrypt-cloudflare"
+        - "traefik.http.routers.reverb.tls.certresolver=letsencrypt-${DNS_PROVIDER}"
         - "traefik.http.services.reverb.loadbalancer.server.port=8080"
 
   ssr:
