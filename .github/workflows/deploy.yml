@@ -18,7 +18,7 @@ jobs:
       contents: read
       packages: write
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - uses: docker/setup-buildx-action@v3
 
@@ -80,7 +80,7 @@ jobs:
       USE_CF_TUNNEL: ${{ secrets.USE_CLOUDFLARE_TUNNEL }}
 
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Load .env and export variables
         run: |
@@ -138,13 +138,15 @@ jobs:
           CACHE=$(docker compose -f compose.prod.yaml config --format json | jq -r '[.services | keys[] | select(. == "valkey" or . == "redis" or . == "dragonfly" or . == "memcached")] | first // empty')
           [ -n "$CACHE" ] && echo "Cache detected: $CACHE" || echo "No cache service detected"
 
-          # Determine if we need DB restore
+          # Determine DB type (sqlite is file-based, others need container restore)
           RESTORE_DB="yes"
+          SQLITE_MODE="no"
           if [ -z "$DB" ]; then
             echo "No database configured (DB_CONNECTION is empty)"
             RESTORE_DB="no"
           elif [ "$DB" = "sqlite" ]; then
-            echo "SQLite detected, no DB volume to restore"
+            echo "SQLite detected (file-based restore)"
+            SQLITE_MODE="yes"
             RESTORE_DB="no"
           fi
 
@@ -155,6 +157,11 @@ jobs:
           if [ "$RESTORE_DB" = "yes" ]; then
             if docker -H ssh://deploy-target volume inspect ${STACK_NAME}_${DB_VOL} > /dev/null 2>&1; then
               echo "Existing deployment detected (DB volume exists)"
+              exit 0
+            fi
+          elif [ "$SQLITE_MODE" = "yes" ]; then
+            if docker -H ssh://deploy-target volume inspect ${STACK_NAME}_stack-sqlite > /dev/null 2>&1; then
+              echo "Existing deployment detected (SQLite volume exists)"
               exit 0
             fi
           elif [ -n "$CACHE" ]; then
@@ -325,13 +332,32 @@ jobs:
               alpine cp /source/redis.rdb /data/dump.rdb 2>/dev/null || true
           fi
 
+          # Restore SQLite (file-based, copy from dumps to volume)
+          if [ "$SQLITE_MODE" = "yes" ]; then
+            echo "Restoring SQLite database"
+            docker -H ssh://deploy-target run --rm \
+              -v ${STACK_NAME}_backup_dumps:/source:ro \
+              -v ${STACK_NAME}_stack-sqlite:/data \
+              alpine sh -c "cp /source/*.sqlite /data/" 2>/dev/null || true
+          fi
+
       - name: Deploy stack
         run: |
+          # Build compose command
+          # - Base: compose.prod.yaml (works for tunnel mode)
+          # - Add certresolver if NOT using tunnel (for Let's Encrypt TLS)
+          COMPOSE_FILES="-c compose.prod.yaml"
+
+          if [ "$USE_CF_TUNNEL" != "true" ] && [ -f compose.prod.certresolver.yaml ]; then
+            echo "Adding TLS certresolver labels"
+            COMPOSE_FILES="$COMPOSE_FILES -c compose.prod.certresolver.yaml"
+          fi
+
           docker -H ssh://deploy-target stack deploy \
             --with-registry-auth \
             --detach=false \
             --prune \
-            -c compose.prod.yaml \
+            $COMPOSE_FILES \
             ${STACK_NAME}
 
       - name: Cleanup old secrets

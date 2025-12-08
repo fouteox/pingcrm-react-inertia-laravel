@@ -37,6 +37,7 @@ services:
       AUTORUN_LARAVEL_MIGRATION_SEED: "true"
       INERTIA_SSR_URL: "http://ssr:13714"
       INERTIA_SSR_ENSURE_BUNDLE_EXISTS: "false"
+      HEALTHCHECK_PATH: "/up"
       PHP_OPCACHE_ENABLE: "1"
     networks:
       - internal
@@ -67,9 +68,6 @@ services:
         - "traefik.swarm.lbswarm=true"
         - "traefik.swarm.network=proxy"
         - "traefik.http.routers.pingcrm.rule=Host(`${APP_HOST}`)"
-        - "traefik.http.routers.pingcrm.entrypoints=websecure"
-        - "traefik.http.routers.pingcrm.tls=true"
-        - "traefik.http.routers.pingcrm.tls.certresolver=letsencrypt-${DNS_PROVIDER}"
         - "traefik.http.services.pingcrm.loadbalancer.server.port=8000"
 
   horizon:
@@ -158,9 +156,6 @@ services:
         - "traefik.swarm.lbswarm=true"
         - "traefik.swarm.network=proxy"
         - "traefik.http.routers.reverb.rule=Host(`${APP_HOST}`) && (PathPrefix(`/app`) || PathPrefix(`/apps`))"
-        - "traefik.http.routers.reverb.entrypoints=websecure"
-        - "traefik.http.routers.reverb.tls=true"
-        - "traefik.http.routers.reverb.tls.certresolver=letsencrypt-${DNS_PROVIDER}"
         - "traefik.http.services.reverb.loadbalancer.server.port=8080"
 
   ssr:

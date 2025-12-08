@@ -1,0 +1,10 @@
+---
+services:
+  app:
+    deploy:
+      labels:
+        - "traefik.http.routers.reverb.tls.certresolver=letsencrypt-${DNS_PROVIDER}"
+  reverb:
+    deploy:
+      labels:
+        - "traefik.http.routers.reverb-reverb.tls.certresolver=letsencrypt-${DNS_PROVIDER}"
