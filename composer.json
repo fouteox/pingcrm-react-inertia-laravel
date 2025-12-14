@@ -59,12 +59,12 @@
         ],
         "setup": [
             "composer install",
-            "@php -r \"file_exists('.env') || copy('.env.herd', '.env');\"",
+            "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
             "@php artisan key:generate",
             "@php artisan migrate --force",
             "@php artisan db:seed --force",
-            "bun install",
-            "bun run build"
+            "npm install",
+            "npm run build"
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
