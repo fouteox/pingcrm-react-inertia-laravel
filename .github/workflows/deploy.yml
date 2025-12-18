@@ -75,12 +75,30 @@ jobs:
     permissions:
       contents: read
       packages: write
+      actions: write
     env:
-      STACK_NAME: ${{ github.event.repository.name }}
       USE_CF_TUNNEL: ${{ secrets.USE_CLOUDFLARE_TUNNEL }}
 
     steps:
       - uses: actions/checkout@v6
+
+      - name: Ensure STACK_ID exists
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Check if STACK_ID variable exists
+          STACK_ID=$(gh variable get STACK_ID 2>/dev/null || echo "")
+
+          if [ -z "$STACK_ID" ]; then
+            # Generate unique ID: repo-name + 8-char hash
+            STACK_ID="${{ github.event.repository.name }}-$(openssl rand -hex 4)"
+            echo "Creating STACK_ID: $STACK_ID"
+            gh variable set STACK_ID --body "$STACK_ID"
+          else
+            echo "Using existing STACK_ID: $STACK_ID"
+          fi
+
+          echo "STACK_NAME=$STACK_ID" >> $GITHUB_ENV
 
       - name: Load .env and export variables
         run: |
@@ -211,11 +229,21 @@ jobs:
 
           elif [[ -n "${BACKUP_DROPBOX_REFRESH_TOKEN:-}" ]]; then
             echo "Provider: Dropbox"
+            # Fetch fresh access_token (rclone has a bug where it strips refresh_token from config)
+            DROPBOX_TOKEN_RESPONSE=$(curl -s -X POST https://api.dropboxapi.com/oauth2/token \
+              -d grant_type=refresh_token \
+              -d "refresh_token=${BACKUP_DROPBOX_REFRESH_TOKEN}" \
+              -d "client_id=${BACKUP_DROPBOX_APP_KEY}" \
+              -d "client_secret=${BACKUP_DROPBOX_APP_SECRET}")
+            DROPBOX_ACCESS_TOKEN=$(echo "$DROPBOX_TOKEN_RESPONSE" | jq -r '.access_token // empty')
+            if [[ -z "$DROPBOX_ACCESS_TOKEN" ]]; then
+              echo "Failed to get Dropbox access token"
+              echo "$DROPBOX_TOKEN_RESPONSE"
+              exit 0
+            fi
             RCLONE_CFG="[backup]
             type = dropbox
-            client_id = ${BACKUP_DROPBOX_APP_KEY}
-            client_secret = ${BACKUP_DROPBOX_APP_SECRET}
-            token = {\"refresh_token\":\"${BACKUP_DROPBOX_REFRESH_TOKEN}\",\"token_type\":\"bearer\"}"
+            token = {\"access_token\":\"${DROPBOX_ACCESS_TOKEN}\",\"token_type\":\"bearer\"}"
             REMOTE_PATH="${BACKUP_DROPBOX_REMOTE_PATH#/}"
 
           else
@@ -353,7 +381,8 @@ jobs:
             COMPOSE_FILES="$COMPOSE_FILES -c compose.prod.certresolver.yaml"
           fi
 
-          docker -H ssh://deploy-target stack deploy \
+          # Deploy with 5 minute timeout (--detach=false waits for convergence)
+          timeout 300 docker -H ssh://deploy-target stack deploy \
             --with-registry-auth \
             --detach=false \
             --prune \
