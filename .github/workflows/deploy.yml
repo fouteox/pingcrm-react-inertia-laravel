@@ -75,30 +75,12 @@ jobs:
     permissions:
       contents: read
       packages: write
-      actions: write
     env:
+      STACK_NAME: ${{ vars.STACK_ID }}
       USE_CF_TUNNEL: ${{ secrets.USE_CLOUDFLARE_TUNNEL }}
 
     steps:
       - uses: actions/checkout@v6
-
-      - name: Ensure STACK_ID exists
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # Check if STACK_ID variable exists
-          STACK_ID=$(gh variable get STACK_ID 2>/dev/null || echo "")
-
-          if [ -z "$STACK_ID" ]; then
-            # Generate unique ID: repo-name + 8-char hash
-            STACK_ID="${{ github.event.repository.name }}-$(openssl rand -hex 4)"
-            echo "Creating STACK_ID: $STACK_ID"
-            gh variable set STACK_ID --body "$STACK_ID"
-          else
-            echo "Using existing STACK_ID: $STACK_ID"
-          fi
-
-          echo "STACK_NAME=$STACK_ID" >> $GITHUB_ENV
 
       - name: Load .env and export variables
         run: |
