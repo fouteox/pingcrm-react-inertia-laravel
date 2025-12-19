@@ -21,9 +21,8 @@ PingCRM is a demo application built with Laravel 12, Inertia.js v2, React 19, an
 - **[FrankenPHP](https://frankenphp.dev/)**: PHP 8.5
 
 ## Getting Started
-**Coming Soon** ✨
 
-Something beautiful is on the way...
+The recommended way to run this project is using [Fadogen](https://docs.fadogen.app) — a free and open-source macOS app (Apple Silicon) that handles the entire PHP application lifecycle, from local development to production deployment.
 
 ## Deployment
 The project includes a GitHub Actions workflow for deploying to your own server using Cloudflare Tunnels. I personally host the live demo version on a Raspberry Pi.
