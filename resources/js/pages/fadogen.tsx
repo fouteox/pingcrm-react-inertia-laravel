@@ -33,7 +33,7 @@ export default function Dashboard() {
                 className="mb-6 leading-normal"
                 dangerouslySetInnerHTML={{
                     __html: t('fadogen_presentation', {
-                        fadogen_link: '<a href="https://fadogen.app" class="underline underline-offset-4">Fadogen</a>',
+                        fadogen_link: '<a href="https://docs.fadogen.app" class="underline underline-offset-4">Fadogen</a>',
                     }),
                 }}
             />
