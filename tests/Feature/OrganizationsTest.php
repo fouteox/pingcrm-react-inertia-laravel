@@ -54,7 +54,7 @@ final class OrganizationsTest extends TestCase
         $this->actingAs($this->user)
             ->get('/organizations')
             ->assertInertia(fn (Assert $assert) => $assert
-                ->component('Organizations/Index')
+                ->component('organizations/index')
                 ->has('organizations.data', 2)
                 ->has('organizations.data.0', fn (Assert $assert) => $assert
                     ->has('id')
@@ -78,7 +78,7 @@ final class OrganizationsTest extends TestCase
         $this->actingAs($this->user)
             ->get('/organizations?search=Apple')
             ->assertInertia(fn (Assert $assert) => $assert
-                ->component('Organizations/Index')
+                ->component('organizations/index')
                 ->where('filters.search', 'Apple')
                 ->has('organizations.data', 1)
                 ->has('organizations.data.0', fn (Assert $assert) => $assert
@@ -98,7 +98,7 @@ final class OrganizationsTest extends TestCase
         $this->actingAs($this->user)
             ->get('/organizations')
             ->assertInertia(fn (Assert $assert) => $assert
-                ->component('Organizations/Index')
+                ->component('organizations/index')
                 ->has('organizations.data', 1)
                 ->where('organizations.data.0.name', 'Apple')
             );
@@ -111,7 +111,7 @@ final class OrganizationsTest extends TestCase
         $this->actingAs($this->user)
             ->get('/organizations?trashed=with')
             ->assertInertia(fn (Assert $assert) => $assert
-                ->component('Organizations/Index')
+                ->component('organizations/index')
                 ->has('organizations.data', 2)
                 ->where('organizations.data.0.name', 'Apple')
                 ->where('organizations.data.1.name', 'Microsoft')

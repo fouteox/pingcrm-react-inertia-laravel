@@ -60,7 +60,7 @@ final class ContactsTest extends TestCase
         $this->actingAs($this->user)
             ->get('/contacts')
             ->assertInertia(fn (Assert $assert) => $assert
-                ->component('Contacts/Index')
+                ->component('contacts/index')
                 ->has('contacts.data', 2)
                 ->has('contacts.data.0', fn (Assert $assert) => $assert
                     ->has('id')
@@ -70,6 +70,7 @@ final class ContactsTest extends TestCase
                     ->where('deleted_at', null)
                     ->has('organization', fn (Assert $assert) => $assert
                         ->where('name', 'Example Organization Inc.')
+                        ->etc()
                     )
                 )
                 ->has('contacts.data.1', fn (Assert $assert) => $assert
@@ -80,6 +81,7 @@ final class ContactsTest extends TestCase
                     ->where('deleted_at', null)
                     ->has('organization', fn (Assert $assert) => $assert
                         ->where('name', 'Example Organization Inc.')
+                        ->etc()
                     )
                 )
             );
@@ -90,7 +92,7 @@ final class ContactsTest extends TestCase
         $this->actingAs($this->user)
             ->get('/contacts?search=Martin')
             ->assertInertia(fn (Assert $assert) => $assert
-                ->component('Contacts/Index')
+                ->component('contacts/index')
                 ->where('filters.search', 'Martin')
                 ->has('contacts.data', 1)
                 ->has('contacts.data.0', fn (Assert $assert) => $assert
@@ -101,6 +103,7 @@ final class ContactsTest extends TestCase
                     ->where('deleted_at', null)
                     ->has('organization', fn (Assert $assert) => $assert
                         ->where('name', 'Example Organization Inc.')
+                        ->etc()
                     )
                 )
             );
@@ -113,7 +116,7 @@ final class ContactsTest extends TestCase
         $this->actingAs($this->user)
             ->get('/contacts')
             ->assertInertia(fn (Assert $assert) => $assert
-                ->component('Contacts/Index')
+                ->component('contacts/index')
                 ->has('contacts.data', 1)
                 ->where('contacts.data.0.name', 'Lynn Kub')
             );
@@ -126,7 +129,7 @@ final class ContactsTest extends TestCase
         $this->actingAs($this->user)
             ->get('/contacts?trashed=with')
             ->assertInertia(fn (Assert $assert) => $assert
-                ->component('Contacts/Index')
+                ->component('contacts/index')
                 ->has('contacts.data', 2)
                 ->where('contacts.data.0.name', 'Martin Abbott')
                 ->where('contacts.data.1.name', 'Lynn Kub')
