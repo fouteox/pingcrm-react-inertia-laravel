@@ -1,4 +1,5 @@
 ARG PHP_VERSION=8.5
+ARG NODE_VERSION=24
 
 ############################################
 # Base Stage
@@ -9,14 +10,16 @@ USER root
 
 RUN install-php-extensions bcmath
 
+FROM node:${NODE_VERSION}-bookworm-slim AS node-base
+
 ############################################
 # Builder Stage
 ############################################
 FROM base AS builder
 
-COPY --from=node:24-bookworm-slim /usr/local/bin/node /usr/local/bin/node
-COPY --from=node:24-bookworm-slim /usr/local/lib/node_modules /usr/local/lib/node_modules
-COPY --from=node:24-bookworm-slim /usr/local/include/node /usr/local/include/node
+COPY --from=node-base /usr/local/bin/node /usr/local/bin/node
+COPY --from=node-base /usr/local/lib/node_modules /usr/local/lib/node_modules
+COPY --from=node-base /usr/local/include/node /usr/local/include/node
 
 RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
     ln -s /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
@@ -70,7 +73,7 @@ USER www-data
 ############################################
 # SSR Image
 ############################################
-FROM node:24-bookworm-slim AS ssr
+FROM node-base AS ssr
 
 WORKDIR /app
 
