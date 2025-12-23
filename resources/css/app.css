@@ -125,3 +125,13 @@
         @apply bg-background text-foreground;
     }
 }
+
+/* Success icon starburst shape - 12 pointed sun */
+.success-burst {
+    clip-path: polygon(
+        50% 0%, 62% 12%, 75% 7%, 80% 22%, 93% 25%, 88% 40%,
+        100% 50%, 88% 60%, 93% 75%, 80% 78%, 75% 93%, 62% 88%,
+        50% 100%, 38% 88%, 25% 93%, 20% 78%, 7% 75%, 12% 60%,
+        0% 50%, 12% 40%, 7% 25%, 20% 22%, 25% 7%, 38% 12%
+    );
+}

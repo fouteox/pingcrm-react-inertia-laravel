@@ -20,12 +20,20 @@ interface FlashPageProps extends SharedData {
 export default function FlashMessages() {
     const { t } = useTranslation();
     const { flash, errors } = usePage<FlashPageProps>().props;
-    const { isProcessing } = useProcessingContext();
+    const { isProcessing, setShowSuccess } = useProcessingContext();
     const numOfErrors = Object.keys(errors).length;
 
     const hasPendingVisitRef = useRef(false);
     const isPopstateRef = useRef(false);
-    const pendingFlashRef = useRef<{ flash: FlashMessage; numOfErrors: number } | null>(null);
+    const wasProcessingRef = useRef(false);
+    const pendingFlashRef = useRef<{ flash: FlashMessage; numOfErrors: number; wasFormSubmit: boolean } | null>(null);
+
+    // Capture when processing starts (persists even if isProcessing becomes false before flash is stored)
+    useEffect(() => {
+        if (isProcessing) {
+            wasProcessingRef.current = true;
+        }
+    }, [isProcessing]);
 
     // Track navigation events
     useEffect(() => {
@@ -57,16 +65,22 @@ export default function FlashMessages() {
         if (isPending && !isPopstate && hasFlash) {
             hasPendingVisitRef.current = false;
             isPopstateRef.current = false;
-            pendingFlashRef.current = { flash: { ...flash }, numOfErrors };
+            pendingFlashRef.current = { flash: { ...flash }, numOfErrors, wasFormSubmit: wasProcessingRef.current };
         }
 
         // Show toast when not processing and we have a pending flash
         if (!isProcessing && pendingFlashRef.current) {
-            const { flash: pendingFlash, numOfErrors: pendingNumOfErrors } = pendingFlashRef.current;
+            const { flash: pendingFlash, numOfErrors: pendingNumOfErrors, wasFormSubmit } = pendingFlashRef.current;
             pendingFlashRef.current = null;
+            wasProcessingRef.current = false;
 
             if (pendingFlash.success) {
-                toast.success(pendingFlash.success);
+                // Show success in button only for form submissions, otherwise use toast
+                if (wasFormSubmit) {
+                    setShowSuccess(true);
+                } else {
+                    toast.success(pendingFlash.success);
+                }
             }
 
             if (pendingFlash.error) {
@@ -75,7 +89,7 @@ export default function FlashMessages() {
                 toast.error(t('form_errors', { count: pendingNumOfErrors }));
             }
         }
-    }, [flash, errors, numOfErrors, isProcessing, t]);
+    }, [flash, errors, numOfErrors, isProcessing, t, setShowSuccess]);
 
     return <Toaster />;
 }
