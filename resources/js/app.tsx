@@ -1,6 +1,7 @@
 import '../css/app.css';
 
 import { LayoutProvider } from '@/contexts/page-context';
+import { ProcessingProvider } from '@/contexts/processing-context';
 import { initializeTheme } from '@/hooks/use-appearance';
 import { applyLayoutToPage } from '@/lib/layout-resolver';
 import { createInertiaApp } from '@inertiajs/react';
@@ -34,9 +35,11 @@ void createInertiaApp({
 
         const AppWithProviders = (
             <LayoutProvider>
-                <I18nextProvider i18n={i18nInstance}>
-                    <App {...props} />
-                </I18nextProvider>
+                <ProcessingProvider>
+                    <I18nextProvider i18n={i18nInstance}>
+                        <App {...props} />
+                    </I18nextProvider>
+                </ProcessingProvider>
             </LayoutProvider>
         );
 

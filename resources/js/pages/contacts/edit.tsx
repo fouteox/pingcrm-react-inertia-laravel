@@ -1,7 +1,6 @@
-import { Button } from '@/components/ui/button';
+import { SubmitButton } from '@/components/submit-button';
 import { BreadcrumbItem, Contact, ContactFormData, Organization, SharedData } from '@/types';
 import { Head, useForm, usePage } from '@inertiajs/react';
-import { Loader2 } from 'lucide-react';
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -10,6 +9,7 @@ import { Form, FormInput, FormLabel, FormMessage } from '@/components/form';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePageActions } from '@/contexts/page-context';
 import { useDeletionControls } from '@/hooks/use-deletion-controls';
+import { useFormProcessing } from '@/hooks/use-form-processing';
 import contacts from '@/routes/contacts';
 
 interface EditPageProps extends SharedData {
@@ -55,6 +55,8 @@ export default function Edit() {
         postal_code: contact.postal_code || '',
     });
 
+    const isProcessing = useFormProcessing(form.processing);
+
     function onSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
         form.submit(update(contact), {
@@ -62,20 +64,11 @@ export default function Edit() {
         });
     }
 
-    const handleDelete = async () => {
-        form.submit(destroy(contact));
-    };
-
-    const handleRestore = async () => {
-        form.submit(restore(contact));
-    };
-
     const { showDeleteControls } = useDeletionControls({
         isDeleted: !!contact.deleted_at,
         resourceType: 'contact',
-        onDelete: handleDelete,
-        onRestore: handleRestore,
-        processing: form.processing,
+        deleteAction: destroy(contact),
+        restoreAction: restore(contact),
     });
 
     return (
@@ -104,7 +97,7 @@ export default function Edit() {
                                     autoFocus
                                     tabIndex={1}
                                     maxLength={25}
-                                    disabled={form.processing}
+                                    disabled={isProcessing}
                                     error={form.errors.first_name}
                                 />
 
@@ -124,7 +117,7 @@ export default function Edit() {
                                     required
                                     tabIndex={2}
                                     maxLength={25}
-                                    disabled={form.processing}
+                                    disabled={isProcessing}
                                     error={form.errors.last_name}
                                 />
 
@@ -141,7 +134,7 @@ export default function Edit() {
                                 <Select
                                     value={form.data.organization_id || '0'}
                                     onValueChange={(value) => form.setData('organization_id', value === '0' ? '' : value)}
-                                    disabled={form.processing}
+                                    disabled={isProcessing}
                                 >
                                     <SelectTrigger id="organization_id" className={form.errors.organization_id ? 'border-destructive' : ''}>
                                         <SelectValue placeholder={t('None')} />
@@ -172,7 +165,7 @@ export default function Edit() {
                                     required
                                     tabIndex={4}
                                     maxLength={50}
-                                    disabled={form.processing}
+                                    disabled={isProcessing}
                                     error={form.errors.email}
                                 />
 
@@ -193,7 +186,7 @@ export default function Edit() {
                                     onChange={(e) => form.setData('phone', e.target.value)}
                                     tabIndex={5}
                                     maxLength={50}
-                                    disabled={form.processing}
+                                    disabled={isProcessing}
                                     error={form.errors.phone}
                                 />
 
@@ -212,7 +205,7 @@ export default function Edit() {
                                     onChange={(e) => form.setData('address', e.target.value)}
                                     tabIndex={6}
                                     maxLength={150}
-                                    disabled={form.processing}
+                                    disabled={isProcessing}
                                     error={form.errors.address}
                                 />
 
@@ -233,7 +226,7 @@ export default function Edit() {
                                     onChange={(e) => form.setData('city', e.target.value)}
                                     tabIndex={7}
                                     maxLength={50}
-                                    disabled={form.processing}
+                                    disabled={isProcessing}
                                     error={form.errors.city}
                                 />
 
@@ -252,7 +245,7 @@ export default function Edit() {
                                     onChange={(e) => form.setData('region', e.target.value)}
                                     tabIndex={8}
                                     maxLength={50}
-                                    disabled={form.processing}
+                                    disabled={isProcessing}
                                     error={form.errors.region}
                                 />
 
@@ -269,7 +262,7 @@ export default function Edit() {
                                 <Select
                                     value={form.data.country || '0'}
                                     onValueChange={(value) => form.setData('country', value === '0' ? '' : value)}
-                                    disabled={form.processing}
+                                    disabled={isProcessing}
                                 >
                                     <SelectTrigger id="country" className={form.errors.country ? 'border-destructive' : ''}>
                                         <SelectValue placeholder={t('None')} />
@@ -296,7 +289,7 @@ export default function Edit() {
                                     onChange={(e) => form.setData('postal_code', e.target.value)}
                                     tabIndex={10}
                                     maxLength={25}
-                                    disabled={form.processing}
+                                    disabled={isProcessing}
                                     error={form.errors.postal_code}
                                 />
 
@@ -307,10 +300,9 @@ export default function Edit() {
                         <div className="flex flex-col justify-end gap-4 sm:flex-row">
                             {!contact.deleted_at && showDeleteControls()}
 
-                            <Button type="submit" disabled={form.processing}>
-                                {form.processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            <SubmitButton processing={isProcessing}>
                                 {t('Update Contact')}
-                            </Button>
+                            </SubmitButton>
                         </div>
                     </div>
                 </Form>

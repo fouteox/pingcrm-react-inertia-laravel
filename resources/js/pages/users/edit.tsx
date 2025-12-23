@@ -1,7 +1,6 @@
-import { Button } from '@/components/ui/button';
+import { SubmitButton } from '@/components/submit-button';
 import { BreadcrumbItem, SharedData, User, UserFormData } from '@/types';
 import { Head, useForm, usePage } from '@inertiajs/react';
-import { Loader2 } from 'lucide-react';
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -11,6 +10,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePageActions } from '@/contexts/page-context';
 import { useDeletionControls } from '@/hooks/use-deletion-controls';
+import { useFormProcessing } from '@/hooks/use-form-processing';
 import users from '@/routes/users';
 
 interface EditPageProps extends SharedData {
@@ -50,6 +50,8 @@ export default function Edit() {
         owner: user.owner ? '1' : '0',
     });
 
+    const isProcessing = useFormProcessing(form.processing);
+
     function onSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
 
@@ -63,21 +65,12 @@ export default function Edit() {
         });
     }
 
-    const handleDelete = async () => {
-        form.submit(destroy(user));
-    };
-
-    const handleRestore = async () => {
-        form.submit(restore(user));
-    };
-
     const { showDeleteControls } = useDeletionControls({
         isDeleted: !!user.deleted_at,
         resourceType: 'user',
         canDelete: user.can_delete,
-        onDelete: handleDelete,
-        onRestore: handleRestore,
-        processing: form.processing,
+        deleteAction: destroy(user),
+        restoreAction: restore(user),
     });
 
     return (
@@ -112,7 +105,7 @@ export default function Edit() {
                                     onChange={(e) => form.setData('first_name', e.target.value)}
                                     required
                                     autoComplete="given-name"
-                                    disabled={form.processing || !user.can_delete}
+                                    disabled={isProcessing || !user.can_delete}
                                     error={form.errors.first_name}
                                 />
 
@@ -131,7 +124,7 @@ export default function Edit() {
                                     onChange={(e) => form.setData('last_name', e.target.value)}
                                     required
                                     autoComplete="family-name"
-                                    disabled={form.processing || !user.can_delete}
+                                    disabled={isProcessing || !user.can_delete}
                                     error={form.errors.last_name}
                                 />
 
@@ -152,7 +145,7 @@ export default function Edit() {
                                     onChange={(e) => form.setData('email', e.target.value)}
                                     required
                                     autoComplete="email"
-                                    disabled={form.processing || !user.can_delete}
+                                    disabled={isProcessing || !user.can_delete}
                                     error={form.errors.email}
                                 />
 
@@ -170,7 +163,7 @@ export default function Edit() {
                                     value={form.data.password}
                                     onChange={(e) => form.setData('password', e.target.value)}
                                     autoComplete="new-password"
-                                    disabled={form.processing || !user.can_delete}
+                                    disabled={isProcessing || !user.can_delete}
                                     error={form.errors.password}
                                 />
 
@@ -186,7 +179,7 @@ export default function Edit() {
                             <Select
                                 value={form.data.owner}
                                 onValueChange={(value) => form.setData('owner', value)}
-                                disabled={form.processing || !user.can_delete}
+                                disabled={isProcessing || !user.can_delete}
                             >
                                 <SelectTrigger id="owner" className={form.errors.owner ? 'border-destructive' : ''}>
                                     <SelectValue placeholder={t('Select an option')} />
@@ -203,10 +196,9 @@ export default function Edit() {
                         <div className="flex flex-col justify-end gap-4 sm:flex-row">
                             {!user.deleted_at && user.can_delete && showDeleteControls()}
 
-                            <Button type="submit" disabled={form.processing || !user.can_delete}>
-                                {form.processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            <SubmitButton processing={isProcessing} disabled={!user.can_delete}>
                                 {t('Update User')}
-                            </Button>
+                            </SubmitButton>
                         </div>
                     </div>
                 </Form>

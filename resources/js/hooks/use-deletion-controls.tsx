@@ -1,13 +1,18 @@
 import { DeletionControls } from '@/components/deletion-controls';
-import React, { ReactElement } from 'react';
+import { router } from '@inertiajs/react';
+import React, { ReactElement, useState } from 'react';
+
+interface RouteDefinition {
+    url: string;
+    method: string;
+}
 
 export interface UseDeletionControlsOptions {
     isDeleted: boolean;
     resourceType: 'contact' | 'organization' | 'user';
     canDelete?: boolean;
-    onDelete: () => Promise<void>;
-    onRestore: () => Promise<void>;
-    processing: boolean;
+    deleteAction: RouteDefinition;
+    restoreAction: RouteDefinition;
 }
 
 export interface DeletionControlsResult {
@@ -18,22 +23,25 @@ export const useDeletionControls = ({
     isDeleted,
     resourceType,
     canDelete = true,
-    onDelete,
-    onRestore,
-    processing,
+    deleteAction,
+    restoreAction,
 }: UseDeletionControlsOptions): DeletionControlsResult => {
+    const [processing, setProcessing] = useState(false);
+
     const handleAction = async (e: React.MouseEvent<HTMLButtonElement>) => {
         e.preventDefault();
 
-        if (!canDelete) {
+        if (!canDelete || processing) {
             return;
         }
 
-        if (isDeleted) {
-            await onRestore();
-        } else {
-            await onDelete();
-        }
+        const action = isDeleted ? restoreAction : deleteAction;
+
+        setProcessing(true);
+        router.visit(action.url, {
+            method: action.method as 'get' | 'post' | 'put' | 'patch' | 'delete',
+            onFinish: () => setProcessing(false),
+        });
     };
 
     const showDeleteControls = () => {

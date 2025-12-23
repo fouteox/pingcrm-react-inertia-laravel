@@ -1,4 +1,5 @@
 import { Toaster } from '@/components/ui/sonner';
+import { useProcessingContext } from '@/contexts/processing-context';
 import { SharedData } from '@/types';
 import { router, usePage } from '@inertiajs/react';
 import { useEffect, useRef } from 'react';
@@ -16,49 +17,65 @@ interface FlashPageProps extends SharedData {
     [key: string]: unknown;
 }
 
-interface NavigationState {
-    currentVisitId: string;
-    lastShownVisitId: string | null;
-}
-
-type NotificationHandler = (message: string) => void;
-
 export default function FlashMessages() {
     const { t } = useTranslation();
     const { flash, errors } = usePage<FlashPageProps>().props;
+    const { isProcessing } = useProcessingContext();
     const numOfErrors = Object.keys(errors).length;
 
-    const navigationState = useRef<NavigationState>({
-        currentVisitId: `initial-${Date.now().toString()}`,
-        lastShownVisitId: null,
-    });
+    const hasPendingVisitRef = useRef(false);
+    const isPopstateRef = useRef(false);
+    const pendingFlashRef = useRef<{ flash: FlashMessage; numOfErrors: number } | null>(null);
 
+    // Track navigation events
     useEffect(() => {
-        const { currentVisitId, lastShownVisitId } = navigationState.current;
+        const handlePopstate = () => {
+            isPopstateRef.current = true;
+        };
+        window.addEventListener('popstate', handlePopstate);
 
-        if (currentVisitId !== lastShownVisitId) {
-            const notifications: [string | undefined | false, NotificationHandler][] = [
-                [flash.success, toast.success],
-                [flash.error || (numOfErrors > 0 && t('form_errors', { count: numOfErrors })), toast.error],
-            ];
-
-            notifications.forEach(([message, handler]) => {
-                if (message) {
-                    handler(message);
-                }
-            });
-
-            navigationState.current.lastShownVisitId = currentVisitId;
-        }
-
-        const unregisterSuccess = router.on('success', () => {
-            navigationState.current.currentVisitId = `visit-${Date.now().toString()}`;
+        const unregister = router.on('before', () => {
+            if (!isPopstateRef.current) {
+                hasPendingVisitRef.current = true;
+            }
+            isPopstateRef.current = false;
         });
 
         return () => {
-            unregisterSuccess();
+            window.removeEventListener('popstate', handlePopstate);
+            unregister();
         };
-    }, [flash, errors, numOfErrors, t]);
+    }, []);
+
+    // Store and show flash messages
+    useEffect(() => {
+        const isPending = hasPendingVisitRef.current;
+        const isPopstate = isPopstateRef.current;
+        const hasFlash = flash.success || flash.error || numOfErrors > 0;
+
+        // Store flash if this is a user-initiated visit with a flash message
+        if (isPending && !isPopstate && hasFlash) {
+            hasPendingVisitRef.current = false;
+            isPopstateRef.current = false;
+            pendingFlashRef.current = { flash: { ...flash }, numOfErrors };
+        }
+
+        // Show toast when not processing and we have a pending flash
+        if (!isProcessing && pendingFlashRef.current) {
+            const { flash: pendingFlash, numOfErrors: pendingNumOfErrors } = pendingFlashRef.current;
+            pendingFlashRef.current = null;
+
+            if (pendingFlash.success) {
+                toast.success(pendingFlash.success);
+            }
+
+            if (pendingFlash.error) {
+                toast.error(pendingFlash.error);
+            } else if (pendingNumOfErrors > 0) {
+                toast.error(t('form_errors', { count: pendingNumOfErrors }));
+            }
+        }
+    }, [flash, errors, numOfErrors, isProcessing, t]);
 
     return <Toaster />;
 }

@@ -1,7 +1,8 @@
+import { SubmitButton } from '@/components/submit-button';
 import { Button } from '@/components/ui/button';
 import { BreadcrumbItem, Organization, OrganizationFormData, SharedData } from '@/types';
 import { Head, Link, useForm, usePage } from '@inertiajs/react';
-import { ChevronRight, Loader2, Trash } from 'lucide-react';
+import { ChevronRight, Trash } from 'lucide-react';
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
@@ -12,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { usePageActions } from '@/contexts/page-context';
 import { useDeletionControls } from '@/hooks/use-deletion-controls';
+import { useFormProcessing } from '@/hooks/use-form-processing';
 import contacts from '@/routes/contacts';
 import organizations from '@/routes/organizations';
 
@@ -55,6 +57,8 @@ export default function Edit() {
         postal_code: organization.postal_code || '',
     });
 
+    const isProcessing = useFormProcessing(form.processing);
+
     function onSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
         form.submit(update(organization), {
@@ -62,20 +66,11 @@ export default function Edit() {
         });
     }
 
-    const handleDelete = async () => {
-        form.submit(destroy(organization));
-    };
-
-    const handleRestore = async () => {
-        form.submit(restore(organization));
-    };
-
     const { showDeleteControls } = useDeletionControls({
         isDeleted: !!organization.deleted_at,
         resourceType: 'organization',
-        onDelete: handleDelete,
-        onRestore: handleRestore,
-        processing: form.processing,
+        deleteAction: destroy(organization),
+        restoreAction: restore(organization),
     });
 
     return (
@@ -103,7 +98,7 @@ export default function Edit() {
                                     required
                                     autoFocus
                                     maxLength={100}
-                                    disabled={form.processing}
+                                    disabled={isProcessing}
                                     error={form.errors.name}
                                 />
 
@@ -122,7 +117,7 @@ export default function Edit() {
                                     onChange={(e) => form.setData('email', e.target.value)}
                                     required
                                     maxLength={50}
-                                    disabled={form.processing}
+                                    disabled={isProcessing}
                                     error={form.errors.email}
                                 />
 
@@ -142,7 +137,7 @@ export default function Edit() {
                                     value={form.data.phone}
                                     onChange={(e) => form.setData('phone', e.target.value)}
                                     maxLength={50}
-                                    disabled={form.processing}
+                                    disabled={isProcessing}
                                     error={form.errors.phone}
                                 />
 
@@ -160,7 +155,7 @@ export default function Edit() {
                                     value={form.data.address}
                                     onChange={(e) => form.setData('address', e.target.value)}
                                     maxLength={150}
-                                    disabled={form.processing}
+                                    disabled={isProcessing}
                                     error={form.errors.address}
                                 />
 
@@ -180,7 +175,7 @@ export default function Edit() {
                                     value={form.data.city}
                                     onChange={(e) => form.setData('city', e.target.value)}
                                     maxLength={50}
-                                    disabled={form.processing}
+                                    disabled={isProcessing}
                                     error={form.errors.city}
                                 />
 
@@ -198,7 +193,7 @@ export default function Edit() {
                                     value={form.data.region}
                                     onChange={(e) => form.setData('region', e.target.value)}
                                     maxLength={50}
-                                    disabled={form.processing}
+                                    disabled={isProcessing}
                                     error={form.errors.region}
                                 />
 
@@ -215,7 +210,7 @@ export default function Edit() {
                                 <Select
                                     value={form.data.country || '0'}
                                     onValueChange={(value) => form.setData('country', value === '0' ? '' : value)}
-                                    disabled={form.processing}
+                                    disabled={isProcessing}
                                 >
                                     <SelectTrigger id="country" className={form.errors.country ? 'border-destructive' : ''}>
                                         <SelectValue placeholder={t('None')} />
@@ -241,7 +236,7 @@ export default function Edit() {
                                     value={form.data.postal_code}
                                     onChange={(e) => form.setData('postal_code', e.target.value)}
                                     maxLength={25}
-                                    disabled={form.processing}
+                                    disabled={isProcessing}
                                     error={form.errors.postal_code}
                                 />
 
@@ -252,10 +247,9 @@ export default function Edit() {
                         <div className="flex flex-col justify-end gap-4 sm:flex-row">
                             {!organization.deleted_at && showDeleteControls()}
 
-                            <Button type="submit" disabled={form.processing}>
-                                {form.processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            <SubmitButton processing={isProcessing}>
                                 {t('Update Organization')}
-                            </Button>
+                            </SubmitButton>
                         </div>
                     </div>
                 </Form>
