@@ -77,7 +77,7 @@ export default function Index() {
                                     </div>
                                     <div className="relative z-0 max-w-full overflow-hidden text-ellipsis whitespace-nowrap">
                                         {name}
-                                        {deleted_at && <Trash className="text-muted-foreground ml-2 h-3 w-3 shrink-0" />}
+                                        {deleted_at && <Trash className="text-muted-foreground ml-2 size-3 shrink-0" />}
                                     </div>
                                 </TableCell>
                                 <TableCell className="relative p-2">
@@ -99,7 +99,7 @@ export default function Index() {
                                 <TableCell className="w-px">
                                     <Button asChild variant="ghost" size="icon">
                                         <Link tabIndex={-1} href={organizations.edit(id)} prefetch>
-                                            <ChevronRight className="text-muted-foreground h-4 w-4" />
+                                            <ChevronRight className="text-muted-foreground size-4" />
                                         </Link>
                                     </Button>
                                 </TableCell>

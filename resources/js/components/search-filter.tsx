@@ -72,8 +72,8 @@ export default function SearchFilter() {
                 <div className="bg-background flex w-full items-center overflow-hidden rounded-md border">
                     <Popover open={open} onOpenChange={setOpen}>
                         <PopoverTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-10 w-10 flex-shrink-0 rounded-none border-r">
-                                <Filter className="h-4 w-4" />
+                            <Button variant="ghost" size="icon" className="size-10 flex-shrink-0 rounded-none border-r">
+                                <Filter className="size-4" />
                                 <span className="sr-only">{t('Filter')}</span>
                             </Button>
                         </PopoverTrigger>
@@ -121,10 +121,10 @@ export default function SearchFilter() {
                         <Button
                             variant="ghost"
                             size="icon"
-                            className="h-10 w-10 flex-shrink-0 rounded-none"
+                            className="size-10 flex-shrink-0 rounded-none"
                             onClick={() => handleChange('search', '')}
                         >
-                            <X className="h-4 w-4" />
+                            <X className="size-4" />
                             <span className="sr-only">{t('Clear')}</span>
                         </Button>
                     )}

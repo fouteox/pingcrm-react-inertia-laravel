@@ -74,7 +74,7 @@ export function SubmitButton({
                 )}
             >
                 <span className={cn('overflow-hidden', showSpinner ? 'opacity-100' : 'opacity-0')}>
-                    <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+                    <Loader2 className="size-4 shrink-0 animate-spin" />
                 </span>
                 <span>{children}</span>
             </span>

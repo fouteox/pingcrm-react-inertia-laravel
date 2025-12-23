@@ -156,7 +156,7 @@ export default function Create() {
 
                         <div className="flex justify-end">
                             <Button type="submit" disabled={form.processing}>
-                                {form.processing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                {form.processing && <Loader2 className="mr-2 size-4 animate-spin" />}
                                 {t('Create User')}
                             </Button>
                         </div>

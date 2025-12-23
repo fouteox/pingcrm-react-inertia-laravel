@@ -41,7 +41,7 @@ export function NavFooter() {
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                                 <SidebarMenuButton className="text-neutral-600 hover:text-neutral-800 dark:text-neutral-300 dark:hover:text-neutral-100">
-                                    <Globe className="h-5 w-5" />
+                                    <Globe className="size-5" />
                                     <span>{currentLang.name}</span>
                                     <ChevronsUpDown className="ml-auto size-4" />
                                 </SidebarMenuButton>
@@ -70,15 +70,15 @@ export function NavFooter() {
                             <DropdownMenu>
                                 <DropdownMenuTrigger asChild>
                                     <SidebarMenuButton className="text-neutral-600 hover:text-neutral-800 dark:text-neutral-300 dark:hover:text-neutral-100">
-                                        {appearance === 'light' && <Sun className="h-5 w-5" />}
-                                        {appearance === 'dark' && <Moon className="h-5 w-5" />}
-                                        {appearance === 'system' && <Monitor className="h-5 w-5" />}
+                                        {appearance === 'light' && <Sun className="size-5" />}
+                                        {appearance === 'dark' && <Moon className="size-5" />}
+                                        {appearance === 'system' && <Monitor className="size-5" />}
                                     </SidebarMenuButton>
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent className="min-w-32" align="center" side={isMobile ? 'top' : 'right'}>
                                     {tabs.map(({ value, icon: Icon }) => (
                                         <DropdownMenuItem key={value} onClick={() => updateAppearance(value)}>
-                                            <Icon className="mr-2 h-4 w-4" />
+                                            <Icon className="mr-2 size-4" />
                                             <span>{value.charAt(0).toUpperCase() + value.slice(1)}</span>
                                         </DropdownMenuItem>
                                     ))}
@@ -97,7 +97,7 @@ export function NavFooter() {
                                                 : 'text-neutral-500 hover:bg-neutral-200/60 hover:text-black dark:text-neutral-400 dark:hover:bg-neutral-700/60',
                                         )}
                                     >
-                                        <Icon className="h-4 w-4" />
+                                        <Icon className="size-4" />
                                     </button>
                                 ))}
                             </div>

@@ -92,7 +92,7 @@ export default function Login({ status }: LoginProps) {
                     </div>
 
                     <Button type="submit" className="mt-4 w-full" tabIndex={4} disabled={processing}>
-                        {processing && <LoaderCircle className="h-4 w-4 animate-spin" />}
+                        {processing && <LoaderCircle className="size-4 animate-spin" />}
                         {t('Log in')}
                     </Button>
                 </div>

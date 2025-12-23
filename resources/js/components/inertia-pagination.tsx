@@ -59,7 +59,7 @@ export default function InertiaPagination({ links, className }: InertiaPaginatio
                             className={cn(buttonVariants({ variant: 'ghost', size: 'default' }), 'gap-1 px-2.5')}
                             aria-label={t('Go to previous page')}
                         >
-                            <ChevronLeft className="h-4 w-4" />
+                            <ChevronLeft className="size-4" />
                             <span className="hidden sm:inline">{t('Previous')}</span>
                         </Link>
                     ) : (
@@ -67,7 +67,7 @@ export default function InertiaPagination({ links, className }: InertiaPaginatio
                             className={cn(buttonVariants({ variant: 'ghost', size: 'default' }), 'pointer-events-none gap-1 px-2.5 opacity-50')}
                             aria-disabled="true"
                         >
-                            <ChevronLeft className="h-4 w-4" />
+                            <ChevronLeft className="size-4" />
                             <span className="hidden sm:inline">{t('Previous')}</span>
                         </span>
                     )}
@@ -119,7 +119,7 @@ export default function InertiaPagination({ links, className }: InertiaPaginatio
                             aria-label={t('Go to next page')}
                         >
                             <span className="hidden sm:inline">{t('Next')}</span>
-                            <ChevronRight className="h-4 w-4" />
+                            <ChevronRight className="size-4" />
                         </Link>
                     ) : (
                         <span
@@ -127,7 +127,7 @@ export default function InertiaPagination({ links, className }: InertiaPaginatio
                             aria-disabled="true"
                         >
                             <span className="hidden sm:inline">{t('Next')}</span>
-                            <ChevronRight className="h-4 w-4" />
+                            <ChevronRight className="size-4" />
                         </span>
                     )}
                 </PaginationItem>
