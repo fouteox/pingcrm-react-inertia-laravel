@@ -19,5 +19,8 @@ export default defineConfig({
     ],
     esbuild: {
         jsx: 'automatic',
-    }
+    },
+    ssr: {
+        noExternal: true,
+    },
 });
