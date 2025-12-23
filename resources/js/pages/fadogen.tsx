@@ -6,8 +6,10 @@ import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 export default function Dashboard() {
-    const { t } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { setBreadcrumbs } = usePageActions();
+
+    const docsUrl = i18n.language === 'fr' ? 'https://docs.fadogen.app/fr' : 'https://docs.fadogen.app';
 
     const breadcrumbs: BreadcrumbItem[] = React.useMemo(
         () => [
@@ -33,7 +35,7 @@ export default function Dashboard() {
                 className="mb-6 leading-normal"
                 dangerouslySetInnerHTML={{
                     __html: t('fadogen_presentation', {
-                        fadogen_link: '<a href="https://docs.fadogen.app" class="underline underline-offset-4">Fadogen</a>',
+                        fadogen_link: `<a href="${docsUrl}" class="underline underline-offset-4">Fadogen</a>`,
                     }),
                 }}
             />
