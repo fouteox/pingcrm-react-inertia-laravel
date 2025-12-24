@@ -1,5 +1,4 @@
 ARG PHP_VERSION=8.5
-ARG NODE_VERSION=24
 
 ############################################
 # Base Stage
@@ -8,21 +7,15 @@ FROM serversideup/php:${PHP_VERSION}-frankenphp AS base
 
 USER root
 
-RUN install-php-extensions bcmath
-
-FROM node:${NODE_VERSION}-bookworm-slim AS node-base
+RUN install-php-extensions bcmath intl
 
 ############################################
 # Builder Stage
 ############################################
 FROM base AS builder
 
-COPY --from=node-base /usr/local/bin/node /usr/local/bin/node
-COPY --from=node-base /usr/local/lib/node_modules /usr/local/lib/node_modules
-COPY --from=node-base /usr/local/include/node /usr/local/include/node
+COPY --from=oven/bun:1.3-debian /usr/local/bin/bun /usr/local/bin/bun
 
-RUN ln -s /usr/local/lib/node_modules/npm/bin/npm-cli.js /usr/local/bin/npm && \
-    ln -s /usr/local/lib/node_modules/npm/bin/npx-cli.js /usr/local/bin/npx
 
 COPY --link composer.json composer.lock ./
 
@@ -34,9 +27,9 @@ RUN composer install \
     --no-scripts \
     --audit
 
-COPY --link package*.json ./
+COPY --link package.json bun.lock* ./
 
-RUN npm ci
+RUN bun install --frozen-lockfile
 
 COPY --link . .
 
@@ -46,7 +39,7 @@ ARG ENV_HASH
 RUN --mount=type=secret,id=dotenv \
     echo "Build with ENV_HASH=${ENV_HASH}" && \
     set -a && . /run/secrets/dotenv && set +a && \
-    npm run build:ssr
+    bun run build:ssr
 
 ############################################
 # App Image
@@ -73,7 +66,7 @@ USER www-data
 ############################################
 # SSR Image
 ############################################
-FROM node-base AS ssr
+FROM oven/bun:1.3-debian AS ssr
 
 WORKDIR /app
 
@@ -81,4 +74,4 @@ COPY --from=builder /var/www/html/bootstrap/ssr ./bootstrap/ssr
 
 EXPOSE 13714
 
-CMD ["node", "bootstrap/ssr/ssr.js"]
+CMD ["bun", "bootstrap/ssr/ssr.js"]
