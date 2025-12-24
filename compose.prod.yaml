@@ -253,12 +253,6 @@ services:
         max-file: "6"
     networks:
       - internal
-    healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:8108/health"]
-      start_period: 30s
-      interval: 10s
-      timeout: 5s
-      retries: 3
     deploy:
       replicas: 1
       placement:
