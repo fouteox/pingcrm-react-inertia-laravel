@@ -11,5 +11,9 @@ export function FormMessage({ error, className }: FormMessageProps) {
 
     if (!error || isProcessing) return null;
 
-    return <p className={cn('text-destructive text-sm font-medium', className)}>{error}</p>;
+    return (
+        <p className={cn('h-5 -mb-5 text-sm font-medium text-destructive', className)}>
+            {error}
+        </p>
+    );
 }
