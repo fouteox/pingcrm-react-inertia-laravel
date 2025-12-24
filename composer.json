@@ -14,8 +14,10 @@
         "laravel/octane": "^2.13",
         "laravel/reverb": "^1.6",
         "laravel/sanctum": "^4.2",
+        "laravel/scout": "^10.23",
         "laravel/tinker": "^2.10",
-        "laravel/wayfinder": "^0.1.12"
+        "laravel/wayfinder": "^0.1.12",
+        "typesense/typesense-php": "^5.2"
     },
     "require-dev": {
         "laravel/breeze": "^2.3",
@@ -68,12 +70,12 @@
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
-            "npx concurrently -c \"#c4b5fd,#fdba74\" \"php artisan horizon\" \"npm run dev\" --names=horizon,vite --kill-others"
+            "npx concurrently -c \"#c4b5fd,#fdba74,#93c5fd\" \"php artisan horizon\" \"npm run dev\" \"php artisan schedule:work\" --names=horizon,vite,scheduler --kill-others"
         ],
         "dev:ssr": [
             "npm run build:ssr",
             "Composer\\Config::disableProcessTimeout",
-            "npx concurrently -c \"#c4b5fd,#fdba74\" \"php artisan horizon\" \"php artisan inertia:start-ssr\" --names=horizon,ssr --kill-others"
+            "npx concurrently -c \"#c4b5fd,#fdba74,#93c5fd\" \"php artisan horizon\" \"php artisan inertia:start-ssr\" \"php artisan schedule:work\" --names=horizon,ssr,scheduler --kill-others"
         ],
         "lint": [
             "pint"

@@ -11,10 +11,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Laravel\Scout\Searchable;
 
 final class Contact extends Model
 {
-    use HasFactory, SoftDeletes;
+    use Concerns\Filterable, HasFactory, Searchable, SoftDeletes;
 
     /**
      * Retrieve the model for a bound value.
@@ -32,6 +33,22 @@ final class Contact extends Model
         return $this->belongsTo(Organization::class);
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+    public function toSearchableArray(): array
+    {
+        return [
+            'id' => (string) $this->id,
+            'account_id' => $this->account_id,
+            'first_name' => $this->first_name,
+            'last_name' => $this->last_name,
+            'email' => $this->email ?? '',
+            'organization_name' => $this->organization?->name ?? '',
+            'created_at' => $this->created_at?->timestamp ?? 0,
+        ];
+    }
+
     public function name(): Attribute
     {
         return Attribute::make(
@@ -46,28 +63,15 @@ final class Contact extends Model
     }
 
     #[Scope]
-    public function filter(Builder $query, array $filters): void
+    public function filter(Builder $query, array $filters, int $accountId): void
     {
         $query
-            ->when($filters['search'] ?? null, fn ($query, $search) => $this->applySearchFilter($query, $search))
+            ->when($filters['search'] ?? null, fn ($query, $search) => $this->applySearchFilter($query, $search, $accountId, $filters['trashed'] ?? null))
             ->when($filters['trashed'] ?? null, fn ($query, $trashed) => $this->applyTrashedFilter($query, $trashed));
     }
 
-    private function applySearchFilter(Builder $query, string $search): void
+    protected function makeAllSearchableUsing(Builder $query): Builder
     {
-        $query->where(function ($query) use ($search) {
-            $query
-                ->whereAny(['first_name', 'last_name', 'email'], 'LIKE', '%'.$search.'%')
-                ->orWhereRelation('organization', 'name', 'like', '%'.$search.'%');
-        });
-    }
-
-    private function applyTrashedFilter(Builder $query, string $trashed): void
-    {
-        if ($trashed === 'with') {
-            $query->withTrashed();
-        } elseif ($trashed === 'only') {
-            $query->onlyTrashed();
-        }
+        return $query->with('organization');
     }
 }

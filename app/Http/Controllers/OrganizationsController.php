@@ -23,7 +23,7 @@ final class OrganizationsController extends Controller
             'organizations' => new OrganizationCollection(
                 Auth::user()->account->organizations()
                     ->orderBy('name')
-                    ->filter(Request::only(['search', 'trashed']))
+                    ->filter(Request::only(['search', 'trashed']), Auth::user()->account_id)
                     ->paginate()
                     ->withQueryString()
             ),

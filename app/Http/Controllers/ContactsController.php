@@ -26,7 +26,7 @@ final class ContactsController extends Controller
                 Auth::user()->account->contacts()
                     ->with('organization')
                     ->orderByName()
-                    ->filter(Request::only(['search', 'trashed']))
+                    ->filter(Request::only(['search', 'trashed']), Auth::user()->account_id)
                     ->paginate()
                     ->withQueryString()
             ),

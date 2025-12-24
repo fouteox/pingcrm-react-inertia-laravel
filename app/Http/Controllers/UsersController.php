@@ -24,7 +24,7 @@ final class UsersController extends Controller
             'users' => new UserCollection(
                 Auth::user()->account->users()
                     ->orderByName()
-                    ->filter(Request::only(['search', 'role', 'trashed']))
+                    ->filter(Request::only(['search', 'role', 'trashed']), Auth::user()->account_id)
                     ->paginate()
                     ->withQueryString()
             ),

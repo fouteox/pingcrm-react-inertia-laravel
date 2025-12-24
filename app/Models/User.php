@@ -13,10 +13,11 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Laravel\Scout\Searchable;
 
 final class User extends Authenticatable
 {
-    use HasFactory, Notifiable, SoftDeletes;
+    use Concerns\Filterable, HasFactory, Notifiable, Searchable, SoftDeletes;
 
     /**
      * The attributes that are mass assignable.
@@ -70,6 +71,22 @@ final class User extends Authenticatable
         return $this->email === 'johndoe@example.com';
     }
 
+    /**
+     * @return array<string, mixed>
+     */
+    public function toSearchableArray(): array
+    {
+        return [
+            'id' => (string) $this->id,
+            'account_id' => $this->account_id,
+            'first_name' => $this->first_name,
+            'last_name' => $this->last_name,
+            'email' => $this->email,
+            'owner' => (bool) $this->owner,
+            'created_at' => $this->created_at?->timestamp ?? 0,
+        ];
+    }
+
     #[Scope]
     public function orderByName(Builder $query): void
     {
@@ -88,10 +105,10 @@ final class User extends Authenticatable
     }
 
     #[Scope]
-    public function filter(Builder $query, array $filters): void
+    public function filter(Builder $query, array $filters, int $accountId): void
     {
         $query
-            ->when($filters['search'] ?? null, fn ($query, $search) => $this->applySearchFilter($query, $search))
+            ->when($filters['search'] ?? null, fn ($query, $search) => $this->applySearchFilter($query, $search, $accountId, $filters['trashed'] ?? null))
             ->when($filters['role'] ?? null, fn ($query, $role) => $query->whereRole($role))
             ->when($filters['trashed'] ?? null, fn ($query, $trashed) => $this->applyTrashedFilter($query, $trashed));
     }
@@ -107,19 +124,5 @@ final class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
-    }
-
-    private function applySearchFilter(Builder $query, string $search): void
-    {
-        $query->whereAny(['first_name', 'last_name', 'email'], 'LIKE', '%'.$search.'%');
-    }
-
-    private function applyTrashedFilter(Builder $query, string $trashed): void
-    {
-        if ($trashed === 'with') {
-            $query->withTrashed();
-        } elseif ($trashed === 'only') {
-            $query->onlyTrashed();
-        }
     }
 }
