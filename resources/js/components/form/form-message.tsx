@@ -1,3 +1,4 @@
+import { useProcessingContext } from '@/contexts/processing-context';
 import { cn } from '@/lib/utils';
 
 interface FormMessageProps {
@@ -6,7 +7,9 @@ interface FormMessageProps {
 }
 
 export function FormMessage({ error, className }: FormMessageProps) {
-    if (!error) return null;
+    const { isProcessing } = useProcessingContext();
+
+    if (!error || isProcessing) return null;
 
     return <p className={cn('text-destructive text-sm font-medium', className)}>{error}</p>;
 }
