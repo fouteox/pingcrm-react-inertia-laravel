@@ -313,6 +313,7 @@ volumes:
   storage_logs:
   stack-valkey:
   stack-mariadb:
+  stack-typesense:
   backup_dumps:
 
 secrets:
