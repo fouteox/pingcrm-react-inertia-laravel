@@ -261,7 +261,7 @@ services:
       update_config:
         parallelism: 1
         delay: 5s
-        order: start-first
+        order: stop-first
 
   backup:
     image: offen/docker-volume-backup:v2
