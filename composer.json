@@ -65,17 +65,17 @@
             "@php artisan key:generate",
             "@php artisan migrate --force",
             "@php artisan db:seed --force",
-            "npm install",
-            "npm run build"
+            "bun install",
+            "bun run build"
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
-            "npx concurrently -c \"#c4b5fd,#fdba74,#93c5fd\" \"php artisan horizon\" \"npm run dev\" \"php artisan schedule:work\" --names=horizon,vite,scheduler --kill-others"
+            "bunx concurrently -c \"#c4b5fd,#fdba74,#93c5fd\" \"php artisan horizon\" \"bun run dev\" \"php artisan schedule:work\" --names=horizon,vite,scheduler --kill-others"
         ],
         "dev:ssr": [
-            "npm run build:ssr",
+            "bun run build:ssr",
             "Composer\\Config::disableProcessTimeout",
-            "npx concurrently -c \"#c4b5fd,#fdba74,#93c5fd\" \"php artisan horizon\" \"php artisan inertia:start-ssr\" \"php artisan schedule:work\" --names=horizon,ssr,scheduler --kill-others"
+            "bunx concurrently -c \"#c4b5fd,#fdba74,#93c5fd\" \"php artisan horizon\" \"php artisan inertia:start-ssr\" \"php artisan schedule:work\" --names=horizon,ssr,scheduler --kill-others"
         ],
         "lint": [
             "pint"
