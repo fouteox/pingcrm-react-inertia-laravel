@@ -16,7 +16,6 @@ FROM base AS builder
 
 COPY --from=oven/bun:1.3-debian /usr/local/bin/bun /usr/local/bin/bun
 
-
 COPY --link composer.json composer.lock ./
 
 RUN composer install \
