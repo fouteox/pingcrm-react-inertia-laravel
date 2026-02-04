@@ -1,0 +1,125 @@
+x-logging: &default-logging
+  driver: 'json-file'
+  options:
+    max-size: "50m"
+    max-file: 6
+x-network: &default-network
+  internal:
+x-base: &base
+  ulimits:
+    nofile:
+      soft: 20000
+      hard: 40000
+  logging: *default-logging
+
+services:
+  app:
+    <<: *base
+    command: ["php", "/var/www/html/artisan", "octane:start", "--server=frankenphp", "--port=8000"]
+    stop_signal: SIGTERM
+    environment:
+      AUTORUN_LARAVEL_MIGRATION_MODE: "fresh"
+      AUTORUN_LARAVEL_MIGRATION_SEED: "true"
+      INERTIA_SSR_URL: "http://ssr:13714"
+      INERTIA_SSR_ENSURE_BUNDLE_EXISTS: "false"
+      HEALTHCHECK_PATH: "/up"
+    networks:
+      - internal
+      - spin-network
+    healthcheck:
+      test: ["CMD", "healthcheck-octane"]
+      start_period: 90s
+      interval: 10s
+      timeout: 10s
+      retries: 3
+
+  queue:
+    <<: *base
+    command: ["php", "/var/www/html/artisan", "queue:work", "--tries=3"]
+    stop_signal: SIGTERM
+    networks: *default-network
+    healthcheck:
+      test: ["CMD", "healthcheck-queue"]
+      start_period: 10s
+      interval: 5s
+      timeout: 5s
+      retries: 2
+
+  scheduler:
+    <<: *base
+    command: ["php", "/var/www/html/artisan", "schedule:work"]
+    stop_signal: SIGTERM
+    networks: *default-network
+    healthcheck:
+      test: ["CMD", "healthcheck-schedule"]
+      start_period: 10s
+      interval: 5s
+      timeout: 5s
+      retries: 2
+
+  reverb:
+    <<: *base
+    command: ["php", "/var/www/html/artisan", "reverb:start", "--port=8080"]
+    stop_signal: SIGTERM
+    networks:
+      - internal
+      - spin-network
+    healthcheck:
+      test: ["CMD", "healthcheck-reverb"]
+      start_period: 10s
+      interval: 5s
+      timeout: 5s
+      retries: 2
+
+  valkey:
+    image: 'valkey/valkey:9-alpine'
+    ulimits:
+      nofile:
+        soft: 20000
+        hard: 40000
+    command: [ "valkey-server", "--requirepass", "${REDIS_PASSWORD}", "--maxmemory", "2gb" ]
+    environment:
+      REDIS_PASSWORD: "${REDIS_PASSWORD}"
+    logging: *default-logging
+    networks: *default-network
+    healthcheck:
+      test: [ "CMD", "valkey-cli", "-a", "${REDIS_PASSWORD}", "ping" ]
+      retries: 3
+      timeout: 5s
+
+  mariadb:
+    image: mariadb:11.8
+    ulimits:
+      nofile:
+        soft: 20000
+        hard: 40000
+    environment:
+      MARIADB_RANDOM_ROOT_PASSWORD: "1"
+      MARIADB_DATABASE: "${DB_DATABASE}"
+      MARIADB_USER: "${DB_USERNAME}"
+      MARIADB_PASSWORD: "${DB_PASSWORD}"
+    networks: *default-network
+    logging: *default-logging
+    healthcheck:
+      test: [ "CMD", "healthcheck.sh", "--connect", "--innodb_initialized" ]
+      start_period: 10s
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  typesense:
+    image: 'typesense/typesense:29.0'
+    command: ["--data-dir=/data", "--api-key=${TYPESENSE_API_KEY}", "--enable-cors"]
+    environment:
+      TYPESENSE_API_KEY: "${TYPESENSE_API_KEY}"
+    logging:
+      driver: 'json-file'
+      options:
+        max-size: "50m"
+        max-file: "6"
+    networks: *default-network
+
+networks:
+  internal:
+  spin-network:
+    external: true

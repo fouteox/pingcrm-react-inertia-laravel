@@ -1,0 +1,129 @@
+services:
+  app:
+    build:
+      target: development
+      args:
+        USER_ID: ${SPIN_USER_ID}
+        GROUP_ID: ${SPIN_GROUP_ID}
+      dockerfile: Dockerfile.php
+    volumes:
+      - .:/var/www/html/
+    depends_on:
+      mariadb:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+      typesense:
+        condition: service_started
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.pingcrm.rule=Host(`${APP_HOST}`)"
+      - "traefik.http.routers.pingcrm.entrypoints=websecure"
+      - "traefik.http.routers.pingcrm.tls=true"
+      - "traefik.http.services.pingcrm.loadbalancer.server.port=8000"
+
+  queue:
+    build:
+      target: development
+      args:
+        USER_ID: ${SPIN_USER_ID}
+        GROUP_ID: ${SPIN_GROUP_ID}
+      dockerfile: Dockerfile.php
+    volumes:
+      - .:/var/www/html/
+    depends_on:
+      app:
+        condition: service_started
+      mariadb:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+
+  scheduler:
+    build:
+      target: development
+      args:
+        USER_ID: ${SPIN_USER_ID}
+        GROUP_ID: ${SPIN_GROUP_ID}
+      dockerfile: Dockerfile.php
+    volumes:
+      - .:/var/www/html/
+    depends_on:
+      app:
+        condition: service_started
+      mariadb:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+
+  reverb:
+    build:
+      target: development
+      args:
+        USER_ID: ${SPIN_USER_ID}
+        GROUP_ID: ${SPIN_GROUP_ID}
+      dockerfile: Dockerfile.php
+    volumes:
+      - .:/var/www/html/
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.reverb.rule=Host(`${APP_HOST}`) && (PathPrefix(`/app`) || PathPrefix(`/apps`))"
+      - "traefik.http.routers.reverb.entrypoints=websecure"
+      - "traefik.http.routers.reverb.tls=true"
+      - "traefik.http.services.reverb.loadbalancer.server.port=8080"
+    depends_on:
+      app:
+        condition: service_started
+      mariadb:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
+
+  valkey:
+    volumes:
+      - ./.infrastructure/volume_data/valkey/valkey_data/:/data
+
+  mariadb:
+    volumes:
+      - ./.infrastructure/volume_data/mariadb/database_data/:/var/lib/mysql
+
+  typesense:
+    volumes:
+      - ./.infrastructure/volume_data/typesense/typesense_data/:/data
+
+  vite:
+    build:
+      target: development
+      args:
+        USER_ID: ${SPIN_USER_ID}
+        GROUP_ID: ${SPIN_GROUP_ID}
+      dockerfile: Dockerfile.php
+    command: bun run dev
+    volumes:
+      - .:/var/www/html/
+    working_dir: /var/www/html/
+    environment:
+      - VITE_DEV_HOST=${VITE_DEV_HOST}
+      - APP_HOST=${APP_HOST}
+    networks:
+      - internal
+      - spin-network
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.vite.rule=Host(`${VITE_DEV_HOST}`)"
+      - "traefik.http.routers.vite.entrypoints=websecure"
+      - "traefik.http.routers.vite.tls=true"
+      - "traefik.http.services.vite.loadbalancer.server.port=5173"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5173/@vite/client"]
+      start_period: 30s
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    depends_on:
+      app:
+        condition: service_started
+      mariadb:
+        condition: service_healthy
+      valkey:
+        condition: service_healthy
