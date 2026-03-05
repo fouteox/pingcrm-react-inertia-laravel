@@ -1,0 +1,164 @@
+name: Build and Deploy (Kubernetes)
+
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      overlay:
+        description: "Kustomize overlay to deploy"
+        required: true
+        default: "production-tunnel"
+        type: choice
+        options:
+          - production-tunnel
+          - production-direct
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build:
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
+    runs-on: ${{ vars.SYSTEM_ARCH == 'aarch64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Load env file for build
+        run: |
+          echo "${{ secrets.ENV_FILE_BASE64 }}" | base64 -d > .env.build
+          echo "ENV_BUILD_HASH=$(sha256sum .env.build | cut -c1-8)" >> $GITHUB_ENV
+
+      - name: Build and push App image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          target: app
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}-app
+          cache-from: type=gha,scope=app
+          cache-to: type=gha,mode=max,scope=app
+          build-args: |
+            ENV_HASH=${{ env.ENV_BUILD_HASH }}
+          secret-files: |
+            dotenv=./.env.build
+
+      - name: Build and push SSR image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          target: ssr
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:ssr
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}-ssr
+          cache-from: type=gha,scope=ssr
+          cache-to: type=gha,mode=max,scope=ssr
+          build-args: |
+            ENV_HASH=${{ env.ENV_BUILD_HASH }}
+          secret-files: |
+            dotenv=./.env.build
+
+      - name: Cleanup build env
+        if: always()
+        run: rm -f .env.build
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      OVERLAY: ${{ github.event.inputs.overlay || 'production-tunnel' }}
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup kubeconfig
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.KUBECONFIG_BASE64 }}" | base64 -d > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Create secrets
+        run: |
+          # Decode .env file
+          echo "${{ secrets.ENV_FILE_BASE64 }}" | base64 -d > /tmp/.env.production
+
+          # Create/update app-dotenv secret
+          kubectl create secret generic app-dotenv \
+            --from-file=.env=/tmp/.env.production \
+            --namespace=pingcrm \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+          # Create/update app-env secret from individual keys
+          DB_DATABASE=$(grep '^DB_DATABASE=' /tmp/.env.production | cut -d= -f2 | tr -d '"')
+          DB_USERNAME=$(grep '^DB_USERNAME=' /tmp/.env.production | cut -d= -f2 | tr -d '"')
+          DB_PASSWORD=$(grep '^DB_PASSWORD=' /tmp/.env.production | cut -d= -f2 | tr -d '"')
+          REDIS_PASSWORD=$(grep '^REDIS_PASSWORD=' /tmp/.env.production | cut -d= -f2 | tr -d '"')
+          TYPESENSE_API_KEY=$(grep '^TYPESENSE_API_KEY=' /tmp/.env.production | cut -d= -f2 | tr -d '"')
+
+          kubectl create secret generic app-env \
+            --from-literal=DB_DATABASE="$DB_DATABASE" \
+            --from-literal=DB_USERNAME="$DB_USERNAME" \
+            --from-literal=DB_PASSWORD="$DB_PASSWORD" \
+            --from-literal=REDIS_PASSWORD="$REDIS_PASSWORD" \
+            --from-literal=TYPESENSE_API_KEY="$TYPESENSE_API_KEY" \
+            --namespace=pingcrm \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+          # Cloudflare tunnel secret (only for tunnel overlay)
+          if [ "$OVERLAY" = "production-tunnel" ] && [ -n "${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}" ]; then
+            kubectl create secret generic cloudflared \
+              --from-literal=TUNNEL_TOKEN="${{ secrets.CLOUDFLARE_TUNNEL_TOKEN }}" \
+              --namespace=pingcrm \
+              --dry-run=client -o yaml | kubectl apply -f -
+          fi
+
+          rm -f /tmp/.env.production
+
+      - name: Create imagePullSecret for ghcr.io
+        run: |
+          kubectl create secret docker-registry ghcr-login \
+            --docker-server=${{ env.REGISTRY }} \
+            --docker-username=${{ github.actor }} \
+            --docker-password=${{ secrets.GITHUB_TOKEN }} \
+            --namespace=pingcrm \
+            --dry-run=client -o yaml | kubectl apply -f -
+
+      - name: Deploy with Kustomize
+        run: |
+          kubectl apply -k k8s/overlays/$OVERLAY
+
+      - name: Restart deployments
+        run: |
+          kubectl rollout restart deployment/app -n pingcrm
+          kubectl rollout restart deployment/ssr -n pingcrm
+          kubectl rollout restart deployment/horizon -n pingcrm
+          kubectl rollout restart deployment/scheduler -n pingcrm
+          kubectl rollout restart deployment/reverb -n pingcrm
+
+      - name: Wait for rollout
+        run: |
+          kubectl rollout status deployment/app -n pingcrm --timeout=300s
+          kubectl rollout status deployment/ssr -n pingcrm --timeout=120s
+          kubectl rollout status deployment/horizon -n pingcrm --timeout=120s
+
+      - name: Cleanup kubeconfig
+        if: always()
+        run: rm -f ~/.kube/config

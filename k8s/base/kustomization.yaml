@@ -1,0 +1,27 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: pingcrm
+
+resources:
+  - namespace.yaml
+  - init-scripts-configmap.yaml
+  - traefik-config.yaml
+  # StatefulSets + Services
+  - mariadb-statefulset.yaml
+  - mariadb-service.yaml
+  - valkey-statefulset.yaml
+  - valkey-service.yaml
+  - typesense-statefulset.yaml
+  - typesense-service.yaml
+  # Deployments + Services
+  - app-deployment.yaml
+  - app-service.yaml
+  - horizon-deployment.yaml
+  - scheduler-deployment.yaml
+  - reverb-deployment.yaml
+  - reverb-service.yaml
+  - ssr-deployment.yaml
+  - ssr-service.yaml
+  # Ingress
+  - ingress.yaml

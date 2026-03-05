@@ -1,0 +1,93 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: app
+  namespace: pingcrm
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: app
+  template:
+    metadata:
+      labels:
+        app: app
+    spec:
+      securityContext:
+        fsGroup: 33
+      initContainers:
+        - name: wait-for-db
+          image: busybox:1.37
+          command: ["sh", "/scripts/wait-for-it.sh", "mariadb", "3306"]
+          volumeMounts:
+            - name: init-scripts
+              mountPath: /scripts
+        - name: wait-for-valkey
+          image: busybox:1.37
+          command: ["sh", "/scripts/wait-for-it.sh", "valkey", "6379"]
+          volumeMounts:
+            - name: init-scripts
+              mountPath: /scripts
+      containers:
+        - name: app
+          image: pingcrm-app:latest
+          imagePullPolicy: Always
+          command: ["php", "/var/www/html/artisan", "octane:start", "--server=frankenphp", "--port=8000"]
+          ports:
+            - containerPort: 8000
+          env:
+            - name: AUTORUN_ENABLED
+              value: "true"
+            - name: AUTORUN_LARAVEL_MIGRATION_MODE
+              value: "fresh"
+            - name: AUTORUN_LARAVEL_MIGRATION_SEED
+              value: "true"
+            - name: INERTIA_SSR_URL
+              value: "http://ssr:13714"
+            - name: INERTIA_SSR_ENSURE_BUNDLE_EXISTS
+              value: "false"
+            - name: HEALTHCHECK_PATH
+              value: "/up"
+            - name: PHP_OPCACHE_ENABLE
+              value: "1"
+          volumeMounts:
+            - name: dotenv
+              mountPath: /var/www/html/.env
+              subPath: .env
+          readinessProbe:
+            httpGet:
+              path: /up
+              port: 8000
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /up
+              port: 8000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+            timeoutSeconds: 5
+          startupProbe:
+            httpGet:
+              path: /up
+              port: 8000
+            failureThreshold: 30
+            periodSeconds: 3
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+      volumes:
+        - name: dotenv
+          secret:
+            secretName: app-dotenv
+        - name: init-scripts
+          configMap:
+            name: init-scripts
+            defaultMode: 0755

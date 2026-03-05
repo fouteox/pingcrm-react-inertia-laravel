@@ -1,0 +1,56 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: valkey
+  namespace: pingcrm
+spec:
+  serviceName: valkey
+  replicas: 1
+  selector:
+    matchLabels:
+      app: valkey
+  template:
+    metadata:
+      labels:
+        app: valkey
+    spec:
+      containers:
+        - name: valkey
+          image: valkey/valkey:9-alpine
+          command: ["valkey-server", "--requirepass", "$(REDIS_PASSWORD)", "--maxmemory", "2gb"]
+          ports:
+            - containerPort: 6379
+          env:
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: app-env
+                  key: REDIS_PASSWORD
+          volumeMounts:
+            - name: data
+              mountPath: /data
+          readinessProbe:
+            exec:
+              command: ["sh", "-c", "valkey-cli -a $REDIS_PASSWORD ping"]
+            initialDelaySeconds: 5
+            periodSeconds: 5
+            timeoutSeconds: 3
+          livenessProbe:
+            exec:
+              command: ["sh", "-c", "valkey-cli -a $REDIS_PASSWORD ping"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        storageClassName: local-path
+        resources:
+          requests:
+            storage: 5Gi
