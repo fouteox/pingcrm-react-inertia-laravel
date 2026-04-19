@@ -59,9 +59,16 @@ COPY --link . .
 RUN composer dump-autoload --classmap-authoritative --no-dev
 
 ARG ENV_HASH
+# Wayfinder (dev-next) introspects the DB schema at generate time (via laravel/ranger
+# RouteBindingResolver). Since no real DB is reachable during image build, we spin up
+# a throwaway SQLite DB, migrate it, and point the build at it. Remove once
+# https://github.com/laravel/wayfinder/issues/214 is fixed.
 RUN --mount=type=secret,id=dotenv \
     echo "Build with ENV_HASH=${ENV_HASH}" && \
     set -a && . /run/secrets/dotenv && set +a && \
+    export DB_CONNECTION=sqlite DB_DATABASE=/tmp/wayfinder.sqlite && \
+    : > "$DB_DATABASE" && \
+    php artisan migrate --force --no-interaction && \
     bun run build:ssr
 
 ############################################
