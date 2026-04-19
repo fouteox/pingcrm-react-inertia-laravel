@@ -22,6 +22,7 @@
         "typesense/typesense-php": "^6.0"
     },
     "require-dev": {
+        "laravel/boost": "^2.4",
         "laravel/breeze": "^2.3",
         "laravel/pint": "^1.26",
         "laravel/sail": "^1.51",
@@ -51,7 +52,8 @@
             "@php artisan package:discover --ansi"
         ],
         "post-update-cmd": [
-            "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
+            "@php artisan vendor:publish --tag=laravel-assets --ansi --force",
+            "@php artisan boost:update --ansi"
         ],
         "post-root-package-install": [
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""

@@ -1,0 +1,19 @@
+{
+    "agents": [
+        "claude_code"
+    ],
+    "guidelines": true,
+    "mcp": true,
+    "nightwatch_mcp": false,
+    "sail": false,
+    "skills": [
+        "laravel-best-practices",
+        "scout-development",
+        "wayfinder-development",
+        "pest-testing",
+        "inertia-react-development",
+        "echo-development",
+        "tailwindcss-development",
+        "echo-react-development"
+    ]
+}
