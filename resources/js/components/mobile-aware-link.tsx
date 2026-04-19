@@ -1,6 +1,6 @@
-import { useSidebar } from '@/components/ui/sidebar';
 import { Link, type InertiaLinkProps } from '@inertiajs/react';
 import React from 'react';
+import { useSidebar } from '@/components/ui/sidebar';
 
 export function MobileAwareLink({ children, onClick, ...props }: InertiaLinkProps) {
     const { isMobile, setOpenMobile } = useSidebar();

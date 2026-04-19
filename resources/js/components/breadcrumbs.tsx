@@ -1,8 +1,8 @@
-import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
-import { usePageContext } from '@/contexts/page-context';
 import { Link } from '@inertiajs/react';
 import { Fragment } from 'react';
 import { useTranslation } from 'react-i18next';
+import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
+import { usePageContext } from '@/contexts/page-context';
 
 export function Breadcrumbs() {
     const { t } = useTranslation();
@@ -23,10 +23,8 @@ export function Breadcrumbs() {
                                                 {t(item.title, item.count !== undefined ? { count: item.count } : undefined)}
                                             </BreadcrumbPage>
                                         ) : (
-                                            <BreadcrumbLink asChild>
-                                                <Link href={item.href}>
-                                                    {t(item.title, item.count !== undefined ? { count: item.count } : undefined)}
-                                                </Link>
+                                            <BreadcrumbLink render={<Link href={item.href} />}>
+                                                {t(item.title, item.count !== undefined ? { count: item.count } : undefined)}
                                             </BreadcrumbLink>
                                         )}
                                     </BreadcrumbItem>

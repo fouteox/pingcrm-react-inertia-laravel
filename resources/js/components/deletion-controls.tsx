@@ -1,3 +1,6 @@
+import { Trash } from 'lucide-react';
+import React from 'react';
+import { useTranslation } from 'react-i18next';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
     AlertDialog,
@@ -9,9 +12,6 @@ import {
     AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
-import { Trash } from 'lucide-react';
-import React from 'react';
-import { useTranslation } from 'react-i18next';
 
 export interface DeletionControlsProps {
     resourceType: 'contact' | 'organization' | 'user';
@@ -36,21 +36,21 @@ export const DeletionControls: React.FC<DeletionControlsProps> = ({ resourceType
                     <Trash className="text-yellow-800 dark:text-yellow-500" />
                     <AlertDescription className="flex w-full items-center justify-between text-yellow-700 dark:text-yellow-500/90">
                         {t(`This ${resourceType} has been deleted.`)}
-                        <AlertDialogTrigger asChild>
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                className="-mr-2 text-yellow-800 hover:bg-yellow-200/50 dark:text-yellow-500 dark:hover:bg-yellow-800/20"
-                            >
-                                {t('Restore')}
-                            </Button>
+                        <AlertDialogTrigger
+                            render={
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="-mr-2 text-yellow-800 hover:bg-yellow-200/50 dark:text-yellow-500 dark:hover:bg-yellow-800/20"
+                                />
+                            }
+                        >
+                            {t('Restore')}
                         </AlertDialogTrigger>
                     </AlertDescription>
                 </Alert>
             ) : (
-                <AlertDialogTrigger asChild>
-                    <Button variant="destructive">{t(`Delete ${resourceName}`)}</Button>
-                </AlertDialogTrigger>
+                <AlertDialogTrigger render={<Button variant="destructive" />}>{t(`Delete ${resourceName}`)}</AlertDialogTrigger>
             )}
 
             <AlertDialogContent>
@@ -66,9 +66,7 @@ export const DeletionControls: React.FC<DeletionControlsProps> = ({ resourceType
                 </AlertDialogDescription>
 
                 <AlertDialogFooter className="gap-2">
-                    <AlertDialogCancel asChild>
-                        <Button variant="secondary">{t('Cancel')}</Button>
-                    </AlertDialogCancel>
+                    <AlertDialogCancel variant="secondary">{t('Cancel')}</AlertDialogCancel>
                     <Button variant={isDeleted ? 'default' : 'destructive'} disabled={processing} onClick={onAction}>
                         {isDeleted ? t(`Restore ${resourceName}`) : t(`Delete ${resourceName}`)}
                     </Button>

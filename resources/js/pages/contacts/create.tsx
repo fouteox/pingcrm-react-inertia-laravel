@@ -1,19 +1,33 @@
-import { Button } from '@/components/ui/button';
-import { BreadcrumbItem, ContactFormData, Organization, SharedData } from '@/types';
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, useForm } from '@inertiajs/react';
 import { Loader2 } from 'lucide-react';
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-
-import { store } from '@/actions/App/Http/Controllers/ContactsController';
-import { Form, FormInput, FormLabel, FormMessage } from '@/components/form';
+import { Button } from '@/components/ui/button';
+import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePageActions } from '@/contexts/page-context';
-import contacts from '@/routes/contacts';
+import { useAppPage } from '@/hooks/use-app-page';
+import { BreadcrumbItem } from '@/types';
+import { store } from '@/wayfinder/App/Http/Controllers/ContactsController';
+import contacts from '@/wayfinder/routes/contacts';
 
-interface CreatePageProps extends SharedData {
-    organizations: Organization[];
-}
+type CreatePageProps = {
+    organizations: Array<{ id: number; name: string }>;
+};
+
+type ContactForm = {
+    first_name: string;
+    last_name: string;
+    organization_id: string;
+    email: string;
+    phone: string;
+    address: string;
+    city: string;
+    region: string;
+    country: string;
+    postal_code: string;
+};
 
 export default function Create() {
     const { t } = useTranslation();
@@ -38,8 +52,8 @@ export default function Create() {
         setBreadcrumbs(breadcrumbs);
     }, [breadcrumbs, setBreadcrumbs]);
 
-    const { organizations } = usePage<CreatePageProps>().props;
-    const form = useForm<Required<ContactFormData>>({
+    const { organizations } = useAppPage<CreatePageProps>().props;
+    const form = useForm<ContactForm>({
         first_name: '',
         last_name: '',
         organization_id: '',
@@ -51,6 +65,22 @@ export default function Create() {
         country: '',
         postal_code: '',
     });
+
+    const organizationItems = React.useMemo(
+        () => [{ value: '0', label: t('None') }, ...organizations.map(({ id, name }) => ({ value: id.toString(), label: name }))],
+        [organizations, t],
+    );
+
+    const countryItems = React.useMemo(
+        () => [
+            { value: '0', label: t('None') },
+            { value: 'CA', label: t('Canada') },
+            { value: 'US', label: t('United States') },
+        ],
+        [t],
+    );
+
+    const errors = form.processing ? ({} as typeof form.errors) : form.errors;
 
     function onSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
@@ -64,15 +94,12 @@ export default function Create() {
             <div className="max-w-3xl">
                 <h2 className="mb-6 text-xl font-semibold">{t('Create Contact')}</h2>
 
-                <Form onSubmit={onSubmit}>
-                    <div className="space-y-6">
-                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                            <div>
-                                <FormLabel htmlFor="first_name" error={form.errors.first_name}>
-                                    {t('First name')}
-                                </FormLabel>
-
-                                <FormInput
+                <form onSubmit={onSubmit}>
+                    <FieldGroup>
+                        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                            <Field data-invalid={!!errors.first_name || undefined}>
+                                <FieldLabel htmlFor="first_name">{t('First name')}</FieldLabel>
+                                <Input
                                     id="first_name"
                                     type="text"
                                     value={form.data.first_name}
@@ -82,18 +109,14 @@ export default function Create() {
                                     tabIndex={1}
                                     maxLength={25}
                                     disabled={form.processing}
-                                    error={form.errors.first_name}
+                                    aria-invalid={!!errors.first_name || undefined}
                                 />
+                                <FieldError>{errors.first_name}</FieldError>
+                            </Field>
 
-                                <FormMessage error={form.errors.first_name} />
-                            </div>
-
-                            <div>
-                                <FormLabel htmlFor="last_name" error={form.errors.last_name}>
-                                    {t('Last name')}
-                                </FormLabel>
-
-                                <FormInput
+                            <Field data-invalid={!!errors.last_name || undefined}>
+                                <FieldLabel htmlFor="last_name">{t('Last name')}</FieldLabel>
+                                <Input
                                     id="last_name"
                                     type="text"
                                     value={form.data.last_name}
@@ -102,46 +125,38 @@ export default function Create() {
                                     tabIndex={2}
                                     maxLength={25}
                                     disabled={form.processing}
-                                    error={form.errors.last_name}
+                                    aria-invalid={!!errors.last_name || undefined}
                                 />
-
-                                <FormMessage error={form.errors.last_name} />
-                            </div>
+                                <FieldError>{errors.last_name}</FieldError>
+                            </Field>
                         </div>
 
-                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                            <div>
-                                <FormLabel htmlFor="organization_id" error={form.errors.organization_id}>
-                                    {t('Organization', { count: 1 })}
-                                </FormLabel>
-
+                        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                            <Field data-invalid={!!errors.organization_id || undefined}>
+                                <FieldLabel htmlFor="organization_id">{t('Organization', { count: 1 })}</FieldLabel>
                                 <Select
+                                    items={organizationItems}
                                     value={form.data.organization_id || '0'}
-                                    onValueChange={(value) => form.setData('organization_id', value === '0' ? '' : value)}
+                                    onValueChange={(value) => form.setData('organization_id', !value || value === '0' ? '' : value)}
                                     disabled={form.processing}
                                 >
-                                    <SelectTrigger id="organization_id" className={form.errors.organization_id ? 'border-destructive' : ''}>
+                                    <SelectTrigger id="organization_id" className="w-full" aria-invalid={!!errors.organization_id || undefined}>
                                         <SelectValue placeholder={t('Select an organization')} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="0">{t('None')}</SelectItem>
-                                        {organizations.map(({ id, name }) => (
-                                            <SelectItem key={id} value={id.toString()}>
-                                                {name}
+                                        {organizationItems.map(({ value, label }) => (
+                                            <SelectItem key={value} value={value}>
+                                                {label}
                                             </SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                <FieldError>{errors.organization_id}</FieldError>
+                            </Field>
 
-                                <FormMessage error={form.errors.organization_id} />
-                            </div>
-
-                            <div>
-                                <FormLabel htmlFor="email" error={form.errors.email}>
-                                    {t('Email')}
-                                </FormLabel>
-
-                                <FormInput
+                            <Field data-invalid={!!errors.email || undefined}>
+                                <FieldLabel htmlFor="email">{t('Email')}</FieldLabel>
+                                <Input
                                     id="email"
                                     type="email"
                                     value={form.data.email}
@@ -150,20 +165,16 @@ export default function Create() {
                                     tabIndex={4}
                                     maxLength={50}
                                     disabled={form.processing}
-                                    error={form.errors.email}
+                                    aria-invalid={!!errors.email || undefined}
                                 />
-
-                                <FormMessage error={form.errors.email} />
-                            </div>
+                                <FieldError>{errors.email}</FieldError>
+                            </Field>
                         </div>
 
-                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                            <div>
-                                <FormLabel htmlFor="phone" error={form.errors.phone}>
-                                    {t('Phone')}
-                                </FormLabel>
-
-                                <FormInput
+                        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                            <Field data-invalid={!!errors.phone || undefined}>
+                                <FieldLabel htmlFor="phone">{t('Phone')}</FieldLabel>
+                                <Input
                                     id="phone"
                                     type="tel"
                                     value={form.data.phone}
@@ -171,18 +182,14 @@ export default function Create() {
                                     tabIndex={5}
                                     maxLength={50}
                                     disabled={form.processing}
-                                    error={form.errors.phone}
+                                    aria-invalid={!!errors.phone || undefined}
                                 />
+                                <FieldError>{errors.phone}</FieldError>
+                            </Field>
 
-                                <FormMessage error={form.errors.phone} />
-                            </div>
-
-                            <div>
-                                <FormLabel htmlFor="address" error={form.errors.address}>
-                                    {t('Address')}
-                                </FormLabel>
-
-                                <FormInput
+                            <Field data-invalid={!!errors.address || undefined}>
+                                <FieldLabel htmlFor="address">{t('Address')}</FieldLabel>
+                                <Input
                                     id="address"
                                     type="text"
                                     value={form.data.address}
@@ -190,20 +197,16 @@ export default function Create() {
                                     tabIndex={6}
                                     maxLength={150}
                                     disabled={form.processing}
-                                    error={form.errors.address}
+                                    aria-invalid={!!errors.address || undefined}
                                 />
-
-                                <FormMessage error={form.errors.address} />
-                            </div>
+                                <FieldError>{errors.address}</FieldError>
+                            </Field>
                         </div>
 
-                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                            <div>
-                                <FormLabel htmlFor="city" error={form.errors.city}>
-                                    {t('City')}
-                                </FormLabel>
-
-                                <FormInput
+                        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                            <Field data-invalid={!!errors.city || undefined}>
+                                <FieldLabel htmlFor="city">{t('City')}</FieldLabel>
+                                <Input
                                     id="city"
                                     type="text"
                                     value={form.data.city}
@@ -211,18 +214,14 @@ export default function Create() {
                                     tabIndex={7}
                                     maxLength={50}
                                     disabled={form.processing}
-                                    error={form.errors.city}
+                                    aria-invalid={!!errors.city || undefined}
                                 />
+                                <FieldError>{errors.city}</FieldError>
+                            </Field>
 
-                                <FormMessage error={form.errors.city} />
-                            </div>
-
-                            <div>
-                                <FormLabel htmlFor="region" error={form.errors.region}>
-                                    {t('Province/State')}
-                                </FormLabel>
-
-                                <FormInput
+                            <Field data-invalid={!!errors.region || undefined}>
+                                <FieldLabel htmlFor="region">{t('Province/State')}</FieldLabel>
+                                <Input
                                     id="region"
                                     type="text"
                                     value={form.data.region}
@@ -230,43 +229,38 @@ export default function Create() {
                                     tabIndex={8}
                                     maxLength={50}
                                     disabled={form.processing}
-                                    error={form.errors.region}
+                                    aria-invalid={!!errors.region || undefined}
                                 />
-
-                                <FormMessage error={form.errors.region} />
-                            </div>
+                                <FieldError>{errors.region}</FieldError>
+                            </Field>
                         </div>
 
-                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                            <div>
-                                <FormLabel htmlFor="country" error={form.errors.country}>
-                                    {t('Country')}
-                                </FormLabel>
-
+                        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                            <Field data-invalid={!!errors.country || undefined}>
+                                <FieldLabel htmlFor="country">{t('Country')}</FieldLabel>
                                 <Select
+                                    items={countryItems}
                                     value={form.data.country || '0'}
-                                    onValueChange={(value) => form.setData('country', value === '0' ? '' : value)}
+                                    onValueChange={(value) => form.setData('country', !value || value === '0' ? '' : value)}
                                     disabled={form.processing}
                                 >
-                                    <SelectTrigger id="country" className={form.errors.country ? 'border-destructive' : ''}>
+                                    <SelectTrigger id="country" className="w-full" aria-invalid={!!errors.country || undefined}>
                                         <SelectValue placeholder={t('Select a country')} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="0">{t('None')}</SelectItem>
-                                        <SelectItem value="CA">{t('Canada')}</SelectItem>
-                                        <SelectItem value="US">{t('United States')}</SelectItem>
+                                        {countryItems.map(({ value, label }) => (
+                                            <SelectItem key={value} value={value}>
+                                                {label}
+                                            </SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
+                                <FieldError>{errors.country}</FieldError>
+                            </Field>
 
-                                <FormMessage error={form.errors.country} />
-                            </div>
-
-                            <div>
-                                <FormLabel htmlFor="postal_code" error={form.errors.postal_code}>
-                                    {t('Postal Code')}
-                                </FormLabel>
-
-                                <FormInput
+                            <Field data-invalid={!!errors.postal_code || undefined}>
+                                <FieldLabel htmlFor="postal_code">{t('Postal Code')}</FieldLabel>
+                                <Input
                                     id="postal_code"
                                     type="text"
                                     value={form.data.postal_code}
@@ -274,11 +268,10 @@ export default function Create() {
                                     tabIndex={10}
                                     maxLength={25}
                                     disabled={form.processing}
-                                    error={form.errors.postal_code}
+                                    aria-invalid={!!errors.postal_code || undefined}
                                 />
-
-                                <FormMessage error={form.errors.postal_code} />
-                            </div>
+                                <FieldError>{errors.postal_code}</FieldError>
+                            </Field>
                         </div>
 
                         <div className="flex justify-end">
@@ -287,8 +280,8 @@ export default function Create() {
                                 {t('Create Contact')}
                             </Button>
                         </div>
-                    </div>
-                </Form>
+                    </FieldGroup>
+                </form>
             </div>
         </>
     );

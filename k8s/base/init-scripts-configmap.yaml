@@ -1,0 +1,23 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: init-scripts
+  namespace: pingcrm
+data:
+  wait-for-it.sh: |
+    #!/bin/sh
+    set -e
+    HOST="$1"
+    PORT="$2"
+    TIMEOUT="${3:-60}"
+    echo "Waiting for $HOST:$PORT (timeout: ${TIMEOUT}s)..."
+    START=$(date +%s)
+    while ! nc -z "$HOST" "$PORT" 2>/dev/null; do
+      ELAPSED=$(( $(date +%s) - START ))
+      if [ "$ELAPSED" -ge "$TIMEOUT" ]; then
+        echo "Timeout waiting for $HOST:$PORT after ${TIMEOUT}s"
+        exit 1
+      fi
+      sleep 1
+    done
+    echo "$HOST:$PORT is available"

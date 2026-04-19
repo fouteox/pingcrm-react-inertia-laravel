@@ -10,9 +10,8 @@
 /public/build
 /public/hot
 /public/storage
-/resources/js/actions
-/resources/js/routes
 /resources/js/wayfinder
+/storage/wayfinder-cache
 /storage/*.key
 /storage/pail
 /vendor
@@ -25,3 +24,7 @@ Homestead.json
 Homestead.yaml
 npm-debug.log
 yarn-error.log
+
+# k8s secrets (never commit)
+k8s/overlays/*/.env
+k8s/overlays/*/app-env.properties

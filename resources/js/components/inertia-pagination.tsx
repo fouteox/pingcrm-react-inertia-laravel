@@ -1,9 +1,9 @@
-import { buttonVariants } from '@/components/ui/button';
-import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem } from '@/components/ui/pagination';
-import { cn } from '@/lib/utils';
 import { Link } from '@inertiajs/react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { buttonVariants } from '@/components/ui/button';
+import { Pagination, PaginationContent, PaginationEllipsis, PaginationItem } from '@/components/ui/pagination';
+import { cn } from '@/lib/utils';
 
 interface InertiaLinkType {
     url: string | null;
@@ -29,12 +29,23 @@ export default function InertiaPagination({ links, className }: InertiaPaginatio
     // Page links are between first and last link
     const pageLinks = links.slice(1, -1);
 
-    // Helper to clean HTML entities in labels
-    const cleanLabel = (label: string) => {
-        const temp = document.createElement('div');
-        temp.innerHTML = label;
-        return temp.textContent || temp.innerText || label;
-    };
+    const cleanLabel = (label: string) =>
+        label
+            .replace(/&#(\d+);/g, (_, code: string) => String.fromCharCode(Number.parseInt(code, 10)))
+            .replace(/&#x([0-9a-f]+);/gi, (_, code: string) => String.fromCharCode(Number.parseInt(code, 16)))
+            .replace(/&(laquo|raquo|amp|lt|gt|quot|apos|nbsp);/g, (_, name: string) => {
+                const entities: Record<string, string> = {
+                    laquo: '«',
+                    raquo: '»',
+                    amp: '&',
+                    lt: '<',
+                    gt: '>',
+                    quot: '"',
+                    apos: "'",
+                    nbsp: ' ',
+                };
+                return entities[name] ?? '';
+            });
 
     // Determine which page links to show on mobile
     const activeIndex = pageLinks.findIndex((link) => link.active);

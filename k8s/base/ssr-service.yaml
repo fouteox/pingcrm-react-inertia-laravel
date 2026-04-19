@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: ssr
+  namespace: pingcrm
+spec:
+  selector:
+    app: ssr
+  ports:
+    - port: 13714
+      targetPort: 13714

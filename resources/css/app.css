@@ -3,7 +3,7 @@
 
 @plugin 'tailwindcss-animate';
 
-@source "../views";
+@source '../views';
 
 @custom-variant dark (&:is(.dark *));
 
@@ -23,7 +23,6 @@
     --accent: oklch(0.97 0 0);
     --accent-foreground: oklch(0.205 0 0);
     --destructive: oklch(0.577 0.245 27.325);
-    --destructive-foreground: oklch(0.577 0.245 27.325);
     --border: oklch(0.922 0 0);
     --input: oklch(0.922 0 0);
     --ring: oklch(0.87 0 0);
@@ -58,8 +57,7 @@
     --muted-foreground: oklch(0.708 0 0);
     --accent: oklch(0.269 0 0);
     --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.396 0.141 25.723);
-    --destructive-foreground: oklch(0.637 0.237 25.331);
+    --destructive: oklch(0.704 0.191 22.216);
     --border: oklch(0.269 0 0);
     --input: oklch(0.269 0 0);
     --ring: oklch(0.439 0 0);
@@ -94,7 +92,6 @@
     --color-accent: var(--accent);
     --color-accent-foreground: var(--accent-foreground);
     --color-destructive: var(--destructive);
-    --color-destructive-foreground: var(--destructive-foreground);
     --color-border: var(--border);
     --color-input: var(--input);
     --color-ring: var(--ring);
@@ -129,9 +126,29 @@
 /* Success icon starburst shape - 12 pointed sun */
 .success-burst {
     clip-path: polygon(
-        50% 0%, 62% 12%, 75% 7%, 80% 22%, 93% 25%, 88% 40%,
-        100% 50%, 88% 60%, 93% 75%, 80% 78%, 75% 93%, 62% 88%,
-        50% 100%, 38% 88%, 25% 93%, 20% 78%, 7% 75%, 12% 60%,
-        0% 50%, 12% 40%, 7% 25%, 20% 22%, 25% 7%, 38% 12%
+        50% 0%,
+        62% 12%,
+        75% 7%,
+        80% 22%,
+        93% 25%,
+        88% 40%,
+        100% 50%,
+        88% 60%,
+        93% 75%,
+        80% 78%,
+        75% 93%,
+        62% 88%,
+        50% 100%,
+        38% 88%,
+        25% 93%,
+        20% 78%,
+        7% 75%,
+        12% 60%,
+        0% 50%,
+        12% 40%,
+        7% 25%,
+        20% 22%,
+        25% 7%,
+        38% 12%
     );
 }

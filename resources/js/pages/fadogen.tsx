@@ -1,9 +1,9 @@
-import { usePageActions } from '@/contexts/page-context';
-import { fadogen } from '@/routes';
-import { BreadcrumbItem } from '@/types';
 import { Head } from '@inertiajs/react';
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
+import { usePageActions } from '@/contexts/page-context';
+import { BreadcrumbItem } from '@/types';
+import { fadogen } from '@/wayfinder/routes';
 
 export default function Dashboard() {
     const { t, i18n } = useTranslation();

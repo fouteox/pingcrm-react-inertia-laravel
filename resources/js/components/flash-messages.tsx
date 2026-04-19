@@ -1,32 +1,23 @@
+import { router, usePage } from '@inertiajs/react';
 import { Toaster } from '@/components/ui/sonner';
 import { useProcessingContext } from '@/contexts/processing-context';
-import { SharedData } from '@/types';
-import { router, usePage } from '@inertiajs/react';
+import type { Inertia } from '@/wayfinder/types';
+
+type Flash = Inertia.SharedData['flash'];
 import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { toast } from 'sonner';
 
-interface FlashMessage {
-    success?: string;
-    error?: string;
-}
-
-interface FlashPageProps extends SharedData {
-    flash: FlashMessage;
-    errors: Record<string, string[]>;
-    [key: string]: unknown;
-}
-
 export default function FlashMessages() {
     const { t } = useTranslation();
-    const { flash, errors } = usePage<FlashPageProps>().props;
+    const { flash, errors } = usePage().props;
     const { isProcessing, setShowSuccess } = useProcessingContext();
     const numOfErrors = Object.keys(errors).length;
 
     const hasPendingVisitRef = useRef(false);
     const isPopstateRef = useRef(false);
     const wasProcessingRef = useRef(false);
-    const pendingFlashRef = useRef<{ flash: FlashMessage; numOfErrors: number; wasFormSubmit: boolean } | null>(null);
+    const pendingFlashRef = useRef<{ flash: Flash; numOfErrors: number; wasFormSubmit: boolean } | null>(null);
 
     // Capture when processing starts (persists even if isProcessing becomes false before flash is stored)
     useEffect(() => {
@@ -79,12 +70,12 @@ export default function FlashMessages() {
                 if (wasFormSubmit) {
                     setShowSuccess(true);
                 } else {
-                    toast.success(pendingFlash.success);
+                    toast.success(pendingFlash.success as string);
                 }
             }
 
             if (pendingFlash.error) {
-                toast.error(pendingFlash.error);
+                toast.error(pendingFlash.error as string);
             } else if (pendingNumOfErrors > 0) {
                 toast.error(t('form_errors', { count: pendingNumOfErrors }));
             }

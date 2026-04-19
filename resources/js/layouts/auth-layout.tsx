@@ -1,14 +1,14 @@
-import AppLogoIcon from '@/components/app-logo-icon';
-import { usePageContext } from '@/contexts/page-context';
-import { dashboard } from '@/routes';
 import { Link } from '@inertiajs/react';
 import { PropsWithChildren } from 'react';
+import AppLogoIcon from '@/components/app-logo-icon';
+import { usePageContext } from '@/contexts/page-context';
+import { dashboard } from '@/wayfinder/routes';
 
 export default function AuthSimpleLayout({ children }: PropsWithChildren) {
     const { authTitle, authDescription } = usePageContext();
 
     return (
-        <div className="bg-background flex min-h-svh flex-col items-center justify-center gap-6 p-6 md:p-10">
+        <div className="flex min-h-svh flex-col items-center justify-center gap-6 bg-background p-6 md:p-10">
             <div className="w-full max-w-sm">
                 <div className="flex flex-col gap-8">
                     <div className="flex flex-col items-center gap-4">
@@ -21,7 +21,7 @@ export default function AuthSimpleLayout({ children }: PropsWithChildren) {
 
                         <div className="space-y-2 text-center">
                             <h1 className="text-xl font-medium">{authTitle}</h1>
-                            <p className="text-muted-foreground text-center text-sm">{authDescription}</p>
+                            <p className="text-center text-sm text-muted-foreground">{authDescription}</p>
                         </div>
                     </div>
                     {children}

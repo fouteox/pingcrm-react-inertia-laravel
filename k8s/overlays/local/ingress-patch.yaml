@@ -1,0 +1,31 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: pingcrm
+  namespace: pingcrm
+spec:
+  rules:
+    - host: pingcrm-react-inertia-laravel.dev.localhost
+      http:
+        paths:
+          - path: /app
+            pathType: Prefix
+            backend:
+              service:
+                name: reverb
+                port:
+                  number: 8080
+          - path: /apps
+            pathType: Prefix
+            backend:
+              service:
+                name: reverb
+                port:
+                  number: 8080
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: app
+                port:
+                  number: 8000

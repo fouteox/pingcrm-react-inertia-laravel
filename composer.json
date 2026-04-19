@@ -2,22 +2,24 @@
     "name": "laravel/laravel",
     "type": "project",
     "description": "The skeleton application for the Laravel framework.",
-    "keywords": ["laravel", "framework"],
+    "keywords": [
+        "laravel",
+        "framework"
+    ],
     "license": "MIT",
     "require": {
         "php": ">=8.5",
         "fakerphp/faker": "^1.24",
-        "inertiajs/inertia-laravel": "^2.0",
+        "inertiajs/inertia-laravel": "^3.0",
         "laravel-lang/common": "^6.7",
-        "laravel/framework": "^12.0",
-        "laravel/horizon": "^5.41",
+        "laravel/framework": "^13.0",
         "laravel/octane": "^2.13",
         "laravel/reverb": "^1.6",
         "laravel/sanctum": "^4.2",
-        "laravel/scout": "^10.23",
-        "laravel/tinker": "^2.10",
-        "laravel/wayfinder": "^0.1.12",
-        "typesense/typesense-php": "^5.2"
+        "laravel/scout": "^11.1",
+        "laravel/tinker": "^3.0",
+        "laravel/wayfinder": "dev-next",
+        "typesense/typesense-php": "^6.0"
     },
     "require-dev": {
         "laravel/breeze": "^2.3",
@@ -60,8 +62,8 @@
             "@php artisan migrate --graceful --ansi"
         ],
         "setup": [
-            "composer install",
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\"",
+            "composer install",
             "@php artisan key:generate",
             "@php artisan migrate --force",
             "@php artisan db:seed --force",
@@ -70,12 +72,7 @@
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
-            "bunx concurrently -c \"#c4b5fd,#fdba74,#93c5fd\" \"php artisan horizon\" \"bun run dev\" \"php artisan schedule:work\" --names=horizon,vite,scheduler --kill-others"
-        ],
-        "dev:ssr": [
-            "bun run build:ssr",
-            "Composer\\Config::disableProcessTimeout",
-            "bunx concurrently -c \"#c4b5fd,#fdba74,#93c5fd\" \"php artisan horizon\" \"php artisan inertia:start-ssr\" \"php artisan schedule:work\" --names=horizon,ssr,scheduler --kill-others"
+            "bunx concurrently -c \"#c4b5fd,#fdba74,#93c5fd\" \"php artisan queue:work\" \"bun run dev\" \"php artisan schedule:work\" --names=queue,vite,scheduler --kill-others"
         ],
         "lint": [
             "pint"

@@ -1,27 +1,37 @@
-import { SubmitButton } from '@/components/submit-button';
-import { BreadcrumbItem, SharedData, User, UserFormData } from '@/types';
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, useForm } from '@inertiajs/react';
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-
-import { destroy, restore, update } from '@/actions/App/Http/Controllers/UsersController';
-import { Form, FormInput, FormLabel, FormMessage } from '@/components/form';
+import { SubmitButton } from '@/components/submit-button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { usePageActions } from '@/contexts/page-context';
+import { useAppPage } from '@/hooks/use-app-page';
 import { useDeletionControls } from '@/hooks/use-deletion-controls';
 import { useFormProcessing } from '@/hooks/use-form-processing';
-import users from '@/routes/users';
+import { BreadcrumbItem } from '@/types';
+import type { UserResource } from '@/types/resources';
+import { destroy, restore, update } from '@/wayfinder/App/Http/Controllers/UsersController';
+import users from '@/wayfinder/routes/users';
 
-interface EditPageProps extends SharedData {
-    user: User & { password: string; photo: File | null };
-}
+type EditPageProps = {
+    user: UserResource;
+};
+
+type UserForm = {
+    first_name: string;
+    last_name: string;
+    email: string;
+    password: string;
+    owner: string;
+};
 
 export default function Edit() {
     const { t } = useTranslation();
     const { setBreadcrumbs } = usePageActions();
 
-    const { user } = usePage<EditPageProps>().props;
+    const { user } = useAppPage<EditPageProps>().props;
 
     const breadcrumbs: BreadcrumbItem[] = React.useMemo(
         () => [
@@ -42,15 +52,25 @@ export default function Edit() {
         setBreadcrumbs(breadcrumbs);
     }, [breadcrumbs, setBreadcrumbs]);
 
-    const form = useForm<Required<UserFormData>>({
+    const form = useForm<UserForm>({
         first_name: user.first_name || '',
         last_name: user.last_name || '',
         email: user.email || '',
-        password: user.password || '',
+        password: '',
         owner: user.owner ? '1' : '0',
     });
 
+    const ownerItems = React.useMemo(
+        () => [
+            { value: '1', label: t('Yes') },
+            { value: '0', label: t('No') },
+        ],
+        [t],
+    );
+
     const isProcessing = useFormProcessing(form.processing);
+    const errors = isProcessing ? ({} as typeof form.errors) : form.errors;
+    const isDisabled = isProcessing || !user.can_delete;
 
     function onSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
@@ -90,108 +110,92 @@ export default function Edit() {
             <div className="max-w-3xl">
                 <h2 className="mb-6 text-xl font-semibold">{t('Edit User')}</h2>
 
-                <Form onSubmit={onSubmit}>
-                    <div className="space-y-6">
-                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                            <div>
-                                <FormLabel htmlFor="first_name" error={form.errors.first_name}>
-                                    {t('First name')}
-                                </FormLabel>
-
-                                <FormInput
+                <form onSubmit={onSubmit}>
+                    <FieldGroup>
+                        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                            <Field data-invalid={!!errors.first_name || undefined}>
+                                <FieldLabel htmlFor="first_name">{t('First name')}</FieldLabel>
+                                <Input
                                     id="first_name"
                                     type="text"
                                     value={form.data.first_name}
                                     onChange={(e) => form.setData('first_name', e.target.value)}
                                     required
                                     autoComplete="given-name"
-                                    disabled={isProcessing || !user.can_delete}
-                                    error={form.errors.first_name}
+                                    disabled={isDisabled}
+                                    aria-invalid={!!errors.first_name || undefined}
                                 />
+                                <FieldError>{errors.first_name}</FieldError>
+                            </Field>
 
-                                <FormMessage error={form.errors.first_name} />
-                            </div>
-
-                            <div>
-                                <FormLabel htmlFor="last_name" error={form.errors.last_name}>
-                                    {t('Last name')}
-                                </FormLabel>
-
-                                <FormInput
+                            <Field data-invalid={!!errors.last_name || undefined}>
+                                <FieldLabel htmlFor="last_name">{t('Last name')}</FieldLabel>
+                                <Input
                                     id="last_name"
                                     type="text"
                                     value={form.data.last_name}
                                     onChange={(e) => form.setData('last_name', e.target.value)}
                                     required
                                     autoComplete="family-name"
-                                    disabled={isProcessing || !user.can_delete}
-                                    error={form.errors.last_name}
+                                    disabled={isDisabled}
+                                    aria-invalid={!!errors.last_name || undefined}
                                 />
-
-                                <FormMessage error={form.errors.last_name} />
-                            </div>
+                                <FieldError>{errors.last_name}</FieldError>
+                            </Field>
                         </div>
 
-                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                            <div>
-                                <FormLabel htmlFor="email" error={form.errors.email}>
-                                    {t('Email')}
-                                </FormLabel>
-
-                                <FormInput
+                        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                            <Field data-invalid={!!errors.email || undefined}>
+                                <FieldLabel htmlFor="email">{t('Email')}</FieldLabel>
+                                <Input
                                     id="email"
                                     type="email"
                                     value={form.data.email}
                                     onChange={(e) => form.setData('email', e.target.value)}
                                     required
                                     autoComplete="email"
-                                    disabled={isProcessing || !user.can_delete}
-                                    error={form.errors.email}
+                                    disabled={isDisabled}
+                                    aria-invalid={!!errors.email || undefined}
                                 />
+                                <FieldError>{errors.email}</FieldError>
+                            </Field>
 
-                                <FormMessage error={form.errors.email} />
-                            </div>
-
-                            <div>
-                                <FormLabel htmlFor="password" error={form.errors.password}>
-                                    {t('Password')}
-                                </FormLabel>
-
-                                <FormInput
+                            <Field data-invalid={!!errors.password || undefined}>
+                                <FieldLabel htmlFor="password">{t('Password')}</FieldLabel>
+                                <Input
                                     id="password"
                                     type="password"
                                     value={form.data.password}
                                     onChange={(e) => form.setData('password', e.target.value)}
                                     autoComplete="new-password"
-                                    disabled={isProcessing || !user.can_delete}
-                                    error={form.errors.password}
+                                    disabled={isDisabled}
+                                    aria-invalid={!!errors.password || undefined}
                                 />
-
-                                <FormMessage error={form.errors.password} />
-                            </div>
+                                <FieldError>{errors.password}</FieldError>
+                            </Field>
                         </div>
 
-                        <div>
-                            <FormLabel htmlFor="owner" error={form.errors.owner}>
-                                {t('Owner')}
-                            </FormLabel>
-
+                        <Field data-invalid={!!errors.owner || undefined}>
+                            <FieldLabel htmlFor="owner">{t('Owner')}</FieldLabel>
                             <Select
+                                items={ownerItems}
                                 value={form.data.owner}
-                                onValueChange={(value) => form.setData('owner', value)}
-                                disabled={isProcessing || !user.can_delete}
+                                onValueChange={(value) => form.setData('owner', value ?? '')}
+                                disabled={isDisabled}
                             >
-                                <SelectTrigger id="owner" className={form.errors.owner ? 'border-destructive' : ''}>
+                                <SelectTrigger id="owner" className="w-full" aria-invalid={!!errors.owner || undefined}>
                                     <SelectValue placeholder={t('Select an option')} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="1">{t('Yes')}</SelectItem>
-                                    <SelectItem value="0">{t('No')}</SelectItem>
+                                    {ownerItems.map(({ value, label }) => (
+                                        <SelectItem key={value} value={value}>
+                                            {label}
+                                        </SelectItem>
+                                    ))}
                                 </SelectContent>
                             </Select>
-
-                            <FormMessage error={form.errors.owner} />
-                        </div>
+                            <FieldError>{errors.owner}</FieldError>
+                        </Field>
 
                         <div className="flex flex-col justify-end gap-4 sm:flex-row">
                             {!user.deleted_at && user.can_delete && showDeleteControls()}
@@ -200,8 +204,8 @@ export default function Edit() {
                                 {t('Update User')}
                             </SubmitButton>
                         </div>
-                    </div>
-                </Form>
+                    </FieldGroup>
+                </form>
             </div>
         </>
     );

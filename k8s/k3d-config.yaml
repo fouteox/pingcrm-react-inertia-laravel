@@ -1,0 +1,38 @@
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: pingcrm
+servers: 1
+agents: 0
+network: spin-network
+ports:
+  - port: 80:80
+    nodeFilters: [loadbalancer]
+  - port: 443:443
+    nodeFilters: [loadbalancer]
+registries:
+  create:
+    name: registry.localhost
+    host: "0.0.0.0"
+    hostPort: "5111"
+options:
+  k3d:
+    wait: true
+    timeout: "120s"
+  k3s:
+    extraArgs: []
+  kubeconfig:
+    updateDefaultKubeconfig: true
+    switchCurrentContext: true
+  runtime:
+    labels:
+      - label: "traefik.enable=true"
+        nodeFilters: [loadbalancer]
+      - label: "traefik.http.routers.pingcrm-k3d.rule=Host(`pingcrm-react-inertia-laravel.dev.localhost`)"
+        nodeFilters: [loadbalancer]
+      - label: "traefik.http.routers.pingcrm-k3d.entrypoints=websecure"
+        nodeFilters: [loadbalancer]
+      - label: "traefik.http.routers.pingcrm-k3d.tls=true"
+        nodeFilters: [loadbalancer]
+      - label: "traefik.http.services.pingcrm-k3d.loadbalancer.server.port=80"
+        nodeFilters: [loadbalancer]

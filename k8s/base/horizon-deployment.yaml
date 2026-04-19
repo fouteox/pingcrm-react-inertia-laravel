@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: horizon
+  namespace: pingcrm
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 0
+      maxUnavailable: 1
+  selector:
+    matchLabels:
+      app: horizon
+  template:
+    metadata:
+      labels:
+        app: horizon
+    spec:
+      securityContext:
+        fsGroup: 33
+      initContainers:
+        - name: wait-for-db
+          image: busybox:1.37
+          command: ["sh", "/scripts/wait-for-it.sh", "mariadb", "3306"]
+          volumeMounts:
+            - name: init-scripts
+              mountPath: /scripts
+        - name: wait-for-valkey
+          image: busybox:1.37
+          command: ["sh", "/scripts/wait-for-it.sh", "valkey", "6379"]
+          volumeMounts:
+            - name: init-scripts
+              mountPath: /scripts
+      containers:
+        - name: horizon
+          image: pingcrm-app:latest
+          imagePullPolicy: Always
+          command: ["php", "/var/www/html/artisan", "horizon"]
+          volumeMounts:
+            - name: dotenv
+              mountPath: /var/www/html/.env
+              subPath: .env
+          livenessProbe:
+            exec:
+              command: ["healthcheck-horizon"]
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 5
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+      volumes:
+        - name: dotenv
+          secret:
+            secretName: app-dotenv
+        - name: init-scripts
+          configMap:
+            name: init-scripts
+            defaultMode: 0755

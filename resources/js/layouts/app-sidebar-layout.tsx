@@ -1,8 +1,8 @@
+import { ReactNode } from 'react';
 import { AppShell } from '@/components/app-shell';
 import { AppSidebar } from '@/components/app-sidebar';
 import { AppSidebarHeader } from '@/components/app-sidebar-header';
 import { SidebarInset } from '@/components/ui/sidebar';
-import { ReactNode } from 'react';
 
 export default function AppSidebarLayout({ children }: { children: ReactNode }) {
     return (
