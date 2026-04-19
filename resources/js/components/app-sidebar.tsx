@@ -1,17 +1,17 @@
+import { Building, ChevronsLeftRightEllipsis, Contact, LayoutGrid, SparklesIcon, Users } from 'lucide-react';
+import React from 'react';
 import AppLogo from '@/components/app-logo';
 import { MobileAwareLink } from '@/components/mobile-aware-link';
 import { NavFooter } from '@/components/nav-footer';
 import { NavMain } from '@/components/nav-main';
 import { NavUser } from '@/components/nav-user';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
-import { dashboard, fadogen } from '@/routes';
-import contacts from '@/routes/contacts';
-import organizations from '@/routes/organizations';
-import reverb from '@/routes/reverb';
-import users from '@/routes/users';
 import { type NavItem } from '@/types';
-import { Building, ChevronsLeftRightEllipsis, Contact, LayoutGrid, SparklesIcon, Users } from 'lucide-react';
-import React from 'react';
+import { dashboard, fadogen } from '@/wayfinder/routes';
+import contacts from '@/wayfinder/routes/contacts';
+import organizations from '@/wayfinder/routes/organizations';
+import reverb from '@/wayfinder/routes/reverb';
+import users from '@/wayfinder/routes/users';
 
 export function AppSidebar() {
     const mainNavItems: NavItem[] = React.useMemo(
@@ -58,10 +58,8 @@ export function AppSidebar() {
             <SidebarHeader>
                 <SidebarMenu>
                     <SidebarMenuItem>
-                        <SidebarMenuButton size="lg" asChild>
-                            <MobileAwareLink href={dashboard()} prefetch>
-                                <AppLogo />
-                            </MobileAwareLink>
+                        <SidebarMenuButton size="lg" render={<MobileAwareLink href={dashboard()} prefetch />}>
+                            <AppLogo />
                         </SidebarMenuButton>
                     </SidebarMenuItem>
                 </SidebarMenu>

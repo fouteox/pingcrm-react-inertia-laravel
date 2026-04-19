@@ -68,13 +68,13 @@ k3d-build:
 		--build-arg ENV_HASH=$$(sha256sum $(ENV_FILE) | cut -c1-8) \
 		--secret id=dotenv,src=$(ENV_FILE) \
 		-t $(K3D_IMAGE):latest \
-		-f Dockerfile.php .
+		.
 	@echo "Building SSR image..."
 	docker build --target ssr \
 		--build-arg ENV_HASH=$$(sha256sum $(ENV_FILE) | cut -c1-8) \
 		--secret id=dotenv,src=$(ENV_FILE) \
 		-t $(K3D_IMAGE):ssr \
-		-f Dockerfile.php .
+		.
 	@echo "✓ Images built"
 
 # Push vers registre local k3d

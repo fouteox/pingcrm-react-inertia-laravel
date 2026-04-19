@@ -1,5 +1,5 @@
-import { useProcessingContext } from '@/contexts/processing-context';
 import { useEffect } from 'react';
+import { useProcessingContext } from '@/contexts/processing-context';
 import { useMinDuration } from './use-min-duration';
 
 /**

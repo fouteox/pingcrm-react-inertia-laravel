@@ -97,4 +97,4 @@ COPY --from=builder /var/www/html/bootstrap/ssr ./bootstrap/ssr
 
 EXPOSE 13714
 
-CMD ["bun", "bootstrap/ssr/ssr.js"]
+CMD ["bun", "bootstrap/ssr/app.js"]

@@ -1,13 +1,14 @@
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { SharedData } from '@/types';
-import { router, usePage } from '@inertiajs/react';
+import { router } from '@inertiajs/react';
 import { Filter, X } from 'lucide-react';
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
+import { Button } from '@/components/ui/button';
+import { ButtonGroup } from '@/components/ui/button-group';
+import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '@/components/ui/input-group';
+import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useAppPage } from '@/hooks/use-app-page';
 
 interface Values {
     role: string;
@@ -30,17 +31,17 @@ function pickBy(object: Values): Partial<Values> {
     }, {});
 }
 
-interface SearchFilterPageProps extends SharedData {
+type SearchFilterPageProps = {
     filters: {
         role?: string;
         search?: string;
         trashed?: string;
     };
-}
+};
 
 export default function SearchFilter() {
     const { t } = useTranslation();
-    const { filters } = usePage<SearchFilterPageProps>().props;
+    const { filters } = useAppPage<SearchFilterPageProps>().props;
     const [open, setOpen] = React.useState(false);
 
     const [values, setValues] = React.useState<Values>({
@@ -49,6 +50,24 @@ export default function SearchFilter() {
         search: filters.search || '',
         trashed: filters.trashed || ANY_VALUE,
     });
+
+    const roleItems = React.useMemo(
+        () => [
+            { value: ANY_VALUE, label: t('Any') },
+            { value: 'user', label: t('User') },
+            { value: 'owner', label: t('Owner') },
+        ],
+        [t],
+    );
+
+    const trashedItems = React.useMemo(
+        () => [
+            { value: ANY_VALUE, label: t('Any') },
+            { value: 'with', label: t('With Trashed') },
+            { value: 'only', label: t('Only Trashed') },
+        ],
+        [t],
+    );
 
     function handleChange(key: keyof Values, value: string) {
         const newValues = {
@@ -67,69 +86,63 @@ export default function SearchFilter() {
     }
 
     return (
-        <div className="w-64">
-            <div className="relative flex w-full items-center">
-                <div className="bg-background flex w-full items-center overflow-hidden rounded-md border">
-                    <Popover open={open} onOpenChange={setOpen}>
-                        <PopoverTrigger asChild>
-                            <Button variant="ghost" size="icon" className="size-10 flex-shrink-0 rounded-none border-r">
-                                <Filter className="size-4" />
-                                <span className="sr-only">{t('Filter')}</span>
-                            </Button>
-                        </PopoverTrigger>
-                        <PopoverContent className="w-72 p-4" align="start">
-                            <div className="grid gap-4">
-                                {Object.prototype.hasOwnProperty.call(filters, 'role') && (
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="role">{t('Role')}</Label>
-                                        <Select value={values.role} onValueChange={(value) => handleChange('role', value)}>
-                                            <SelectTrigger id="role">
-                                                <SelectValue placeholder={t('Select role')} />
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                <SelectItem value={ANY_VALUE}>{t('Any')}</SelectItem>
-                                                <SelectItem value="user">{t('User')}</SelectItem>
-                                                <SelectItem value="owner">{t('Owner')}</SelectItem>
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
-                                )}
-                                <div className="grid gap-2">
-                                    <Label htmlFor="trashed">{t('Trashed')}</Label>
-                                    <Select value={values.trashed} onValueChange={(value) => handleChange('trashed', value)}>
-                                        <SelectTrigger id="trashed">
-                                            <SelectValue placeholder={t('Select trashed status')} />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value={ANY_VALUE}>{t('Any')}</SelectItem>
-                                            <SelectItem value="with">{t('With Trashed')}</SelectItem>
-                                            <SelectItem value="only">{t('Only Trashed')}</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-                                </div>
+        <ButtonGroup className="w-64">
+            <Popover open={open} onOpenChange={setOpen}>
+                <PopoverTrigger render={<Button variant="outline" size="icon" aria-label={t('Filter')} />}>
+                    <Filter />
+                </PopoverTrigger>
+                <PopoverContent className="w-auto min-w-72" align="start">
+                    <div className="grid gap-4">
+                        {Object.prototype.hasOwnProperty.call(filters, 'role') && (
+                            <div className="grid gap-2">
+                                <Label htmlFor="role">{t('Role')}</Label>
+                                <Select items={roleItems} value={values.role} onValueChange={(value) => handleChange('role', value ?? '')}>
+                                    <SelectTrigger id="role" className="w-full">
+                                        <SelectValue placeholder={t('Select role')} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {roleItems.map(({ value, label }) => (
+                                            <SelectItem key={value} value={value}>
+                                                {label}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
-                        </PopoverContent>
-                    </Popover>
-                    <Input
-                        type="text"
-                        placeholder={t('Search')}
-                        value={values.search}
-                        onChange={(e) => handleChange('search', e.target.value)}
-                        className="min-w-0 flex-1 rounded-none border-0 px-3 focus-visible:ring-0 focus-visible:ring-offset-0"
-                    />
-                    {values.search && (
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            className="size-10 flex-shrink-0 rounded-none"
-                            onClick={() => handleChange('search', '')}
-                        >
-                            <X className="size-4" />
-                            <span className="sr-only">{t('Clear')}</span>
-                        </Button>
-                    )}
-                </div>
-            </div>
-        </div>
+                        )}
+                        <div className="grid gap-2">
+                            <Label htmlFor="trashed">{t('Trashed')}</Label>
+                            <Select items={trashedItems} value={values.trashed} onValueChange={(value) => handleChange('trashed', value ?? '')}>
+                                <SelectTrigger id="trashed" className="w-full">
+                                    <SelectValue placeholder={t('Select trashed status')} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {trashedItems.map(({ value, label }) => (
+                                        <SelectItem key={value} value={value}>
+                                            {label}
+                                        </SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                </PopoverContent>
+            </Popover>
+            <InputGroup>
+                <InputGroupInput
+                    type="text"
+                    placeholder={t('Search')}
+                    value={values.search}
+                    onChange={(e) => handleChange('search', e.target.value)}
+                />
+                {values.search && (
+                    <InputGroupAddon align="inline-end">
+                        <InputGroupButton size="icon-sm" aria-label={t('Clear')} onClick={() => handleChange('search', '')}>
+                            <X />
+                        </InputGroupButton>
+                    </InputGroupAddon>
+                )}
+            </InputGroup>
+        </ButtonGroup>
     );
 }

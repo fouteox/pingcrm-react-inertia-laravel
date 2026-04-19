@@ -1,31 +1,44 @@
-import { SubmitButton } from '@/components/submit-button';
-import { Button } from '@/components/ui/button';
-import { BreadcrumbItem, Organization, OrganizationFormData, SharedData } from '@/types';
-import { Head, Link, useForm, usePage } from '@inertiajs/react';
+import { Head, Link, useForm } from '@inertiajs/react';
 import { ChevronRight, Trash } from 'lucide-react';
 import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
-
-import { destroy, restore, update } from '@/actions/App/Http/Controllers/OrganizationsController';
-import { Form, FormInput, FormLabel, FormMessage } from '@/components/form';
+import { SubmitButton } from '@/components/submit-button';
 import { TableContainer } from '@/components/table-container';
+import { Button } from '@/components/ui/button';
+import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { usePageActions } from '@/contexts/page-context';
+import { useAppPage } from '@/hooks/use-app-page';
 import { useDeletionControls } from '@/hooks/use-deletion-controls';
 import { useFormProcessing } from '@/hooks/use-form-processing';
-import contacts from '@/routes/contacts';
-import organizations from '@/routes/organizations';
+import { BreadcrumbItem } from '@/types';
+import type { OrganizationResource } from '@/types/resources';
+import { destroy, restore, update } from '@/wayfinder/App/Http/Controllers/OrganizationsController';
+import contacts from '@/wayfinder/routes/contacts';
+import organizations from '@/wayfinder/routes/organizations';
 
-interface EditPageProps extends SharedData {
-    organization: Organization;
-}
+type EditPageProps = {
+    organization: OrganizationResource;
+};
+
+type OrganizationForm = {
+    name: string;
+    email: string;
+    phone: string;
+    address: string;
+    city: string;
+    region: string;
+    country: string;
+    postal_code: string;
+};
 
 export default function Edit() {
     const { t } = useTranslation();
     const { setBreadcrumbs } = usePageActions();
 
-    const { organization } = usePage<EditPageProps>().props;
+    const { organization } = useAppPage<EditPageProps>().props;
 
     const breadcrumbs: BreadcrumbItem[] = React.useMemo(
         () => [
@@ -46,7 +59,7 @@ export default function Edit() {
         setBreadcrumbs(breadcrumbs);
     }, [breadcrumbs, setBreadcrumbs]);
 
-    const form = useForm<Required<OrganizationFormData>>({
+    const form = useForm<OrganizationForm>({
         name: organization.name || '',
         email: organization.email || '',
         phone: organization.phone || '',
@@ -57,7 +70,17 @@ export default function Edit() {
         postal_code: organization.postal_code || '',
     });
 
+    const countryItems = React.useMemo(
+        () => [
+            { value: '0', label: t('None') },
+            { value: 'CA', label: t('Canada') },
+            { value: 'US', label: t('United States') },
+        ],
+        [t],
+    );
+
     const isProcessing = useFormProcessing(form.processing);
+    const errors = isProcessing ? ({} as typeof form.errors) : form.errors;
 
     function onSubmit(e: React.FormEvent<HTMLFormElement>) {
         e.preventDefault();
@@ -82,15 +105,12 @@ export default function Edit() {
             <div className="max-w-3xl">
                 <h2 className="mb-6 text-xl font-semibold">{t('Edit Organization')}</h2>
 
-                <Form onSubmit={onSubmit}>
-                    <div className="space-y-6">
-                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                            <div>
-                                <FormLabel htmlFor="name" error={form.errors.name}>
-                                    {t('Name')}
-                                </FormLabel>
-
-                                <FormInput
+                <form onSubmit={onSubmit}>
+                    <FieldGroup>
+                        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                            <Field data-invalid={!!errors.name || undefined}>
+                                <FieldLabel htmlFor="name">{t('Name')}</FieldLabel>
+                                <Input
                                     id="name"
                                     type="text"
                                     value={form.data.name}
@@ -99,18 +119,14 @@ export default function Edit() {
                                     autoFocus
                                     maxLength={100}
                                     disabled={isProcessing}
-                                    error={form.errors.name}
+                                    aria-invalid={!!errors.name || undefined}
                                 />
+                                <FieldError>{errors.name}</FieldError>
+                            </Field>
 
-                                <FormMessage error={form.errors.name} />
-                            </div>
-
-                            <div>
-                                <FormLabel htmlFor="email" error={form.errors.email}>
-                                    {t('Email')}
-                                </FormLabel>
-
-                                <FormInput
+                            <Field data-invalid={!!errors.email || undefined}>
+                                <FieldLabel htmlFor="email">{t('Email')}</FieldLabel>
+                                <Input
                                     id="email"
                                     type="email"
                                     value={form.data.email}
@@ -118,141 +134,117 @@ export default function Edit() {
                                     required
                                     maxLength={50}
                                     disabled={isProcessing}
-                                    error={form.errors.email}
+                                    aria-invalid={!!errors.email || undefined}
                                 />
-
-                                <FormMessage error={form.errors.email} />
-                            </div>
+                                <FieldError>{errors.email}</FieldError>
+                            </Field>
                         </div>
 
-                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                            <div>
-                                <FormLabel htmlFor="phone" error={form.errors.phone}>
-                                    {t('Phone')}
-                                </FormLabel>
-
-                                <FormInput
+                        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                            <Field data-invalid={!!errors.phone || undefined}>
+                                <FieldLabel htmlFor="phone">{t('Phone')}</FieldLabel>
+                                <Input
                                     id="phone"
                                     type="tel"
                                     value={form.data.phone}
                                     onChange={(e) => form.setData('phone', e.target.value)}
                                     maxLength={50}
                                     disabled={isProcessing}
-                                    error={form.errors.phone}
+                                    aria-invalid={!!errors.phone || undefined}
                                 />
+                                <FieldError>{errors.phone}</FieldError>
+                            </Field>
 
-                                <FormMessage error={form.errors.phone} />
-                            </div>
-
-                            <div>
-                                <FormLabel htmlFor="address" error={form.errors.address}>
-                                    {t('Address')}
-                                </FormLabel>
-
-                                <FormInput
+                            <Field data-invalid={!!errors.address || undefined}>
+                                <FieldLabel htmlFor="address">{t('Address')}</FieldLabel>
+                                <Input
                                     id="address"
                                     type="text"
                                     value={form.data.address}
                                     onChange={(e) => form.setData('address', e.target.value)}
                                     maxLength={150}
                                     disabled={isProcessing}
-                                    error={form.errors.address}
+                                    aria-invalid={!!errors.address || undefined}
                                 />
-
-                                <FormMessage error={form.errors.address} />
-                            </div>
+                                <FieldError>{errors.address}</FieldError>
+                            </Field>
                         </div>
 
-                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                            <div>
-                                <FormLabel htmlFor="city" error={form.errors.city}>
-                                    {t('City')}
-                                </FormLabel>
-
-                                <FormInput
+                        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                            <Field data-invalid={!!errors.city || undefined}>
+                                <FieldLabel htmlFor="city">{t('City')}</FieldLabel>
+                                <Input
                                     id="city"
                                     type="text"
                                     value={form.data.city}
                                     onChange={(e) => form.setData('city', e.target.value)}
                                     maxLength={50}
                                     disabled={isProcessing}
-                                    error={form.errors.city}
+                                    aria-invalid={!!errors.city || undefined}
                                 />
+                                <FieldError>{errors.city}</FieldError>
+                            </Field>
 
-                                <FormMessage error={form.errors.city} />
-                            </div>
-
-                            <div>
-                                <FormLabel htmlFor="region" error={form.errors.region}>
-                                    {t('Province/State')}
-                                </FormLabel>
-
-                                <FormInput
+                            <Field data-invalid={!!errors.region || undefined}>
+                                <FieldLabel htmlFor="region">{t('Province/State')}</FieldLabel>
+                                <Input
                                     id="region"
                                     type="text"
                                     value={form.data.region}
                                     onChange={(e) => form.setData('region', e.target.value)}
                                     maxLength={50}
                                     disabled={isProcessing}
-                                    error={form.errors.region}
+                                    aria-invalid={!!errors.region || undefined}
                                 />
-
-                                <FormMessage error={form.errors.region} />
-                            </div>
+                                <FieldError>{errors.region}</FieldError>
+                            </Field>
                         </div>
 
-                        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                            <div>
-                                <FormLabel htmlFor="country" error={form.errors.country}>
-                                    {t('Country')}
-                                </FormLabel>
-
+                        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+                            <Field data-invalid={!!errors.country || undefined}>
+                                <FieldLabel htmlFor="country">{t('Country')}</FieldLabel>
                                 <Select
+                                    items={countryItems}
                                     value={form.data.country || '0'}
-                                    onValueChange={(value) => form.setData('country', value === '0' ? '' : value)}
+                                    onValueChange={(value) => form.setData('country', !value || value === '0' ? '' : value)}
                                     disabled={isProcessing}
                                 >
-                                    <SelectTrigger id="country" className={form.errors.country ? 'border-destructive' : ''}>
+                                    <SelectTrigger id="country" className="w-full" aria-invalid={!!errors.country || undefined}>
                                         <SelectValue placeholder={t('None')} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="0">{t('None')}</SelectItem>
-                                        <SelectItem value="CA">{t('Canada')}</SelectItem>
-                                        <SelectItem value="US">{t('United States')}</SelectItem>
+                                        {countryItems.map(({ value, label }) => (
+                                            <SelectItem key={value} value={value}>
+                                                {label}
+                                            </SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
+                                <FieldError>{errors.country}</FieldError>
+                            </Field>
 
-                                <FormMessage error={form.errors.country} />
-                            </div>
-
-                            <div>
-                                <FormLabel htmlFor="postal_code" error={form.errors.postal_code}>
-                                    {t('Postal Code')}
-                                </FormLabel>
-
-                                <FormInput
+                            <Field data-invalid={!!errors.postal_code || undefined}>
+                                <FieldLabel htmlFor="postal_code">{t('Postal Code')}</FieldLabel>
+                                <Input
                                     id="postal_code"
                                     type="text"
                                     value={form.data.postal_code}
                                     onChange={(e) => form.setData('postal_code', e.target.value)}
                                     maxLength={25}
                                     disabled={isProcessing}
-                                    error={form.errors.postal_code}
+                                    aria-invalid={!!errors.postal_code || undefined}
                                 />
-
-                                <FormMessage error={form.errors.postal_code} />
-                            </div>
+                                <FieldError>{errors.postal_code}</FieldError>
+                            </Field>
                         </div>
 
                         <div className="flex flex-col justify-end gap-4 sm:flex-row">
                             {!organization.deleted_at && showDeleteControls()}
 
-                            <SubmitButton processing={isProcessing}>
-                                {t('Update Organization')}
-                            </SubmitButton>
+                            <SubmitButton processing={isProcessing}>{t('Update Organization')}</SubmitButton>
                         </div>
-                    </div>
-                </Form>
+                    </FieldGroup>
+                </form>
             </div>
 
             <h2 className="mt-12 mb-6 text-lg font-semibold">{t('Contact', { count: 2 })}</h2>
@@ -277,7 +269,7 @@ export default function Edit() {
                                     </div>
                                     <div className="relative z-0 max-w-full overflow-hidden text-ellipsis whitespace-nowrap">
                                         {name}
-                                        {deleted_at && <Trash className="text-muted-foreground ml-2 size-3 shrink-0" />}
+                                        {deleted_at && <Trash className="ml-2 size-3 shrink-0 text-muted-foreground" />}
                                     </div>
                                 </TableCell>
                                 <TableCell className="relative p-2">
@@ -297,10 +289,13 @@ export default function Edit() {
                                     <div className="relative z-0 max-w-full overflow-hidden text-ellipsis whitespace-nowrap">{phone}</div>
                                 </TableCell>
                                 <TableCell className="w-px">
-                                    <Button asChild variant="ghost" size="icon">
-                                        <Link tabIndex={-1} href={contacts.edit(id)} prefetch>
-                                            <ChevronRight className="text-muted-foreground size-4" />
-                                        </Link>
+                                    <Button
+                                        render={<Link tabIndex={-1} href={contacts.edit(id)} prefetch />}
+                                        nativeButton={false}
+                                        variant="ghost"
+                                        size="icon"
+                                    >
+                                        <ChevronRight className="size-4 text-muted-foreground" />
                                     </Button>
                                 </TableCell>
                             </TableRow>

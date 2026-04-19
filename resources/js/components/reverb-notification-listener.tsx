@@ -1,6 +1,6 @@
-import { useReverbNotification } from '@/contexts/reverb-context';
 import { useEcho } from '@laravel/echo-react';
 import { toast } from 'sonner';
+import { useReverbNotification } from '@/contexts/reverb-context';
 
 interface ReverbCompletedEvent {
     type: string;

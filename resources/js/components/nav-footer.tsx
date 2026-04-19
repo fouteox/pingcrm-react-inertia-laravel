@@ -1,11 +1,11 @@
+import { ChevronsUpDown, Globe, Monitor, Moon, Sun } from 'lucide-react';
+import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar';
 import { useAppearance, type Appearance } from '@/hooks/use-appearance';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { cn } from '@/lib/utils';
-import { ChevronsUpDown, Globe, Monitor, Moon, Sun } from 'lucide-react';
-import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
 
 const LANGUAGES = [
     { code: 'fr', name: 'Français', flag: 'fr' },
@@ -39,15 +39,17 @@ export function NavFooter() {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <SidebarMenuButton className="text-neutral-600 hover:text-neutral-800 dark:text-neutral-300 dark:hover:text-neutral-100">
-                                    <Globe className="size-5" />
-                                    <span>{currentLang.name}</span>
-                                    <ChevronsUpDown className="ml-auto size-4" />
-                                </SidebarMenuButton>
+                            <DropdownMenuTrigger
+                                render={
+                                    <SidebarMenuButton className="text-neutral-600 hover:text-neutral-800 dark:text-neutral-300 dark:hover:text-neutral-100" />
+                                }
+                            >
+                                <Globe className="size-5" />
+                                <span>{currentLang.name}</span>
+                                <ChevronsUpDown className="ml-auto size-4" />
                             </DropdownMenuTrigger>
                             <DropdownMenuContent
-                                className="w-(--radix-dropdown-menu-trigger-width) min-w-56"
+                                className="w-(--anchor-width) min-w-56"
                                 align="center"
                                 side={isMobile ? 'top' : state === 'collapsed' ? 'left' : 'top'}
                             >
@@ -68,12 +70,14 @@ export function NavFooter() {
                     <SidebarMenuItem>
                         {state === 'collapsed' && !isMobile ? (
                             <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                    <SidebarMenuButton className="text-neutral-600 hover:text-neutral-800 dark:text-neutral-300 dark:hover:text-neutral-100">
-                                        {appearance === 'light' && <Sun className="size-5" />}
-                                        {appearance === 'dark' && <Moon className="size-5" />}
-                                        {appearance === 'system' && <Monitor className="size-5" />}
-                                    </SidebarMenuButton>
+                                <DropdownMenuTrigger
+                                    render={
+                                        <SidebarMenuButton className="text-neutral-600 hover:text-neutral-800 dark:text-neutral-300 dark:hover:text-neutral-100" />
+                                    }
+                                >
+                                    {appearance === 'light' && <Sun className="size-5" />}
+                                    {appearance === 'dark' && <Moon className="size-5" />}
+                                    {appearance === 'system' && <Monitor className="size-5" />}
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent className="min-w-32" align="center" side={isMobile ? 'top' : 'right'}>
                                     {tabs.map(({ value, icon: Icon }) => (

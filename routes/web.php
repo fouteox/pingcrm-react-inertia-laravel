@@ -41,7 +41,7 @@ Route::middleware('auth')->group(function () {
 
     // Reverb example
     Route::get('/reverb', [ReverbExampleController::class, 'index'])->name('reverb.index');
-    Route::post('/reverb', [ReverbExampleController::class, 'store'])->name('reverb.store')->middleware('throttle:5,1');
+    Route::post('/reverb', [ReverbExampleController::class, 'store'])->name('reverb.store');
 
     // Fadogen
     Route::get('/fadogen', function () {

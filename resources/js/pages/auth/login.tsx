@@ -1,14 +1,14 @@
+import { Head, useForm } from '@inertiajs/react';
+import { LoaderCircle } from 'lucide-react';
+import { FormEvent, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import InputError from '@/components/input-error';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { usePageActions } from '@/contexts/page-context';
-import login from '@/routes/login';
-import { Head, useForm } from '@inertiajs/react';
-import { LoaderCircle } from 'lucide-react';
-import { FormEvent, useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
+import login from '@/wayfinder/routes/login';
 
 type LoginForm = {
     email: string;

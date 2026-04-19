@@ -1,3 +1,7 @@
+import { Head, Link } from '@inertiajs/react';
+import { ChevronRight, Trash } from 'lucide-react';
+import React, { useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import AnchorLink from '@/components/anchor-link';
 import InertiaPagination from '@/components/inertia-pagination';
 import SearchFilter from '@/components/search-filter';
@@ -5,16 +9,14 @@ import { TableContainer } from '@/components/table-container';
 import { Button } from '@/components/ui/button';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { usePageActions } from '@/contexts/page-context';
-import contacts from '@/routes/contacts';
-import { BreadcrumbItem, Contact, PaginatedData, SharedData } from '@/types';
-import { Head, Link, usePage } from '@inertiajs/react';
-import { ChevronRight, Trash } from 'lucide-react';
-import React, { useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useAppPage } from '@/hooks/use-app-page';
+import { BreadcrumbItem } from '@/types';
+import type { ContactCollection } from '@/types/resources';
+import contacts from '@/wayfinder/routes/contacts';
 
-interface IndexPageProps extends SharedData {
-    contacts: PaginatedData<Contact>;
-}
+type IndexPageProps = {
+    contacts: ContactCollection;
+};
 
 export default function Index() {
     const { t } = useTranslation();
@@ -35,7 +37,7 @@ export default function Index() {
         setBreadcrumbs(breadcrumbs);
     }, [breadcrumbs, setBreadcrumbs]);
 
-    const { contacts: contactsData } = usePage<IndexPageProps>().props;
+    const { contacts: contactsData } = useAppPage<IndexPageProps>().props;
     const {
         data,
         meta: { links },
@@ -78,7 +80,7 @@ export default function Index() {
                                     </div>
                                     <div className="relative z-0 max-w-full overflow-hidden text-ellipsis whitespace-nowrap">
                                         {name}
-                                        {deleted_at && <Trash className="text-muted-foreground ml-2 size-3 shrink-0" />}
+                                        {deleted_at && <Trash className="ml-2 size-3 shrink-0 text-muted-foreground" />}
                                     </div>
                                 </TableCell>
                                 <TableCell className="relative p-2">
@@ -108,10 +110,13 @@ export default function Index() {
                                     <div className="relative z-0 max-w-full overflow-hidden text-ellipsis whitespace-nowrap">{phone}</div>
                                 </TableCell>
                                 <TableCell className="w-px">
-                                    <Button asChild variant="ghost" size="icon">
-                                        <Link tabIndex={-1} href={contacts.edit(id)} prefetch>
-                                            <ChevronRight className="text-muted-foreground size-4" />
-                                        </Link>
+                                    <Button
+                                        render={<Link tabIndex={-1} href={contacts.edit(id)} prefetch />}
+                                        nativeButton={false}
+                                        variant="ghost"
+                                        size="icon"
+                                    >
+                                        <ChevronRight className="size-4 text-muted-foreground" />
                                     </Button>
                                 </TableCell>
                             </TableRow>

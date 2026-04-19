@@ -1,6 +1,6 @@
-import { DeletionControls } from '@/components/deletion-controls';
 import { router } from '@inertiajs/react';
 import React, { ReactElement, useState } from 'react';
+import { DeletionControls } from '@/components/deletion-controls';
 
 interface RouteDefinition {
     url: string;

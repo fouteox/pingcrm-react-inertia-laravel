@@ -1,6 +1,6 @@
+import * as React from 'react';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import * as React from 'react';
 
 function TableContainer({ className, ...props }: React.ComponentProps<'table'>) {
     return (

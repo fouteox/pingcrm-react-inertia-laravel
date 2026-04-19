@@ -1,25 +1,15 @@
-import { buttonVariants } from '@/components/ui/button';
-import { useProcessingContext } from '@/contexts/processing-context';
-import { cn } from '@/lib/utils';
 import { type VariantProps } from 'class-variance-authority';
 import { Check, Loader2 } from 'lucide-react';
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { buttonVariants } from '@/components/ui/button';
+import { useProcessingContext } from '@/contexts/processing-context';
+import { cn } from '@/lib/utils';
 
-export interface SubmitButtonProps
-    extends Omit<React.ComponentProps<'button'>, 'type'>,
-            VariantProps<typeof buttonVariants> {
+export interface SubmitButtonProps extends Omit<React.ComponentProps<'button'>, 'type'>, VariantProps<typeof buttonVariants> {
     processing: boolean;
 }
 
-export function SubmitButton({
-    processing,
-    disabled,
-    children,
-    className,
-    variant,
-    size,
-    ...props
-}: SubmitButtonProps) {
+export function SubmitButton({ processing, disabled, children, className, variant, size, ...props }: SubmitButtonProps) {
     const { showSuccess, setShowSuccess } = useProcessingContext();
     const buttonRef = useRef<HTMLButtonElement>(null);
     const [measuredWidth, setMeasuredWidth] = useState<number | null>(null);
@@ -93,7 +83,7 @@ export function SubmitButton({
             >
                 <span className={cn('overflow-hidden', showSpinner || showCheck ? 'opacity-100' : 'opacity-0')}>
                     {showCheck ? (
-                        <span className="success-burst flex size-4 items-center justify-center bg-green-500 animate-in zoom-in-0 duration-200">
+                        <span className="success-burst flex size-4 items-center justify-center bg-green-500 duration-200 animate-in zoom-in-0">
                             <Check className="size-2.5 stroke-3 text-white" />
                         </span>
                     ) : (
