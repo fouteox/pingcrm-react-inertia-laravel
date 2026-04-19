@@ -344,7 +344,7 @@
     "View :name": "View :name",
     "Web Server is Down": "Web Server is Down",
     "Welcome Back!": "Welcome Back!",
-    "welcome_message": "Hey there! Welcome to Ping CRM, a demo app designed to help illustrate how {{inertia_link}} v2.0 works with {{react_link}}. You can find the source code on {{github_link}}.",
+    "welcome_message": "Hey there! Welcome to Ping CRM, a demo app designed to help illustrate how {{inertia_link}} v3.0 works with {{react_link}}. You can find the source code on {{github_link}}.",
     "With Trashed": "With Trashed",
     "Whoops!": "Whoops!",
     "Whoops, something went wrong on our servers.": "Whoops, something went wrong on our servers.",

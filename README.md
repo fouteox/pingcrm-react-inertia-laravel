@@ -1,19 +1,19 @@
 # PingCRM - Modern Laravel Example Application
 
-PingCRM is a demo application built with Laravel 12, Inertia.js v2, React 19, and Tailwind CSS v4. It demonstrates how to build modern, full-stack applications with these technologies while showcasing many advanced Laravel features.
+PingCRM is a demo application built with Laravel 13, Inertia.js v3, React 19, and Tailwind CSS v4. It demonstrates how to build modern, full-stack applications with these technologies while showcasing many advanced Laravel features.
 
 ## Features
-- **[Laravel 12](https://laravel.com/)**: The latest version of Laravel
-- **[Inertia.js v2](https://inertiajs.com/)**: With SSR
+- **[Laravel 13](https://laravel.com/)**: The latest version of Laravel
+- **[Inertia.js v3](https://inertiajs.com/)**: With SSR
 - **[React 19](https://react.dev/)**: The latest version of React
 - **[Tailwind CSS v4](https://tailwindcss.com/)**: With shadcn
 - **[TypeScript](https://www.typescriptlang.org/)**
 - **[Internationalization](https://www.i18next.com/)**: i18next for seamless multi-language support (EN/FR)
 - Laravel Features:
-  - Queue processing with [Horizon](https://laravel.com/docs/12.x/horizon)
-  - [Task scheduling](https://laravel.com/docs/12.x/scheduling)
-  - Real-time websockets with [Reverb](https://laravel.com/docs/12.x/reverb)
-  - [Octane](https://laravel.com/docs/12.x/octane)
+  - Queue processing with [Horizon](https://laravel.com/docs/13.x/horizon)
+  - [Task scheduling](https://laravel.com/docs/13.x/scheduling)
+  - Real-time websockets with [Reverb](https://laravel.com/docs/13.x/reverb)
+  - [Octane](https://laravel.com/docs/13.x/octane)
 
 ## Backend Infrastructure
 - **[MariaDB](https://mariadb.org/)**
