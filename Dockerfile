@@ -72,15 +72,21 @@ RUN --mount=type=secret,id=dotenv \
     bun run build:ssr
 
 ############################################
-# App Image
+# App Image (also runs SSR via `php artisan inertia:start-ssr --runtime=bun`)
 ############################################
 FROM base AS app
+
+COPY --from=oven/bun:1.3-debian /usr/local/bin/bun /usr/local/bin/bun
 
 COPY --link --chown=33:33 --from=builder /var/www/html/vendor ./vendor
 
 COPY --link --chown=33:33 . .
 
 COPY --link --chown=33:33 --from=builder /var/www/html/public/build ./public/build
+
+COPY --link --chown=33:33 --from=builder /var/www/html/bootstrap/ssr ./bootstrap/ssr
+
+COPY --link --chown=33:33 --from=builder /var/www/html/node_modules ./node_modules
 
 RUN mkdir -p \
     storage/logs \
@@ -92,16 +98,3 @@ RUN mkdir -p \
     && chown -R www-data:www-data storage bootstrap/cache
 
 USER www-data
-
-############################################
-# SSR Image
-############################################
-FROM oven/bun:1.3-debian AS ssr
-
-WORKDIR /app
-
-COPY --from=builder /var/www/html/bootstrap/ssr ./bootstrap/ssr
-
-EXPOSE 13714
-
-CMD ["bun", "bootstrap/ssr/app.js"]

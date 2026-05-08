@@ -49,22 +49,6 @@ jobs:
           secret-files: |
             dotenv=./.env.build
 
-      - name: Build and push SSR image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          target: ssr
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:ssr
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}-ssr
-          cache-from: type=gha,scope=ssr
-          cache-to: type=gha,mode=max,scope=ssr
-          build-args: |
-            ENV_HASH=${{ env.ENV_BUILD_HASH }}
-          secret-files: |
-            dotenv=./.env.build
-
       - name: Cleanup build env
         if: always()
         run: rm -f .env.build
