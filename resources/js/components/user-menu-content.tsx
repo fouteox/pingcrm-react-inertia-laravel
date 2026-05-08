@@ -34,14 +34,17 @@ export function UserMenuContent({ user }: UserMenuContentProps) {
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
                 <DropdownMenuItem
-                    render={<MobileAwareLink className="block w-full" href={users.edit(user.id)} as="button" prefetch onClick={cleanup} />}
+                    render={<MobileAwareLink className="block w-full" href={users.edit(user.id)} prefetch onClick={cleanup} />}
                 >
                     <Settings className="mr-2" />
                     {t('My Profile')}
                 </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem render={<Link className="block w-full" href={logout()} as="button" onClick={handleLogout} />}>
+            <DropdownMenuItem
+                nativeButton
+                render={<Link className="block w-full" href={logout()} as="button" onClick={handleLogout} />}
+            >
                 <LogOut className="mr-2" />
                 {t('Logout')}
             </DropdownMenuItem>
