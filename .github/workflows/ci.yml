@@ -1,0 +1,90 @@
+name: CI
+
+on:
+    pull_request:
+    push:
+        branches: [main]
+
+concurrency:
+    group: ci-${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+permissions:
+    contents: read
+
+jobs:
+    php:
+        name: PHP (Pint + Pest)
+        runs-on: ubuntu-24.04
+
+        steps:
+            - uses: actions/checkout@v6
+
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: '8.5'
+                  extensions: dom, curl, libxml, mbstring, zip, pdo, pdo_sqlite, sqlite3, bcmath, intl
+                  coverage: none
+                  tools: composer:v2
+
+            - name: Install Composer dependencies
+              uses: ramsey/composer-install@v3
+
+            - name: Run Pint
+              run: vendor/bin/pint --test --format agent
+
+            - name: Run Pest tests
+              run: php artisan test --compact
+
+    frontend:
+        name: Frontend (Types + Lint + Format)
+        runs-on: ubuntu-24.04
+
+        steps:
+            - uses: actions/checkout@v6
+
+            - uses: voidzero-dev/setup-vp@v1
+              with:
+                  node-version-file: .nvmrc
+                  cache: true
+
+            - name: Type check
+              run: vp run types
+
+            - name: Lint check
+              run: vp run lint:check
+
+            - name: Format check
+              run: vp run format:check
+
+    build:
+        name: Build (Vite production bundle)
+        runs-on: ubuntu-24.04
+
+        steps:
+            - uses: actions/checkout@v6
+
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: '8.5'
+                  extensions: dom, curl, libxml, mbstring, zip, pdo, pdo_sqlite, sqlite3, bcmath, intl
+                  coverage: none
+                  tools: composer:v2
+
+            - name: Install Composer dependencies
+              uses: ramsey/composer-install@v3
+
+            - uses: voidzero-dev/setup-vp@v1
+              with:
+                  node-version-file: .nvmrc
+                  cache: true
+
+            - name: Prepare Laravel environment (Wayfinder needs a booted app)
+              run: |
+                  cp .env.example .env
+                  php artisan key:generate --force --ansi
+
+            - name: Build production bundle
+              run: vp run build

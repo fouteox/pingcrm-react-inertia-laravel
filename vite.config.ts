@@ -6,13 +6,17 @@ import react from '@vitejs/plugin-react';
 import laravel from 'laravel-vite-plugin';
 import { defineConfig } from 'vite-plus';
 
-export default defineConfig({
+export default defineConfig(({ isSsrBuild }) => ({
     fmt: {
         printWidth: 150,
         tabWidth: 4,
         useTabs: false,
         semi: true,
         singleQuote: true,
+        ignorePatterns: [
+            'resources/js/components/ui/**',
+            'resources/js/wayfinder/**',
+        ],
         overrides: [
             { files: ['**/*.yml'], options: { tabWidth: 2 } },
         ],
@@ -38,6 +42,6 @@ export default defineConfig({
         wayfinder(),
     ],
     ssr: {
-        noExternal: true,
+        noExternal: isSsrBuild ? true : ['@inertiajs/server'],
     },
-});
+}));
