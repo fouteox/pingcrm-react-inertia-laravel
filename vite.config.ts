@@ -6,7 +6,7 @@ import react from '@vitejs/plugin-react';
 import laravel from 'laravel-vite-plugin';
 import { defineConfig } from 'vite-plus';
 
-export default defineConfig(({ isSsrBuild }) => ({
+export default defineConfig({
     fmt: {
         printWidth: 150,
         tabWidth: 4,
@@ -42,6 +42,6 @@ export default defineConfig(({ isSsrBuild }) => ({
         wayfinder(),
     ],
     ssr: {
-        noExternal: isSsrBuild ? true : ['@inertiajs/server'],
+        noExternal: ['@inertiajs/server'],
     },
-}));
+});
