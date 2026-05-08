@@ -14,6 +14,9 @@
         <testsuite name="Arch">
             <directory>tests/Arch</directory>
         </testsuite>
+        <testsuite name="Browser">
+            <directory>tests/Browser</directory>
+        </testsuite>
     </testsuites>
     <source>
         <include>
