@@ -14,6 +14,8 @@ export default defineConfig({
         semi: true,
         singleQuote: true,
         ignorePatterns: [
+            '**/*',
+            '!resources/**',
             'resources/js/components/ui/**',
             'resources/js/wayfinder/**',
         ],
@@ -29,7 +31,9 @@ export default defineConfig({
             newlinesBetween: false,
         },
     },
-    lint: {},
+    lint: {
+        ignorePatterns: ['**/*', '!resources/**'],
+    },
     plugins: [
         fadogen(),
         laravel({

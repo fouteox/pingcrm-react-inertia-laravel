@@ -4,13 +4,11 @@
     "scripts": {
         "build": "vp build",
         "build:ssr": "vp build && vp build --ssr",
-        "check": "NODE_OPTIONS='--experimental-strip-types' vp check resources/",
-        "check:fix": "NODE_OPTIONS='--experimental-strip-types' vp check --fix resources/",
         "dev": "vp dev",
-        "format": "NODE_OPTIONS='--experimental-strip-types' vp fmt resources/",
-        "format:check": "NODE_OPTIONS='--experimental-strip-types' vp fmt --check resources/",
-        "lint": "NODE_OPTIONS='--experimental-strip-types' vp lint --fix resources/",
-        "lint:check": "NODE_OPTIONS='--experimental-strip-types' vp lint resources/",
+        "format": "NODE_OPTIONS='--experimental-strip-types' vp fmt",
+        "format:check": "NODE_OPTIONS='--experimental-strip-types' vp fmt --check",
+        "lint": "NODE_OPTIONS='--experimental-strip-types' vp lint --fix",
+        "lint:check": "NODE_OPTIONS='--experimental-strip-types' vp lint",
         "types": "tsc --noEmit"
     },
     "devDependencies": {
