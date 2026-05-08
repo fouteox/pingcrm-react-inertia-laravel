@@ -24,6 +24,7 @@ Homestead.json
 Homestead.yaml
 npm-debug.log
 yarn-error.log
+.DS_Store
 
 # k8s secrets (never commit)
 k8s/overlays/*/.env
