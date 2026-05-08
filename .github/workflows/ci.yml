@@ -68,10 +68,12 @@ jobs:
                   node-version-file: .nvmrc
                   cache: true
 
-            - name: Prepare Laravel environment (Wayfinder needs a booted app)
+            - name: Prepare Laravel environment (Wayfinder needs a booted app + DB schema)
               run: |
                   cp .env.example .env
                   php artisan key:generate --force --ansi
+                  touch database/database.sqlite
+                  php artisan migrate --force --ansi
 
             - name: Generate Wayfinder TypeScript files
               run: php artisan wayfinder:generate --no-interaction
