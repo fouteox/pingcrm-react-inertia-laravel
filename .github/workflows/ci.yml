@@ -12,6 +12,9 @@ concurrency:
 permissions:
     contents: read
 
+env:
+    FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
     php:
         name: PHP (Pint + Pest)
@@ -31,6 +34,11 @@ jobs:
             - name: Install Composer dependencies
               uses: ramsey/composer-install@v3
 
+            - name: Prepare Laravel environment
+              run: |
+                  cp .env.example .env
+                  php artisan key:generate --force --ansi
+
             - name: Run Pint
               run: vendor/bin/pint --test --format agent
 
@@ -44,10 +52,29 @@ jobs:
         steps:
             - uses: actions/checkout@v6
 
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: '8.5'
+                  extensions: dom, curl, libxml, mbstring, zip, pdo, pdo_sqlite, sqlite3, bcmath, intl
+                  coverage: none
+                  tools: composer:v2
+
+            - name: Install Composer dependencies
+              uses: ramsey/composer-install@v3
+
             - uses: voidzero-dev/setup-vp@v1
               with:
                   node-version-file: .nvmrc
                   cache: true
+
+            - name: Prepare Laravel environment (Wayfinder needs a booted app)
+              run: |
+                  cp .env.example .env
+                  php artisan key:generate --force --ansi
+
+            - name: Generate Wayfinder TypeScript files
+              run: php artisan wayfinder:generate --no-interaction
 
             - name: Type check
               run: vp run types
