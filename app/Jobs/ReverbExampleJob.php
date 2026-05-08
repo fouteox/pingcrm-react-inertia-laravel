@@ -25,8 +25,6 @@ final class ReverbExampleJob implements ShouldQueue
 
     public function handle(): void
     {
-        sleep(5);
-
         event(new ReverbExampleEvent($this->uuid, $this->locale));
     }
 }
