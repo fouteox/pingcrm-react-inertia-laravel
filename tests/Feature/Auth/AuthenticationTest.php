@@ -4,25 +4,22 @@ declare(strict_types=1);
 
 use App\Models\User;
 
-test('login screen can be rendered', function () {
-    $response = $this->get('/login');
-
-    $response->assertStatus(200);
+it('renders the login screen', function () {
+    $this->get('/login')->assertSuccessful();
 });
 
-test('users can authenticate using the login screen', function () {
+it('authenticates users with correct credentials', function () {
     $user = User::factory()->create();
 
-    $response = $this->post('/login', [
+    $this->post('/login', [
         'email' => $user->email,
         'password' => 'password',
-    ]);
+    ])->assertRedirect(route('dashboard', absolute: false));
 
     $this->assertAuthenticated();
-    $response->assertRedirect(route('dashboard', absolute: false));
 });
 
-test('users can not authenticate with invalid password', function () {
+it('rejects authentication with invalid password', function () {
     $user = User::factory()->create();
 
     $this->post('/login', [
@@ -33,11 +30,12 @@ test('users can not authenticate with invalid password', function () {
     $this->assertGuest();
 });
 
-test('users can logout', function () {
+it('logs users out', function () {
     $user = User::factory()->create();
 
-    $response = $this->actingAs($user)->post('/logout');
+    $this->actingAs($user)
+        ->post('/logout')
+        ->assertRedirect('/');
 
     $this->assertGuest();
-    $response->assertRedirect('/');
 });
