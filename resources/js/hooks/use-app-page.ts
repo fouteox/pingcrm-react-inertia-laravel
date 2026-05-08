@@ -1,7 +1,6 @@
-import type { Page } from '@inertiajs/core';
+import type { PageProps } from '@inertiajs/core';
 import { usePage } from '@inertiajs/react';
-import type { Inertia } from '@/wayfinder/types';
 
-export function useAppPage<T = Record<string, never>>() {
-    return usePage() as unknown as Page<T & Inertia.SharedData>;
+export function useAppPage<T extends PageProps = PageProps>() {
+    return usePage<T>();
 }
