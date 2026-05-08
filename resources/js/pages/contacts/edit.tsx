@@ -1,15 +1,14 @@
 import { Head, useForm } from '@inertiajs/react';
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { SubmitButton } from '@/components/submit-button';
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { usePageActions } from '@/contexts/page-context';
 import { useAppPage } from '@/hooks/use-app-page';
+import { useBreadcrumbs } from '@/hooks/use-breadcrumbs';
 import { useDeletionControls } from '@/hooks/use-deletion-controls';
 import { useFormProcessing } from '@/hooks/use-form-processing';
-import { BreadcrumbItem } from '@/types';
 import type { ContactResource, UserOrganizationCollection } from '@/types/resources';
 import { destroy, restore, update } from '@/wayfinder/App/Http/Controllers/ContactsController';
 import contacts from '@/wayfinder/routes/contacts';
@@ -34,28 +33,20 @@ type ContactForm = {
 
 export default function Edit() {
     const { t } = useTranslation();
-    const { setBreadcrumbs } = usePageActions();
 
     const { contact, organizations } = useAppPage<EditPageProps>().props;
 
-    const breadcrumbs: BreadcrumbItem[] = React.useMemo(
-        () => [
-            {
-                title: 'Contact',
-                count: 2,
-                href: contacts.index().url,
-            },
-            {
-                title: `${contact.first_name} ${contact.last_name}`,
-                href: contacts.edit(contact.id).url,
-            },
-        ],
-        [contact.first_name, contact.last_name, contact.id],
-    );
-
-    useEffect(() => {
-        setBreadcrumbs(breadcrumbs);
-    }, [breadcrumbs, setBreadcrumbs]);
+    useBreadcrumbs([
+        {
+            title: 'Contact',
+            count: 2,
+            href: contacts.index().url,
+        },
+        {
+            title: `${contact.first_name} ${contact.last_name}`,
+            href: contacts.edit(contact.id).url,
+        },
+    ]);
 
     const form = useForm<ContactForm>({
         first_name: contact.first_name || '',
@@ -122,7 +113,6 @@ export default function Edit() {
                                     onChange={(e) => form.setData('first_name', e.target.value)}
                                     required
                                     autoFocus
-                                    tabIndex={1}
                                     maxLength={25}
                                     disabled={isProcessing}
                                     aria-invalid={!!errors.first_name || undefined}
@@ -138,7 +128,6 @@ export default function Edit() {
                                     value={form.data.last_name}
                                     onChange={(e) => form.setData('last_name', e.target.value)}
                                     required
-                                    tabIndex={2}
                                     maxLength={25}
                                     disabled={isProcessing}
                                     aria-invalid={!!errors.last_name || undefined}
@@ -178,7 +167,6 @@ export default function Edit() {
                                     value={form.data.email}
                                     onChange={(e) => form.setData('email', e.target.value)}
                                     required
-                                    tabIndex={4}
                                     maxLength={50}
                                     disabled={isProcessing}
                                     aria-invalid={!!errors.email || undefined}
@@ -195,7 +183,6 @@ export default function Edit() {
                                     type="tel"
                                     value={form.data.phone}
                                     onChange={(e) => form.setData('phone', e.target.value)}
-                                    tabIndex={5}
                                     maxLength={50}
                                     disabled={isProcessing}
                                     aria-invalid={!!errors.phone || undefined}
@@ -210,7 +197,6 @@ export default function Edit() {
                                     type="text"
                                     value={form.data.address}
                                     onChange={(e) => form.setData('address', e.target.value)}
-                                    tabIndex={6}
                                     maxLength={150}
                                     disabled={isProcessing}
                                     aria-invalid={!!errors.address || undefined}
@@ -227,7 +213,6 @@ export default function Edit() {
                                     type="text"
                                     value={form.data.city}
                                     onChange={(e) => form.setData('city', e.target.value)}
-                                    tabIndex={7}
                                     maxLength={50}
                                     disabled={isProcessing}
                                     aria-invalid={!!errors.city || undefined}
@@ -242,7 +227,6 @@ export default function Edit() {
                                     type="text"
                                     value={form.data.region}
                                     onChange={(e) => form.setData('region', e.target.value)}
-                                    tabIndex={8}
                                     maxLength={50}
                                     disabled={isProcessing}
                                     aria-invalid={!!errors.region || undefined}
@@ -281,7 +265,6 @@ export default function Edit() {
                                     type="text"
                                     value={form.data.postal_code}
                                     onChange={(e) => form.setData('postal_code', e.target.value)}
-                                    tabIndex={10}
                                     maxLength={25}
                                     disabled={isProcessing}
                                     aria-invalid={!!errors.postal_code || undefined}

@@ -1,13 +1,12 @@
 import { Head, useForm } from '@inertiajs/react';
 import { Loader2 } from 'lucide-react';
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { usePageActions } from '@/contexts/page-context';
-import { BreadcrumbItem } from '@/types';
+import { useBreadcrumbs } from '@/hooks/use-breadcrumbs';
 import { store } from '@/wayfinder/App/Http/Controllers/OrganizationsController';
 import organizations from '@/wayfinder/routes/organizations';
 
@@ -24,26 +23,18 @@ type OrganizationForm = {
 
 export default function Create() {
     const { t } = useTranslation();
-    const { setBreadcrumbs } = usePageActions();
 
-    const breadcrumbs: BreadcrumbItem[] = React.useMemo(
-        () => [
-            {
-                title: 'Organization',
-                count: 2,
-                href: organizations.index().url,
-            },
-            {
-                title: 'Create',
-                href: organizations.create().url,
-            },
-        ],
-        [],
-    );
-
-    useEffect(() => {
-        setBreadcrumbs(breadcrumbs);
-    }, [breadcrumbs, setBreadcrumbs]);
+    useBreadcrumbs([
+        {
+            title: 'Organization',
+            count: 2,
+            href: organizations.index().url,
+        },
+        {
+            title: 'Create',
+            href: organizations.create().url,
+        },
+    ]);
 
     const countryItems = React.useMemo(
         () => [

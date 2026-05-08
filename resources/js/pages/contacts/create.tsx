@@ -1,14 +1,13 @@
 import { Head, useForm } from '@inertiajs/react';
 import { Loader2 } from 'lucide-react';
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { usePageActions } from '@/contexts/page-context';
 import { useAppPage } from '@/hooks/use-app-page';
-import { BreadcrumbItem } from '@/types';
+import { useBreadcrumbs } from '@/hooks/use-breadcrumbs';
 import { store } from '@/wayfinder/App/Http/Controllers/ContactsController';
 import contacts from '@/wayfinder/routes/contacts';
 
@@ -31,26 +30,18 @@ type ContactForm = {
 
 export default function Create() {
     const { t } = useTranslation();
-    const { setBreadcrumbs } = usePageActions();
 
-    const breadcrumbs: BreadcrumbItem[] = React.useMemo(
-        () => [
-            {
-                title: 'Contact',
-                count: 2,
-                href: contacts.index().url,
-            },
-            {
-                title: 'Create',
-                href: contacts.create().url,
-            },
-        ],
-        [],
-    );
-
-    useEffect(() => {
-        setBreadcrumbs(breadcrumbs);
-    }, [breadcrumbs, setBreadcrumbs]);
+    useBreadcrumbs([
+        {
+            title: 'Contact',
+            count: 2,
+            href: contacts.index().url,
+        },
+        {
+            title: 'Create',
+            href: contacts.create().url,
+        },
+    ]);
 
     const { organizations } = useAppPage<CreatePageProps>().props;
     const form = useForm<ContactForm>({
@@ -106,7 +97,6 @@ export default function Create() {
                                     onChange={(e) => form.setData('first_name', e.target.value)}
                                     required
                                     autoFocus
-                                    tabIndex={1}
                                     maxLength={25}
                                     disabled={form.processing}
                                     aria-invalid={!!errors.first_name || undefined}
@@ -122,7 +112,6 @@ export default function Create() {
                                     value={form.data.last_name}
                                     onChange={(e) => form.setData('last_name', e.target.value)}
                                     required
-                                    tabIndex={2}
                                     maxLength={25}
                                     disabled={form.processing}
                                     aria-invalid={!!errors.last_name || undefined}
@@ -162,7 +151,6 @@ export default function Create() {
                                     value={form.data.email}
                                     onChange={(e) => form.setData('email', e.target.value)}
                                     required
-                                    tabIndex={4}
                                     maxLength={50}
                                     disabled={form.processing}
                                     aria-invalid={!!errors.email || undefined}
@@ -179,7 +167,6 @@ export default function Create() {
                                     type="tel"
                                     value={form.data.phone}
                                     onChange={(e) => form.setData('phone', e.target.value)}
-                                    tabIndex={5}
                                     maxLength={50}
                                     disabled={form.processing}
                                     aria-invalid={!!errors.phone || undefined}
@@ -194,7 +181,6 @@ export default function Create() {
                                     type="text"
                                     value={form.data.address}
                                     onChange={(e) => form.setData('address', e.target.value)}
-                                    tabIndex={6}
                                     maxLength={150}
                                     disabled={form.processing}
                                     aria-invalid={!!errors.address || undefined}
@@ -211,7 +197,6 @@ export default function Create() {
                                     type="text"
                                     value={form.data.city}
                                     onChange={(e) => form.setData('city', e.target.value)}
-                                    tabIndex={7}
                                     maxLength={50}
                                     disabled={form.processing}
                                     aria-invalid={!!errors.city || undefined}
@@ -226,7 +211,6 @@ export default function Create() {
                                     type="text"
                                     value={form.data.region}
                                     onChange={(e) => form.setData('region', e.target.value)}
-                                    tabIndex={8}
                                     maxLength={50}
                                     disabled={form.processing}
                                     aria-invalid={!!errors.region || undefined}
@@ -265,7 +249,6 @@ export default function Create() {
                                     type="text"
                                     value={form.data.postal_code}
                                     onChange={(e) => form.setData('postal_code', e.target.value)}
-                                    tabIndex={10}
                                     maxLength={25}
                                     disabled={form.processing}
                                     aria-invalid={!!errors.postal_code || undefined}

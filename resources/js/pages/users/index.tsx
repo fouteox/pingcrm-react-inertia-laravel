@@ -1,6 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
 import { ChevronRight, Trash } from 'lucide-react';
-import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import AnchorLink from '@/components/anchor-link';
 import InertiaPagination from '@/components/inertia-pagination';
@@ -8,34 +7,27 @@ import SearchFilter from '@/components/search-filter';
 import { TableContainer } from '@/components/table-container';
 import { Button } from '@/components/ui/button';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { usePageActions } from '@/contexts/page-context';
 import { useAppPage } from '@/hooks/use-app-page';
-import { BreadcrumbItem } from '@/types';
+import { useBreadcrumbs } from '@/hooks/use-breadcrumbs';
+import type { UsersFilters } from '@/types/filters';
 import type { UserCollection } from '@/types/resources';
 import users from '@/wayfinder/routes/users';
 
 type IndexPageProps = {
+    filters: UsersFilters;
     users: UserCollection;
 };
 
 export default function Index() {
     const { t } = useTranslation();
-    const { setBreadcrumbs } = usePageActions();
 
-    const breadcrumbs: BreadcrumbItem[] = React.useMemo(
-        () => [
-            {
-                title: 'User',
-                count: 2,
-                href: users.index().url,
-            },
-        ],
-        [],
-    );
-
-    useEffect(() => {
-        setBreadcrumbs(breadcrumbs);
-    }, [breadcrumbs, setBreadcrumbs]);
+    useBreadcrumbs([
+        {
+            title: 'User',
+            count: 2,
+            href: users.index().url,
+        },
+    ]);
 
     const { users: usersData } = useAppPage<IndexPageProps>().props;
     const {

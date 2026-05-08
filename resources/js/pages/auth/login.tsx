@@ -55,7 +55,6 @@ export default function Login({ status }: LoginProps) {
                             type="email"
                             required
                             autoFocus
-                            tabIndex={1}
                             autoComplete="email"
                             value={data.email}
                             onChange={(e) => setData('email', e.target.value)}
@@ -71,7 +70,6 @@ export default function Login({ status }: LoginProps) {
                             id="password"
                             type="password"
                             required
-                            tabIndex={2}
                             autoComplete="current-password"
                             value={data.password}
                             onChange={(e) => setData('password', e.target.value)}
@@ -84,14 +82,13 @@ export default function Login({ status }: LoginProps) {
                         <Checkbox
                             id="remember"
                             name="remember"
-                            tabIndex={3}
                             checked={data.remember}
                             onCheckedChange={(checked) => setData('remember', Boolean(checked))}
                         />
                         <Label htmlFor="remember">{t('Remember me')}</Label>
                     </div>
 
-                    <Button type="submit" className="mt-4 w-full" tabIndex={4} disabled={processing}>
+                    <Button type="submit" className="mt-4 w-full" disabled={processing}>
                         {processing && <LoaderCircle className="size-4 animate-spin" />}
                         {t('Log in')}
                     </Button>

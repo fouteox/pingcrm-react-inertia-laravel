@@ -1,29 +1,14 @@
 import { Head } from '@inertiajs/react';
-import React, { useEffect } from 'react';
-import { useTranslation } from 'react-i18next';
-import { usePageActions } from '@/contexts/page-context';
-import { BreadcrumbItem } from '@/types';
+import { Trans, useTranslation } from 'react-i18next';
+import { useBreadcrumbs } from '@/hooks/use-breadcrumbs';
 import { fadogen } from '@/wayfinder/routes';
 
 export default function Dashboard() {
     const { t, i18n } = useTranslation();
-    const { setBreadcrumbs } = usePageActions();
 
     const docsUrl = i18n.language === 'fr' ? 'https://docs.fadogen.app/fr' : 'https://docs.fadogen.app';
 
-    const breadcrumbs: BreadcrumbItem[] = React.useMemo(
-        () => [
-            {
-                title: 'Fadogen',
-                href: fadogen().url,
-            },
-        ],
-        [],
-    );
-
-    useEffect(() => {
-        setBreadcrumbs(breadcrumbs);
-    }, [breadcrumbs, setBreadcrumbs]);
+    useBreadcrumbs([{ title: 'Fadogen', href: fadogen().url }]);
 
     return (
         <>
@@ -31,14 +16,14 @@ export default function Dashboard() {
 
             <h1 className="mb-8 text-3xl font-bold">{t('Fadogen')}</h1>
 
-            <p
-                className="mb-6 leading-normal"
-                dangerouslySetInnerHTML={{
-                    __html: t('fadogen_presentation', {
-                        fadogen_link: `<a href="${docsUrl}" class="underline underline-offset-4">Fadogen</a>`,
-                    }),
-                }}
-            />
+            <p className="mb-6 leading-normal">
+                <Trans
+                    i18nKey="fadogen_presentation"
+                    components={{
+                        fadogen_link: <a href={docsUrl} className="underline underline-offset-4" />,
+                    }}
+                />
+            </p>
         </>
     );
 }

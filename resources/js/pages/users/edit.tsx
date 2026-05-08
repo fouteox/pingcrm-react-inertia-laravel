@@ -1,16 +1,15 @@
 import { Head, useForm } from '@inertiajs/react';
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { SubmitButton } from '@/components/submit-button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { usePageActions } from '@/contexts/page-context';
 import { useAppPage } from '@/hooks/use-app-page';
+import { useBreadcrumbs } from '@/hooks/use-breadcrumbs';
 import { useDeletionControls } from '@/hooks/use-deletion-controls';
 import { useFormProcessing } from '@/hooks/use-form-processing';
-import { BreadcrumbItem } from '@/types';
 import type { UserResource } from '@/types/resources';
 import { destroy, restore, update } from '@/wayfinder/App/Http/Controllers/UsersController';
 import users from '@/wayfinder/routes/users';
@@ -29,28 +28,20 @@ type UserForm = {
 
 export default function Edit() {
     const { t } = useTranslation();
-    const { setBreadcrumbs } = usePageActions();
 
     const { user } = useAppPage<EditPageProps>().props;
 
-    const breadcrumbs: BreadcrumbItem[] = React.useMemo(
-        () => [
-            {
-                title: 'User',
-                count: 2,
-                href: users.index().url,
-            },
-            {
-                title: `${user.first_name} ${user.last_name}`,
-                href: users.edit(user.id).url,
-            },
-        ],
-        [user.first_name, user.last_name, user.id],
-    );
-
-    useEffect(() => {
-        setBreadcrumbs(breadcrumbs);
-    }, [breadcrumbs, setBreadcrumbs]);
+    useBreadcrumbs([
+        {
+            title: 'User',
+            count: 2,
+            href: users.index().url,
+        },
+        {
+            title: `${user.first_name} ${user.last_name}`,
+            href: users.edit(user.id).url,
+        },
+    ]);
 
     const form = useForm<UserForm>({
         first_name: user.first_name || '',

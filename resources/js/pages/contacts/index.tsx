@@ -1,6 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
 import { ChevronRight, Trash } from 'lucide-react';
-import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import AnchorLink from '@/components/anchor-link';
 import InertiaPagination from '@/components/inertia-pagination';
@@ -8,34 +7,27 @@ import SearchFilter from '@/components/search-filter';
 import { TableContainer } from '@/components/table-container';
 import { Button } from '@/components/ui/button';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { usePageActions } from '@/contexts/page-context';
 import { useAppPage } from '@/hooks/use-app-page';
-import { BreadcrumbItem } from '@/types';
+import { useBreadcrumbs } from '@/hooks/use-breadcrumbs';
+import type { ContactsFilters } from '@/types/filters';
 import type { ContactCollection } from '@/types/resources';
 import contacts from '@/wayfinder/routes/contacts';
 
 type IndexPageProps = {
+    filters: ContactsFilters;
     contacts: ContactCollection;
 };
 
 export default function Index() {
     const { t } = useTranslation();
-    const { setBreadcrumbs } = usePageActions();
 
-    const breadcrumbs: BreadcrumbItem[] = React.useMemo(
-        () => [
-            {
-                title: 'Contact',
-                count: 2,
-                href: contacts.index().url,
-            },
-        ],
-        [],
-    );
-
-    useEffect(() => {
-        setBreadcrumbs(breadcrumbs);
-    }, [breadcrumbs, setBreadcrumbs]);
+    useBreadcrumbs([
+        {
+            title: 'Contact',
+            count: 2,
+            href: contacts.index().url,
+        },
+    ]);
 
     const { contacts: contactsData } = useAppPage<IndexPageProps>().props;
     const {
@@ -85,7 +77,7 @@ export default function Index() {
                                 </TableCell>
                                 <TableCell className="relative p-2">
                                     <div className="absolute inset-0 z-10">
-                                        <Link href={contacts.edit(id)} prefetch tabIndex={1} className="block h-full w-full">
+                                        <Link href={contacts.edit(id)} prefetch className="block h-full w-full">
                                             <span className="sr-only">Modifier {name}</span>
                                         </Link>
                                     </div>

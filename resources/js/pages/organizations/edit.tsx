@@ -1,6 +1,6 @@
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ChevronRight, Trash } from 'lucide-react';
-import React, { useEffect } from 'react';
+import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { SubmitButton } from '@/components/submit-button';
 import { TableContainer } from '@/components/table-container';
@@ -9,11 +9,10 @@ import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { usePageActions } from '@/contexts/page-context';
 import { useAppPage } from '@/hooks/use-app-page';
+import { useBreadcrumbs } from '@/hooks/use-breadcrumbs';
 import { useDeletionControls } from '@/hooks/use-deletion-controls';
 import { useFormProcessing } from '@/hooks/use-form-processing';
-import { BreadcrumbItem } from '@/types';
 import type { OrganizationResource } from '@/types/resources';
 import { destroy, restore, update } from '@/wayfinder/App/Http/Controllers/OrganizationsController';
 import contacts from '@/wayfinder/routes/contacts';
@@ -36,28 +35,20 @@ type OrganizationForm = {
 
 export default function Edit() {
     const { t } = useTranslation();
-    const { setBreadcrumbs } = usePageActions();
 
     const { organization } = useAppPage<EditPageProps>().props;
 
-    const breadcrumbs: BreadcrumbItem[] = React.useMemo(
-        () => [
-            {
-                title: 'Organization',
-                count: 2,
-                href: organizations.index().url,
-            },
-            {
-                title: organization.name,
-                href: organizations.edit(organization.id).url,
-            },
-        ],
-        [organization.name, organization.id],
-    );
-
-    useEffect(() => {
-        setBreadcrumbs(breadcrumbs);
-    }, [breadcrumbs, setBreadcrumbs]);
+    useBreadcrumbs([
+        {
+            title: 'Organization',
+            count: 2,
+            href: organizations.index().url,
+        },
+        {
+            title: organization.name,
+            href: organizations.edit(organization.id).url,
+        },
+    ]);
 
     const form = useForm<OrganizationForm>({
         name: organization.name || '',

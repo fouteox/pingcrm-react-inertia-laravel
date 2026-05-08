@@ -1,6 +1,5 @@
 import { Head, Link } from '@inertiajs/react';
 import { ChevronRight, Trash } from 'lucide-react';
-import React, { useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import AnchorLink from '@/components/anchor-link';
 import InertiaPagination from '@/components/inertia-pagination';
@@ -8,34 +7,27 @@ import SearchFilter from '@/components/search-filter';
 import { TableContainer } from '@/components/table-container';
 import { Button } from '@/components/ui/button';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { usePageActions } from '@/contexts/page-context';
 import { useAppPage } from '@/hooks/use-app-page';
-import { BreadcrumbItem } from '@/types';
+import { useBreadcrumbs } from '@/hooks/use-breadcrumbs';
+import type { OrganizationsFilters } from '@/types/filters';
 import type { OrganizationCollection } from '@/types/resources';
 import organizations from '@/wayfinder/routes/organizations';
 
 type IndexPageProps = {
+    filters: OrganizationsFilters;
     organizations: OrganizationCollection;
 };
 
 export default function Index() {
     const { t } = useTranslation();
-    const { setBreadcrumbs } = usePageActions();
 
-    const breadcrumbs: BreadcrumbItem[] = React.useMemo(
-        () => [
-            {
-                title: 'Organization',
-                count: 2,
-                href: organizations.index().url,
-            },
-        ],
-        [],
-    );
-
-    useEffect(() => {
-        setBreadcrumbs(breadcrumbs);
-    }, [breadcrumbs, setBreadcrumbs]);
+    useBreadcrumbs([
+        {
+            title: 'Organization',
+            count: 2,
+            href: organizations.index().url,
+        },
+    ]);
 
     const { organizations: organizationsData } = useAppPage<IndexPageProps>().props;
     const {
