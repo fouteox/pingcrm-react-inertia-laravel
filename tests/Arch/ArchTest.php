@@ -8,10 +8,21 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Resources\Json\JsonResource;
+use Symfony\Component\Finder\Finder;
 
-arch('strict types everywhere in app/')
-    ->expect('App')
-    ->toUseStrictTypes();
+test('strict types everywhere in app/', function () {
+    $offenders = [];
+
+    foreach (Finder::create()->in(dirname(__DIR__, 2).'/app')->files()->name('*.php') as $file) {
+        $content = (string) file_get_contents($file->getRealPath());
+
+        if (preg_match('/^<\?php\s*(\/\*[\s\S]*?\*\/|\/\/[^\r\n]*(?:\r?\n|$)|\s)*declare\s*\(\s*strict_types\s*=\s*1\s*\)\s*;/m', $content) !== 1) {
+            $offenders[] = $file->getRelativePathname();
+        }
+    }
+
+    expect($offenders)->toBeEmpty();
+});
 
 arch('no debug helpers shipped to production')
     ->expect(['dd', 'dump', 'var_dump', 'ray'])
