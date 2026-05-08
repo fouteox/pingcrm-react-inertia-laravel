@@ -14,7 +14,7 @@ final class SetLocaleMiddleware
     {
         $locale = $request->cookie('locale');
 
-        if (! in_array($locale, ['fr', 'en'])) {
+        if (! in_array($locale, ['fr', 'en'], true)) {
             $locale = $request->getPreferredLanguage(['fr', 'en']);
         }
 

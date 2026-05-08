@@ -54,12 +54,9 @@ final readonly class I18NextTranslationsLoader
     private function prepare(array $translations): array
     {
         $i18nTranslations = [];
-        $keys = array_keys($translations);
 
-        for ($i = 0; $i < count($keys); $i++) {
-            $laravelKey = $keys[$i];
+        foreach ($translations as $laravelKey => $laravelValue) {
             $i18nKey = preg_replace("/:(\w+)/", '{{$1}}', is_int($laravelKey) ? (string) $laravelKey : $laravelKey);
-            $laravelValue = $translations[$laravelKey];
 
             if (is_array($laravelValue)) {
                 $i18nTranslations[$i18nKey] = $this->prepare($laravelValue);
