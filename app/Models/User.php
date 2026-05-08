@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\Role;
+use Illuminate\Database\Eloquent\Attributes\Fillable;
+use Illuminate\Database\Eloquent\Attributes\Hidden;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
@@ -15,33 +18,20 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Scout\Searchable;
 
+#[Fillable([
+    'account_id',
+    'first_name',
+    'last_name',
+    'email',
+    'email_verified_at',
+    'password',
+    'owner',
+    'photo',
+])]
+#[Hidden(['password', 'remember_token'])]
 final class User extends Authenticatable
 {
     use Concerns\Filterable, HasFactory, Notifiable, Searchable, SoftDeletes;
-
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
-    protected $fillable = [
-        'name',
-        'first_name',
-        'last_name',
-        'email',
-        'password',
-        'photo',
-    ];
-
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
-    protected $hidden = [
-        'password',
-        'remember_token',
-    ];
 
     /**
      * Retrieve the model for a bound value.
@@ -71,6 +61,11 @@ final class User extends Authenticatable
         return $this->email === 'johndoe@example.com';
     }
 
+    public function isProtectedDemoUser(): bool
+    {
+        return app()->isProduction() && $this->isDemoUser();
+    }
+
     /**
      * @return array<string, mixed>
      */
@@ -96,12 +91,9 @@ final class User extends Authenticatable
     }
 
     #[Scope]
-    public function whereRole(Builder $query, string $role): void
+    public function whereRole(Builder $query, Role $role): void
     {
-        $query->where('owner', match ($role) {
-            'user' => false,
-            'owner' => true,
-        });
+        $query->where('owner', $role === Role::Owner);
     }
 
     #[Scope]
@@ -109,7 +101,10 @@ final class User extends Authenticatable
     {
         $query
             ->when($filters['search'] ?? null, fn ($query, $search) => $this->applySearchFilter($query, $search, $accountId, $filters['trashed'] ?? null))
-            ->when($filters['role'] ?? null, fn ($query, $role) => $query->whereRole($role))
+            ->when(
+                Role::tryFrom((string) ($filters['role'] ?? '')),
+                fn ($query, Role $role) => $query->whereRole($role)
+            )
             ->when($filters['trashed'] ?? null, fn ($query, $trashed) => $this->applyTrashedFilter($query, $trashed));
     }
 

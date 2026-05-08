@@ -29,9 +29,7 @@ final class OrganizationResource extends JsonResource
             'country' => $this->country,
             'postal_code' => $this->postal_code,
             'deleted_at' => $this->deleted_at,
-            'contacts' => OrganizationContactResource::collection(
-                $this->contacts()->orderByName()->get()
-            ),
+            'contacts' => OrganizationContactResource::collection($this->whenLoaded('contacts')),
         ];
     }
 }

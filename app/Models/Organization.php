@@ -4,14 +4,28 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Facades\Auth;
 use Laravel\Scout\Searchable;
 
+#[Fillable([
+    'account_id',
+    'name',
+    'email',
+    'phone',
+    'address',
+    'city',
+    'region',
+    'country',
+    'postal_code',
+])]
 final class Organization extends Model
 {
     use Concerns\Filterable, HasFactory, Searchable, SoftDeletes;
@@ -24,7 +38,15 @@ final class Organization extends Model
      */
     public function resolveRouteBinding($value, $field = null): ?Model
     {
-        return $this->where($field ?? 'id', $value)->withTrashed()->firstOrFail();
+        return $this->where($field ?? 'id', $value)
+            ->where('account_id', Auth::user()?->account_id)
+            ->withTrashed()
+            ->firstOrFail();
+    }
+
+    public function account(): BelongsTo
+    {
+        return $this->belongsTo(Account::class);
     }
 
     public function contacts(): HasMany

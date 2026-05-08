@@ -38,9 +38,7 @@ final class HandleInertiaRequests extends Middleware
         return [
             ...parent::share($request),
             'auth' => fn () => [
-                'user' => $request->user()
-                    ? new UserResource($request->user()->loadMissing('account'))
-                    : null,
+                'user' => $request->user() ? new UserResource($request->user()) : null,
             ],
             'locale' => fn () => $locale,
             'translations' => ! $request->inertia() ? [

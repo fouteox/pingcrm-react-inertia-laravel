@@ -15,8 +15,12 @@ final class OrganizationCollection extends ResourceCollection
      */
     public function toArray(Request $request): Collection
     {
-        return $this->collection->map->only(
-            'id', 'name', 'phone', 'city', 'deleted_at'
-        );
+        return $this->collection->map(fn (OrganizationResource $organization): array => [
+            'id' => $organization->id,
+            'name' => $organization->name,
+            'phone' => $organization->phone,
+            'city' => $organization->city,
+            'deleted_at' => $organization->deleted_at,
+        ]);
     }
 }

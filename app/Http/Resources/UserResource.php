@@ -27,7 +27,6 @@ final class UserResource extends JsonResource
             'email' => $this->email,
             'owner' => $this->owner,
             'deleted_at' => $this->deleted_at,
-            'account' => $this->whenLoaded('account'),
             'can_delete' => ! App::environment('production') || ! $this->isDemoUser(),
         ];
     }
