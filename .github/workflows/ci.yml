@@ -43,7 +43,44 @@ jobs:
               run: vendor/bin/pint --test --format agent
 
             - name: Run Pest tests
-              run: php artisan test --compact
+              run: php artisan test --compact --testsuite=Unit,Feature,Arch
+
+    browser:
+        name: Browser (Pest 4)
+        runs-on: ubuntu-24.04
+
+        steps:
+            - uses: actions/checkout@v6
+
+            - name: Setup PHP
+              uses: shivammathur/setup-php@v2
+              with:
+                  php-version: '8.5'
+                  extensions: dom, curl, libxml, mbstring, zip, pdo, pdo_sqlite, sqlite3, bcmath, intl
+                  coverage: none
+                  tools: composer:v2
+
+            - name: Install Composer dependencies
+              uses: ramsey/composer-install@v3
+
+            - uses: voidzero-dev/setup-vp@v1
+              with:
+                  node-version-file: .nvmrc
+                  cache: true
+
+            - name: Prepare Laravel environment (Wayfinder needs a booted app)
+              run: |
+                  cp .env.example .env
+                  php artisan key:generate --force --ansi
+
+            - name: Build Vite assets
+              run: vp run build
+
+            - name: Install Playwright Chromium
+              run: npx playwright install --with-deps chromium
+
+            - name: Run Browser tests
+              run: php artisan test --compact --testsuite=Browser
 
     frontend:
         name: Frontend (Types + Lint + Format)
