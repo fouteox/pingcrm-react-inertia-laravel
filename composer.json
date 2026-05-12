@@ -70,12 +70,12 @@
             "@php artisan key:generate",
             "@php artisan migrate --force",
             "@php artisan db:seed --force",
-            "bun install",
-            "bun run build"
+            "vp install",
+            "vp build"
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
-            "bunx concurrently -c \"#c4b5fd,#fdba74,#93c5fd\" \"php artisan queue:work\" \"bun run dev\" \"php artisan schedule:work\" --names=queue,vite,scheduler --kill-others"
+            "vp exec bunx concurrently -c \"#c4b5fd,#fdba74,#93c5fd\" \"php artisan queue:work\" \"bun run dev\" \"php artisan schedule:work\" --names=queue,vite,scheduler --kill-others"
         ],
         "lint": [
             "pint"
