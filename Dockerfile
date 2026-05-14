@@ -34,11 +34,10 @@ RUN docker-php-serversideup-set-id www-data $USER_ID:$GROUP_ID  && \
 USER www-data
 
 ############################################
-# Builder Stage
+# Builder Stage (vendor only — JS assets are pre-built on the CI runner
+# against a real MariaDB so Wayfinder generates types that match production)
 ############################################
 FROM base AS builder
-
-COPY --from=oven/bun:1.3-debian /usr/local/bin/bun /usr/local/bin/bun
 
 COPY --link composer.json composer.lock ./
 
@@ -50,26 +49,9 @@ RUN composer install \
     --no-scripts \
     --audit
 
-COPY --link package.json bun.lock* ./
-
-RUN bun install --frozen-lockfile
-
 COPY --link . .
 
 RUN composer dump-autoload --classmap-authoritative --no-dev
-
-ARG ENV_HASH
-# Wayfinder (dev-next) introspects the DB schema at generate time (via laravel/ranger
-# RouteBindingResolver). Since no real DB is reachable during image build, we spin up
-# a throwaway SQLite DB, migrate it, and point the build at it. Remove once
-# https://github.com/laravel/wayfinder/issues/214 is fixed.
-RUN --mount=type=secret,id=dotenv \
-    echo "Build with ENV_HASH=${ENV_HASH}" && \
-    set -a && . /run/secrets/dotenv && set +a && \
-    export DB_CONNECTION=sqlite DB_DATABASE=/tmp/wayfinder.sqlite && \
-    : > "$DB_DATABASE" && \
-    php artisan migrate --force --no-interaction && \
-    bun run build:ssr
 
 ############################################
 # App Image (also runs SSR via `php artisan inertia:start-ssr --runtime=bun`)
@@ -81,12 +63,6 @@ COPY --from=oven/bun:1.3-debian /usr/local/bin/bun /usr/local/bin/bun
 COPY --link --chown=33:33 --from=builder /var/www/html/vendor ./vendor
 
 COPY --link --chown=33:33 . .
-
-COPY --link --chown=33:33 --from=builder /var/www/html/public/build ./public/build
-
-COPY --link --chown=33:33 --from=builder /var/www/html/bootstrap/ssr ./bootstrap/ssr
-
-COPY --link --chown=33:33 --from=builder /var/www/html/node_modules ./node_modules
 
 RUN mkdir -p \
     storage/logs \

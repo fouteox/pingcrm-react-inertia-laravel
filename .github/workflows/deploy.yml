@@ -17,8 +17,57 @@ jobs:
     permissions:
       contents: read
       packages: write
+    services:
+      # Wayfinder (dev-next) introspects the live DB schema at generate time.
+      # Running against the same engine as production (MariaDB) is required so
+      # generated TS types match runtime PDO behaviour (e.g. INT columns are
+      # returned as `string` by MariaDB but `number` by SQLite).
+      mariadb:
+        image: mariadb:11
+        env:
+          MARIADB_ROOT_PASSWORD: secret
+          MARIADB_DATABASE: pingcrm
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mariadb-admin ping --silent"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+    env:
+      DB_HOST: 127.0.0.1
+      DB_PORT: '3306'
+      DB_DATABASE: pingcrm
+      DB_USERNAME: root
+      DB_PASSWORD: secret
     steps:
       - uses: actions/checkout@v6
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.5'
+          extensions: dom, curl, libxml, mbstring, zip, pdo, pdo_mysql, bcmath, intl
+          coverage: none
+          tools: composer:v2
+
+      - name: Install Composer dependencies (no-dev — matches production)
+        uses: ramsey/composer-install@v3
+        with:
+          composer-options: '--no-dev'
+
+      - uses: voidzero-dev/setup-vp@v1
+        with:
+          node-version-file: .nvmrc
+          cache: true
+
+      - name: Load env, migrate MariaDB and pre-build assets
+        run: |
+          echo "${{ secrets.ENV_FILE_BASE64 }}" | base64 -d > .env
+          php artisan key:generate --force --ansi
+          php artisan migrate --force --no-interaction
+          vp install
+          vp run build:ssr
 
       - uses: docker/setup-buildx-action@v3
 
@@ -27,11 +76,6 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Load env file for build
-        run: |
-          echo "${{ secrets.ENV_FILE_BASE64 }}" | base64 -d > .env.build
-          echo "ENV_BUILD_HASH=$(sha256sum .env.build | cut -c1-8)" >> $GITHUB_ENV
 
       - name: Build and push App image
         uses: docker/build-push-action@v5
@@ -44,14 +88,10 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}-app
           cache-from: type=gha,scope=app
           cache-to: type=gha,mode=max,scope=app
-          build-args: |
-            ENV_HASH=${{ env.ENV_BUILD_HASH }}
-          secret-files: |
-            dotenv=./.env.build
 
-      - name: Cleanup build env
+      - name: Cleanup pre-build env
         if: always()
-        run: rm -f .env.build
+        run: rm -f .env
 
   deploy:
     needs: build
