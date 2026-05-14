@@ -104,8 +104,14 @@ jobs:
                   cache: true
 
             - name: Prepare Laravel environment (Wayfinder needs a booted app + DB schema)
+              # .env.example points at MariaDB which is not available in CI, so
+              # override to SQLite locally for the tsc/lint/format checks.
+              # Production parity (Wayfinder types from MariaDB) is enforced in
+              # the deploy workflow.
               run: |
                   cp .env.example .env
+                  sed -i 's/^DB_CONNECTION=.*/DB_CONNECTION=sqlite/' .env
+                  sed -i 's|^DB_DATABASE=.*|DB_DATABASE=database/database.sqlite|' .env
                   php artisan key:generate --force --ansi
                   touch database/database.sqlite
                   php artisan migrate --force --ansi
