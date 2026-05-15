@@ -70,10 +70,11 @@ services:
         - "traefik.http.routers.pingcrm.rule=Host(`${APP_HOST}`)"
         - "traefik.http.services.pingcrm.loadbalancer.server.port=8000"
 
-  horizon:
+  queue:
     <<: *base
-    command: ["php", "/var/www/html/artisan", "horizon"]
+    command: ["php", "/var/www/html/artisan", "queue:work", "--tries=3", "--max-time=3600"]
     stop_signal: SIGTERM
+    stop_grace_period: 60s
     networks: *default-network
     deploy:
       update_config:
@@ -89,12 +90,6 @@ services:
         delay: 10s
         max_attempts: 3
         window: 120s
-    healthcheck:
-      test: ["CMD", "healthcheck-horizon"]
-      start_period: 10s
-      interval: 5s
-      timeout: 5s
-      retries: 2
 
   scheduler:
     <<: *base
