@@ -28,9 +28,6 @@ vendor/
 .env*
 /.phpunit.cache
 .phpunit.result.cache
-node_modules/
-bootstrap/ssr/
-public/build/
 Homestead.json
 Homestead.yaml
 npm-debug.log
