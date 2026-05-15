@@ -90,6 +90,12 @@ services:
         delay: 10s
         max_attempts: 3
         window: 120s
+    healthcheck:
+      test: ["CMD", "healthcheck-queue"]
+      start_period: 10s
+      interval: 5s
+      timeout: 5s
+      retries: 2
 
   scheduler:
     <<: *base
