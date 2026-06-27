@@ -1,7 +1,26 @@
 .PHONY: sw sw-native sw-docker env-status \
+	go \
 	k3d-create k3d-delete k3d-build k3d-push k3d-secrets k3d-deploy \
 	k3d-redeploy k3d-up k3d-down k3d-status k3d-logs k3d-shell \
 	k8s-deploy-tunnel k8s-deploy-direct
+
+# ============================================================================
+# Full check pipeline
+# ============================================================================
+
+# Lance TOUT : pint, oxlint, oxfmt, types, tests (Unit + Feature + Arch + Browser)
+go:
+	@echo "==> Pint (PHP formatter)"
+	vendor/bin/pint --format agent
+	@echo "==> oxlint"
+	vp exec bun run lint
+	@echo "==> oxfmt"
+	vp exec bun run format
+	@echo "==> TypeScript"
+	vp exec bun run types
+	@echo "==> Pest (Unit + Feature + Arch + Browser)"
+	php artisan test --compact
+	@echo "✓ All checks passed"
 
 # ============================================================================
 # Environment switching
