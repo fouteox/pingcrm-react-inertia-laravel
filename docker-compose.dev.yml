@@ -93,9 +93,10 @@ services:
       args:
         USER_ID: ${SPIN_USER_ID}
         GROUP_ID: ${SPIN_GROUP_ID}
-    command: ["sh", "-c", "bun install && bun run dev"]
+    command: ["sh", "-c", "vp install && vp dev"]
     volumes:
       - .:/var/www/html/
+      - vite-plus-home:/opt/vite-plus
     working_dir: /var/www/html/
     environment:
       - VITE_DEV_HOST=${VITE_DEV_HOST}
@@ -122,3 +123,7 @@ services:
         condition: service_healthy
       valkey:
         condition: service_healthy
+
+# Persist vite+'s managed Node runtime and caches across container recreations.
+volumes:
+  vite-plus-home:

@@ -63,7 +63,7 @@ jobs:
 
             - uses: voidzero-dev/setup-vp@v1
               with:
-                  node-version-file: .nvmrc
+                  node-version-file: .node-version
                   cache: true
 
             - name: Prepare Laravel environment (Wayfinder needs a booted app)
@@ -100,7 +100,7 @@ jobs:
 
             - uses: voidzero-dev/setup-vp@v1
               with:
-                  node-version-file: .nvmrc
+                  node-version-file: .node-version
                   cache: true
 
             - name: Prepare Laravel environment (Wayfinder needs a booted app + DB schema)
@@ -148,7 +148,7 @@ jobs:
 
             - uses: voidzero-dev/setup-vp@v1
               with:
-                  node-version-file: .nvmrc
+                  node-version-file: .node-version
                   cache: true
 
             - name: Prepare Laravel environment (Wayfinder needs a booted app)

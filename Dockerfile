@@ -23,12 +23,19 @@ ARG GROUP_ID
 # Switch to root so we can set the user ID and group ID
 USER root
 
-# Installer Bun pour le développement frontend
-COPY --from=oven/bun:1.3-debian /usr/local/bin/bun /usr/local/bin/bun
+# Install native vite+ (vp) — dev only. VP_NODE_MANAGER=yes makes the install
+# non-interactive; vp manages its own Node runtime and the pinned bun under VP_HOME.
+ENV VP_HOME=/opt/vite-plus
+ENV PATH="/opt/vite-plus/bin:${PATH}"
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ca-certificates curl \
+    && rm -rf /var/lib/apt/lists/* \
+    && curl -fsSL https://vite.plus | VP_NODE_MANAGER=yes bash
 
-# Set the user ID and group ID for www-data
+# Set www-data UID/GID and let it own VP_HOME so vp can write its runtime there.
 RUN docker-php-serversideup-set-id www-data $USER_ID:$GROUP_ID  && \
-    docker-php-serversideup-set-file-permissions --owner $USER_ID:$GROUP_ID
+    docker-php-serversideup-set-file-permissions --owner $USER_ID:$GROUP_ID && \
+    chown -R www-data:www-data /opt/vite-plus
 
 # Drop privileges back to www-data
 USER www-data
