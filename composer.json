@@ -24,6 +24,7 @@
     "require-dev": {
         "laravel/boost": "^2.4",
         "laravel/breeze": "^2.3",
+        "laravel/pao": "^1.1",
         "laravel/pint": "^1.26",
         "laravel/sail": "^1.51",
         "mockery/mockery": "^1.6",
