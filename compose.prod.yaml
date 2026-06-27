@@ -184,7 +184,7 @@ services:
     restart: always
 
   typesense:
-    image: 'typesense/typesense:29.0'
+    image: 'typesense/typesense:30.2-arm64-lg-page16'
     command: ["--data-dir=/data", "--api-key=${TYPESENSE_API_KEY}", "--enable-cors"]
     security_opt:
       - no-new-privileges:true
