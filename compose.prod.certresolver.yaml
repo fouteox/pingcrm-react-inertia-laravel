@@ -1,10 +1,12 @@
 ---
+# Overlay activé uniquement hors Cloudflare Tunnel : ajoute le certresolver
+# Let's Encrypt sur les routers Traefik. Labels au niveau service (Compose),
+# fusionnés avec ceux de compose.prod.yaml. Les noms de routers (`pingcrm`,
+# `pingcrm-reverb`) correspondent à ceux déclarés dans compose.prod.yaml.
 services:
   app:
-    deploy:
-      labels:
-        - "traefik.http.routers.reverb.tls.certresolver=letsencrypt-${DNS_PROVIDER}"
+    labels:
+      traefik.http.routers.pingcrm.tls.certresolver: "letsencrypt-${DNS_PROVIDER}"
   reverb:
-    deploy:
-      labels:
-        - "traefik.http.routers.reverb-reverb.tls.certresolver=letsencrypt-${DNS_PROVIDER}"
+    labels:
+      traefik.http.routers.pingcrm-reverb.tls.certresolver: "letsencrypt-${DNS_PROVIDER}"

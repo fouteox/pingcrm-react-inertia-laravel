@@ -98,23 +98,20 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      packages: write
+      packages: read
     env:
-      STACK_NAME: ${{ vars.STACK_ID }}
       USE_CF_TUNNEL: ${{ secrets.USE_CLOUDFLARE_TUNNEL }}
 
     steps:
       - uses: actions/checkout@v6
 
-      - name: Load .env and export variables
+      - name: Load .env.production and export variables
         run: |
           echo "${{ secrets.ENV_FILE_BASE64 }}" | base64 -d > .env.production
 
-          # Calculate hash for versioned secret name
-          ENV_HASH=$(sha256sum .env.production | cut -c1-8)
-          echo "ENV_HASH=$ENV_HASH" >> $GITHUB_ENV
-
-          # Export all variables to GITHUB_ENV for compose substitution AND backup restore
+          # Export every variable (masked) for compose substitution and first-deploy
+          # detection in the next step. The full file is delivered to the containers
+          # as a Docker secret (see the deploy step), not exported here.
           while IFS= read -r line || [[ -n "$line" ]]; do
             [[ -z "$line" || "$line" == \#* ]] && continue
             if [[ $line =~ ^([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]]; then
@@ -126,7 +123,6 @@ jobs:
             fi
           done < .env.production
 
-          # Add IMAGE_NAME for compose substitution
           echo "IMAGE_NAME=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}" >> $GITHUB_ENV
 
       - name: Install cloudflared
@@ -149,259 +145,142 @@ jobs:
               StrictHostKeyChecking accept-new
               ${{ env.USE_CF_TUNNEL == 'true' && 'ProxyCommand cloudflared access ssh --hostname %h' || format('Port {0}', secrets.SSH_PORT) }}
 
-      - name: Login to registry on remote
+      # Deploy by driving the REMOTE Docker daemon over SSH (DOCKER_HOST=ssh://).
+      # Nothing is copied to the server: compose files and .env stay on the runner,
+      # compose only sends API calls. The Laravel .env is delivered as an env-sourced
+      # Docker secret (LARAVEL_ENV) — its content is transmitted to the remote daemon
+      # and mounted at /var/www/html/.env, never written to the server filesystem.
+      - name: Deploy to remote Docker daemon (no project copy)
+        env:
+          DOCKER_HOST: ssh://deploy-target
         run: |
-          echo "${{ secrets.GITHUB_TOKEN }}" | docker -H ssh://deploy-target login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+          set -e
 
-      - name: Check first deploy & restore backup
-        run: |
-          # Service detection from env and compose
+          # Whole Laravel .env → Docker secret value (raw content keeps phpdotenv
+          # interpolation like ${APP_HOST} intact for the app to resolve at runtime).
+          export LARAVEL_ENV="$(cat .env.production)"
+
+          PROJECT="${COMPOSE_PROJECT_NAME:-${{ github.event.repository.name }}}"
+
+          # Add the Let's Encrypt certresolver overlay unless behind a Cloudflare Tunnel.
+          COMPOSE_FILES=(-f compose.prod.yaml)
+          if [ "${USE_CF_TUNNEL}" != "true" ]; then
+            COMPOSE_FILES+=(-f compose.prod.certresolver.yaml)
+          fi
+          DC=(docker compose -p "$PROJECT" "${COMPOSE_FILES[@]}" --env-file .env.production)
+
           DB="${DB_CONNECTION:-}"
+          CACHE="${REDIS_HOST:-}"
 
-          # Auto-detect cache service from compose (valkey, redis, dragonfly, memcached)
-          CACHE=$(docker compose -f compose.prod.yaml config --format json | jq -r '[.services | keys[] | select(. == "valkey" or . == "redis" or . == "dragonfly" or . == "memcached")] | first // empty')
-          [ -n "$CACHE" ] && echo "Cache detected: $CACHE" || echo "No cache service detected"
-
-          # Determine DB type (sqlite is file-based, others need container restore)
-          RESTORE_DB="yes"
-          SQLITE_MODE="no"
-          if [ -z "$DB" ]; then
-            echo "No database configured (DB_CONNECTION is empty)"
-            RESTORE_DB="no"
-          elif [ "$DB" = "sqlite" ]; then
-            echo "SQLite detected (file-based restore)"
-            SQLITE_MODE="yes"
-            RESTORE_DB="no"
+          # First deploy = the DB data volume does not exist yet on the remote host
+          FIRST_DEPLOY="no"
+          if [ -n "$DB" ] && [ "$DB" != "sqlite" ] && ! docker volume inspect "${PROJECT}_stack-${DB}" > /dev/null 2>&1; then
+            FIRST_DEPLOY="yes"
           fi
 
-          # Volume name for DB (if applicable)
-          DB_VOL="stack-${DB}"
+          echo "==> Logging in to ${{ env.REGISTRY }} and pulling images on the remote..."
+          echo "${{ secrets.GITHUB_TOKEN }}" | docker login ${{ env.REGISTRY }} -u ${{ github.actor }} --password-stdin
+          "${DC[@]}" pull
 
-          # First deploy check - use DB volume if DB exists, otherwise use cache volume
-          if [ "$RESTORE_DB" = "yes" ]; then
-            if docker -H ssh://deploy-target volume inspect ${STACK_NAME}_${DB_VOL} > /dev/null 2>&1; then
-              echo "Existing deployment detected (DB volume exists)"
-              exit 0
-            fi
-          elif [ "$SQLITE_MODE" = "yes" ]; then
-            if docker -H ssh://deploy-target volume inspect ${STACK_NAME}_stack-sqlite > /dev/null 2>&1; then
-              echo "Existing deployment detected (SQLite volume exists)"
-              exit 0
-            fi
-          elif [ -n "$CACHE" ]; then
-            if docker -H ssh://deploy-target volume inspect ${STACK_NAME}_stack-${CACHE} > /dev/null 2>&1; then
-              echo "Existing deployment detected (cache volume exists)"
-              exit 0
-            fi
-          else
-            echo "No DB or cache to restore, skipping"
-            exit 0
-          fi
+          # === First-deploy backup restore (S3 or Dropbox, via rclone) ===
+          # Best-effort: a failure here never blocks the deployment. rclone is
+          # configured through RCLONE_CONFIG_* env vars (no config file to place on
+          # the server) and all I/O targets remote named volumes.
+          if [ "$FIRST_DEPLOY" = "yes" ]; then
+            echo "==> First deploy detected, looking for a backup to restore..."
+            (
+              set -e
+              RCLONE_ENV=()
+              REMOTE_PATH=""
 
-          echo "First deploy detected"
+              if [ -n "${BACKUP_S3_BUCKET:-}" ]; then
+                echo "Backup provider: S3"
+                RCLONE_ENV=(
+                  -e RCLONE_CONFIG_BACKUP_TYPE=s3
+                  -e RCLONE_CONFIG_BACKUP_PROVIDER=Other
+                  -e "RCLONE_CONFIG_BACKUP_ACCESS_KEY_ID=${BACKUP_AWS_ACCESS_KEY_ID}"
+                  -e "RCLONE_CONFIG_BACKUP_SECRET_ACCESS_KEY=${BACKUP_AWS_SECRET_ACCESS_KEY}"
+                  -e "RCLONE_CONFIG_BACKUP_ENDPOINT=https://${BACKUP_AWS_ENDPOINT:-s3.amazonaws.com}"
+                )
+                REMOTE_PATH="${BACKUP_S3_BUCKET}/${BACKUP_S3_PATH:-}"
 
-          # Validate DB service exists in compose (only if restoring DB)
-          if [ "$RESTORE_DB" = "yes" ]; then
-            DB_IMAGE=$(docker compose -f compose.prod.yaml config --format json | jq -r ".services.${DB}.image")
-            if [ "$DB_IMAGE" = "null" ] || [ -z "$DB_IMAGE" ]; then
-              echo "ERROR: Service '${DB}' not found in compose.prod.yaml"
-              echo "Make sure DB_CONNECTION matches a service name in compose.prod.yaml"
-              exit 1
-            fi
-            echo "Using ${DB} image: $DB_IMAGE"
-          fi
+              elif [ -n "${BACKUP_DROPBOX_REFRESH_TOKEN:-}" ]; then
+                echo "Backup provider: Dropbox"
+                # rclone strips refresh_token from config, so mint a short-lived access_token
+                TOKEN_RESPONSE=$(curl -s -X POST https://api.dropboxapi.com/oauth2/token \
+                  -d grant_type=refresh_token \
+                  -d "refresh_token=${BACKUP_DROPBOX_REFRESH_TOKEN}" \
+                  -d "client_id=${BACKUP_DROPBOX_APP_KEY}" \
+                  -d "client_secret=${BACKUP_DROPBOX_APP_SECRET}")
+                ACCESS_TOKEN=$(echo "$TOKEN_RESPONSE" | jq -r '.access_token // empty')
+                if [ -z "$ACCESS_TOKEN" ]; then
+                  echo "Failed to obtain a Dropbox access token"; exit 1
+                fi
+                RCLONE_ENV=(
+                  -e RCLONE_CONFIG_BACKUP_TYPE=dropbox
+                  -e "RCLONE_CONFIG_BACKUP_TOKEN={\"access_token\":\"${ACCESS_TOKEN}\",\"token_type\":\"bearer\"}"
+                )
+                REMOTE_PATH="${BACKUP_DROPBOX_REMOTE_PATH#/}"
 
-          # === BACKUP DOWNLOAD (rclone - supports S3, Dropbox) ===
-          RESTORE_VOL="${STACK_NAME}_backup_dumps"
-
-          # Helper: run rclone on remote with config from stdin
-          rclone_cmd() {
-            local args="$*"
-            ssh deploy-target "cat > /tmp/rclone.conf && docker run --rm \
-              -v /tmp/rclone.conf:/config/rclone/rclone.conf:ro \
-              -v ${RESTORE_VOL}:/restore rclone/rclone ${args} ; rm -f /tmp/rclone.conf"
-          }
-
-          # Generate rclone config based on detected provider (uses BACKUP_* vars from .env)
-          if [[ -n "${BACKUP_S3_BUCKET:-}" ]]; then
-            echo "Provider: S3"
-            RCLONE_CFG="[backup]
-            type = s3
-            provider = Other
-            access_key_id = ${BACKUP_AWS_ACCESS_KEY_ID}
-            secret_access_key = ${BACKUP_AWS_SECRET_ACCESS_KEY}
-            endpoint = https://${BACKUP_AWS_ENDPOINT:-s3.amazonaws.com}"
-            REMOTE_PATH="${BACKUP_S3_BUCKET}/${BACKUP_S3_PATH:-}"
-
-          elif [[ -n "${BACKUP_DROPBOX_REFRESH_TOKEN:-}" ]]; then
-            echo "Provider: Dropbox"
-            # Fetch fresh access_token (rclone has a bug where it strips refresh_token from config)
-            DROPBOX_TOKEN_RESPONSE=$(curl -s -X POST https://api.dropboxapi.com/oauth2/token \
-              -d grant_type=refresh_token \
-              -d "refresh_token=${BACKUP_DROPBOX_REFRESH_TOKEN}" \
-              -d "client_id=${BACKUP_DROPBOX_APP_KEY}" \
-              -d "client_secret=${BACKUP_DROPBOX_APP_SECRET}")
-            DROPBOX_ACCESS_TOKEN=$(echo "$DROPBOX_TOKEN_RESPONSE" | jq -r '.access_token // empty')
-            if [[ -z "$DROPBOX_ACCESS_TOKEN" ]]; then
-              echo "Failed to get Dropbox access token"
-              echo "$DROPBOX_TOKEN_RESPONSE"
-              exit 0
-            fi
-            RCLONE_CFG="[backup]
-            type = dropbox
-            token = {\"access_token\":\"${DROPBOX_ACCESS_TOKEN}\",\"token_type\":\"bearer\"}"
-            REMOTE_PATH="${BACKUP_DROPBOX_REMOTE_PATH#/}"
-
-          else
-            echo "No backup provider configured"
-            exit 0
-          fi
-
-          # Find latest backup (strip leading whitespace from config)
-          LATEST=$(echo "$RCLONE_CFG" | sed 's/^[[:space:]]*//' | rclone_cmd lsf "backup:${REMOTE_PATH}/" --files-only 2>/dev/null \
-            | grep '\.tar\.gz' | sort | tail -1) || true
-
-          [[ -z "$LATEST" ]] && { echo "No backup found"; exit 0; }
-
-          echo "Restoring from: $LATEST"
-
-          # Download backup
-          echo "$RCLONE_CFG" | sed 's/^[[:space:]]*//' | rclone_cmd copy "backup:${REMOTE_PATH}/$LATEST" /restore/
-          docker -H ssh://deploy-target run --rm -v ${RESTORE_VOL}:/restore alpine mv "/restore/$LATEST" /restore/backup.tar.gz
-
-          docker -H ssh://deploy-target run --rm \
-            -v ${STACK_NAME}_backup_dumps:/restore \
-            alpine sh -c "tar -xzf /restore/backup.tar.gz -C /restore --strip-components=2 backup/dumps/ && rm /restore/backup.tar.gz"
-
-          # Helper function: wait for DB with timeout
-          wait_for_db() {
-            local check_cmd="$1"
-            local timeout=60
-            local elapsed=0
-            echo "Waiting for database (timeout: ${timeout}s)..."
-            until docker -H ssh://deploy-target exec temp-db sh -c "$check_cmd" 2>/dev/null; do
-              sleep 2
-              elapsed=$((elapsed + 2))
-              if [ $elapsed -ge $timeout ]; then
-                echo "ERROR: Database failed to start within ${timeout}s"
-                docker -H ssh://deploy-target logs temp-db 2>&1 | tail -20
-                docker -H ssh://deploy-target rm -f temp-db 2>/dev/null || true
-                exit 1
+              else
+                echo "No backup provider configured, skipping restore."; exit 0
               fi
-            done
-            echo "Database ready after ${elapsed}s"
-          }
 
-          # Restore database (only if needed)
-          if [ "$RESTORE_DB" = "yes" ]; then
-            case "$DB" in
-              pgsql)
-                docker -H ssh://deploy-target run -d --name temp-db \
-                  -v ${STACK_NAME}_${DB_VOL}:/var/lib/postgresql/data \
-                  -v ${STACK_NAME}_backup_dumps:/dumps \
-                  -e POSTGRES_DB="${DB_DATABASE}" \
-                  -e POSTGRES_USER="${DB_USERNAME}" \
-                  -e POSTGRES_PASSWORD="${DB_PASSWORD}" \
-                  "$DB_IMAGE"
+              rclone_run() {
+                docker run --rm "${RCLONE_ENV[@]}" \
+                  -v "${PROJECT}_backup_dumps:/restore" \
+                  rclone/rclone "$@"
+              }
 
-                wait_for_db "pg_isready -U ${DB_USERNAME}"
+              LATEST=$(rclone_run lsf "backup:${REMOTE_PATH}/" --files-only 2>/dev/null | grep '\.tar\.gz' | sort | tail -1 || true)
+              if [ -z "$LATEST" ]; then
+                echo "No backup archive found, skipping restore."; exit 0
+              fi
+              echo "Restoring from: $LATEST"
 
-                docker -H ssh://deploy-target exec temp-db sh -c \
-                  'pg_restore -U "$POSTGRES_USER" -d "$POSTGRES_DB" -c --if-exists /dumps/pgsql.dump 2>/dev/null || psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" < /dumps/pgsql.sql' || true
-                ;;
+              # Download the archive into the backup_dumps volume and extract the dumps
+              rclone_run copy "backup:${REMOTE_PATH}/$LATEST" /restore/
+              docker run --rm -v "${PROJECT}_backup_dumps:/restore" alpine sh -c \
+                "mv '/restore/$LATEST' /restore/backup.tar.gz && \
+                 tar -xzf /restore/backup.tar.gz -C /restore --strip-components=2 backup/dumps/ && \
+                 rm -f /restore/backup.tar.gz"
 
-              mysql)
-                docker -H ssh://deploy-target run -d --name temp-db \
-                  -v ${STACK_NAME}_${DB_VOL}:/var/lib/mysql \
-                  -v ${STACK_NAME}_backup_dumps:/dumps \
-                  -e MYSQL_RANDOM_ROOT_PASSWORD=yes \
-                  -e MYSQL_DATABASE="${DB_DATABASE}" \
-                  -e MYSQL_USER="${DB_USERNAME}" \
-                  -e MYSQL_PASSWORD="${DB_PASSWORD}" \
-                  "$DB_IMAGE"
+              # Restore the database into a freshly started container
+              if [ -n "$DB" ] && [ "$DB" != "sqlite" ]; then
+                echo "Starting $DB and importing the dump..."
+                "${DC[@]}" up -d --wait "$DB"
+                case "$DB" in
+                  mariadb)
+                    "${DC[@]}" exec -T mariadb sh -c \
+                      'mariadb -u"$MARIADB_USER" -p"$MARIADB_PASSWORD" "$MARIADB_DATABASE" < /dumps/mariadb.sql' < /dev/null
+                    ;;
+                  mysql)
+                    "${DC[@]}" exec -T mysql sh -c \
+                      'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" < /dumps/mysql.sql' < /dev/null
+                    ;;
+                  pgsql)
+                    "${DC[@]}" exec -T pgsql pg_restore -U "${DB_USERNAME}" -d "${DB_DATABASE}" \
+                      -c --if-exists /dumps/pgsql.dump < /dev/null
+                    ;;
+                esac
+              fi
 
-                wait_for_db "mysqladmin ping --silent"
-
-                docker -H ssh://deploy-target exec temp-db sh -c \
-                  'mysql -u"$MYSQL_USER" -p"$MYSQL_PASSWORD" "$MYSQL_DATABASE" < /dumps/mysql.sql' || true
-                ;;
-
-              mariadb)
-                docker -H ssh://deploy-target run -d --name temp-db \
-                  -v ${STACK_NAME}_${DB_VOL}:/var/lib/mysql \
-                  -v ${STACK_NAME}_backup_dumps:/dumps \
-                  -e MARIADB_ALLOW_EMPTY_ROOT_PASSWORD=yes \
-                  -e MARIADB_DATABASE="${DB_DATABASE}" \
-                  -e MARIADB_USER="${DB_USERNAME}" \
-                  -e MARIADB_PASSWORD="${DB_PASSWORD}" \
-                  "$DB_IMAGE"
-
-                wait_for_db "mariadb-admin ping --silent"
-
-                docker -H ssh://deploy-target exec temp-db sh -c \
-                  'mariadb -u"$MARIADB_USER" -p"$MARIADB_PASSWORD" "$MARIADB_DATABASE" < /dumps/mariadb.sql' || true
-                ;;
-
-              *)
-                echo "ERROR: Unsupported database type: ${DB}"
-                echo "Supported: pgsql, mysql, mariadb"
-                exit 1
-                ;;
-            esac
-
-            # Cleanup temp DB container
-            docker -H ssh://deploy-target rm -f temp-db 2>/dev/null || true
+              # Restore the cache snapshot before its first start
+              if [ -n "$CACHE" ]; then
+                echo "Restoring $CACHE snapshot..."
+                "${DC[@]}" create "$CACHE" 2>/dev/null || true
+                docker run --rm \
+                  -v "${PROJECT}_backup_dumps:/source:ro" \
+                  -v "${PROJECT}_stack-${CACHE}:/data" \
+                  alpine sh -c "cp /source/${CACHE}.rdb /data/dump.rdb 2>/dev/null || cp /source/redis.rdb /data/dump.rdb 2>/dev/null || true"
+                "${DC[@]}" up -d --wait "$CACHE"
+              fi
+            ) || echo "==> Backup restore skipped or failed (non-fatal), continuing deploy."
           fi
 
-          # Restore cache (valkey/redis use same format)
-          if [ -n "$CACHE" ]; then
-            echo "Restoring cache: $CACHE"
-            docker -H ssh://deploy-target run --rm \
-              -v ${STACK_NAME}_backup_dumps:/source:ro \
-              -v ${STACK_NAME}_stack-${CACHE}:/data \
-              alpine cp /source/${CACHE}.rdb /data/dump.rdb 2>/dev/null || \
-            docker -H ssh://deploy-target run --rm \
-              -v ${STACK_NAME}_backup_dumps:/source:ro \
-              -v ${STACK_NAME}_stack-${CACHE}:/data \
-              alpine cp /source/redis.rdb /data/dump.rdb 2>/dev/null || true
-          fi
-
-          # Restore SQLite (file-based, copy from dumps to volume)
-          if [ "$SQLITE_MODE" = "yes" ]; then
-            echo "Restoring SQLite database"
-            docker -H ssh://deploy-target run --rm \
-              -v ${STACK_NAME}_backup_dumps:/source:ro \
-              -v ${STACK_NAME}_stack-sqlite:/data \
-              alpine sh -c "cp /source/*.sqlite /data/" 2>/dev/null || true
-          fi
-
-      - name: Deploy stack
-        run: |
-          # Build compose command
-          # - Base: compose.prod.yaml (works for tunnel mode)
-          # - Add certresolver if NOT using tunnel (for Let's Encrypt TLS)
-          COMPOSE_FILES="-c compose.prod.yaml"
-
-          if [ "$USE_CF_TUNNEL" != "true" ] && [ -f compose.prod.certresolver.yaml ]; then
-            echo "Adding TLS certresolver labels"
-            COMPOSE_FILES="$COMPOSE_FILES -c compose.prod.certresolver.yaml"
-          fi
-
-          # Deploy with 5 minute timeout (--detach=false waits for convergence)
-          timeout 300 docker -H ssh://deploy-target stack deploy \
-            --with-registry-auth \
-            --detach=false \
-            --prune \
-            $COMPOSE_FILES \
-            ${STACK_NAME}
-
-      - name: Cleanup old secrets
-        run: |
-          # Remove old laravel_env secrets (keep only the current one)
-          docker -H ssh://deploy-target secret ls --format '{{.Name}}' \
-            | grep '^laravel_env_' \
-            | grep -v "laravel_env_${ENV_HASH}" \
-            | xargs -r docker -H ssh://deploy-target secret rm || true
+          echo "==> Starting all services on the remote..."
+          "${DC[@]}" up -d --wait --remove-orphans
+          echo "==> Deployment complete!"
 
       - name: Cleanup .env.production
         if: always()
