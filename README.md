@@ -25,7 +25,7 @@ PingCRM is a demo application built with Laravel 13, Inertia.js v3, React 19, an
 The recommended way to run this project is using [Fadogen](https://docs.fadogen.app) — a free and open-source macOS app (Apple Silicon) that handles the entire PHP application lifecycle, from local development to production deployment.
 
 ## Deployment
-The project includes a GitHub Actions workflow for deploying to your own server using Cloudflare Tunnels. I personally host the live demo version on a Raspberry Pi.
+The project includes a GitHub Actions workflow that builds and publishes a container image to the GitHub Container Registry on every merge to main. How that image gets run in production (Docker Compose, Kubernetes, Fadogen, ...) is up to you — the live demo runs on a Kubernetes cluster.
 
 ## Credits
 The [original Vue.js](https://github.com/inertiajs/pingcrm) version was created by [Jonathan Reinink](https://github.com/reinink).
