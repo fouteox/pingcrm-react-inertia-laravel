@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Str;
+use Pdo\Mysql;
 
 return [
 
