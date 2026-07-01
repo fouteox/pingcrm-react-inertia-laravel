@@ -19,26 +19,27 @@ jobs:
       packages: write
     services:
       # Wayfinder (dev-next) introspects the live DB schema at generate time.
-      # Running against the same engine as production (MariaDB) is required so
-      # generated TS types match runtime PDO behaviour (e.g. INT columns are
-      # returned as `string` by MariaDB but `number` by SQLite).
-      mariadb:
-        image: mariadb:11
+      # Running against the same engine as production (PostgreSQL) is required so
+      # generated TS types match runtime PDO behaviour (column types are engine
+      # specific).
+      postgres:
+        image: postgres:18
         env:
-          MARIADB_ROOT_PASSWORD: secret
-          MARIADB_DATABASE: pingcrm
+          POSTGRES_PASSWORD: secret
+          POSTGRES_DB: pingcrm
         ports:
-          - 3306:3306
+          - 5432:5432
         options: >-
-          --health-cmd="mariadb-admin ping --silent"
+          --health-cmd="pg_isready -U postgres"
           --health-interval=5s
           --health-timeout=5s
           --health-retries=10
     env:
+      DB_CONNECTION: pgsql
       DB_HOST: 127.0.0.1
-      DB_PORT: '3306'
+      DB_PORT: '5432'
       DB_DATABASE: pingcrm
-      DB_USERNAME: root
+      DB_USERNAME: postgres
       DB_PASSWORD: secret
     steps:
       - uses: actions/checkout@v6
@@ -47,7 +48,7 @@ jobs:
         uses: shivammathur/setup-php@v2
         with:
           php-version: '8.5'
-          extensions: dom, curl, libxml, mbstring, zip, pdo, pdo_mysql, bcmath, intl
+          extensions: dom, curl, libxml, mbstring, zip, pdo, pdo_pgsql, bcmath, intl
           coverage: none
           tools: composer:v2
 
@@ -61,7 +62,7 @@ jobs:
           node-version-file: .node-version
           cache: true
 
-      - name: Load env, migrate MariaDB and pre-build assets
+      - name: Load env, migrate PostgreSQL and pre-build assets
         run: |
           echo "${{ secrets.ENV_FILE_BASE64 }}" | base64 -d > .env
           php artisan key:generate --force --ansi
