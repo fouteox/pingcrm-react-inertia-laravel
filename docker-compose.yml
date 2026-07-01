@@ -87,21 +87,16 @@ services:
       retries: 3
       timeout: 5s
 
-  mariadb:
-    image: mariadb:11.8
-    ulimits:
-      nofile:
-        soft: 20000
-        hard: 40000
+  postgres:
+    image: postgres:18
     environment:
-      MARIADB_RANDOM_ROOT_PASSWORD: "1"
-      MARIADB_DATABASE: "${DB_DATABASE}"
-      MARIADB_USER: "${DB_USERNAME}"
-      MARIADB_PASSWORD: "${DB_PASSWORD}"
+      POSTGRES_DB: "${DB_DATABASE}"
+      POSTGRES_USER: "${DB_USERNAME}"
+      POSTGRES_PASSWORD: "${DB_PASSWORD}"
     networks: *default-network
     logging: *default-logging
     healthcheck:
-      test: [ "CMD", "healthcheck.sh", "--connect", "--innodb_initialized" ]
+      test: [ "CMD", "pg_isready", "-U", "${DB_USERNAME}", "-d", "${DB_DATABASE}" ]
       start_period: 10s
       interval: 10s
       timeout: 5s

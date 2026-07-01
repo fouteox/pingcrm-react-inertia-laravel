@@ -8,7 +8,7 @@ services:
     volumes:
       - .:/var/www/html/
     depends_on:
-      mariadb:
+      postgres:
         condition: service_healthy
       valkey:
         condition: service_healthy
@@ -32,7 +32,7 @@ services:
     depends_on:
       app:
         condition: service_started
-      mariadb:
+      postgres:
         condition: service_healthy
       valkey:
         condition: service_healthy
@@ -48,7 +48,7 @@ services:
     depends_on:
       app:
         condition: service_started
-      mariadb:
+      postgres:
         condition: service_healthy
       valkey:
         condition: service_healthy
@@ -70,7 +70,7 @@ services:
     depends_on:
       app:
         condition: service_started
-      mariadb:
+      postgres:
         condition: service_healthy
       valkey:
         condition: service_healthy
@@ -79,9 +79,9 @@ services:
     volumes:
       - ./.infrastructure/volume_data/valkey/valkey_data/:/data
 
-  mariadb:
+  postgres:
     volumes:
-      - ./.infrastructure/volume_data/mariadb/database_data/:/var/lib/mysql
+      - ./.infrastructure/volume_data/postgres/database_data/:/var/lib/postgresql/data
 
   typesense:
     volumes:
@@ -119,7 +119,7 @@ services:
     depends_on:
       app:
         condition: service_started
-      mariadb:
+      postgres:
         condition: service_healthy
       valkey:
         condition: service_healthy

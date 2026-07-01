@@ -104,9 +104,9 @@ jobs:
                   cache: true
 
             - name: Prepare Laravel environment (Wayfinder needs a booted app + DB schema)
-              # .env.example points at MariaDB which is not available in CI, so
+              # .env.example points at PostgreSQL which is not available in CI, so
               # override to SQLite locally for the tsc/lint/format checks.
-              # Production parity (Wayfinder types from MariaDB) is enforced in
+              # Production parity (Wayfinder types from PostgreSQL) is enforced in
               # the build workflow.
               run: |
                   cp .env.example .env
