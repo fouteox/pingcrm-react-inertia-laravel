@@ -33,7 +33,6 @@
         "uuid": "^14.0.1",
       },
       "devDependencies": {
-        "@fadogen/vite-plugin": "^0.1.0-beta.4",
         "@laravel/echo-react": "^2.3.7",
         "@laravel/vite-plugin-wayfinder": "^0.1.7",
         "concurrently": "^10.0.3",
@@ -61,8 +60,6 @@
     "@base-ui/utils": ["@base-ui/utils@0.3.1", "", { "dependencies": { "@babel/runtime": "^7.29.2", "@floating-ui/utils": "^0.2.11", "reselect": "^5.2.0", "use-sync-external-store": "^1.6.0" }, "peerDependencies": { "@types/react": "^17 || ^18 || ^19", "react": "^17 || ^18 || ^19", "react-dom": "^17 || ^18 || ^19" }, "optionalPeers": ["@types/react"] }, "sha512-gFFiltORVmW/N6IILTGxizP3PBpVpysqML1ALY5Vk0mH+7faVkCknOU31goYHN5Aoek2dkjxva1XOD2Ce9WuIg=="],
 
     "@blazediff/core": ["@blazediff/core@1.9.1", "", {}, "sha512-ehg3jIkYKulZh+8om/O25vkvSsXXwC+skXmyA87FFx6A/45eqOkZsBltMw/TVteb0mloiGT8oGRTcjRAz66zaA=="],
-
-    "@fadogen/vite-plugin": ["@fadogen/vite-plugin@0.1.0-beta.4", "", { "peerDependencies": { "vite": "^7.1.12" } }, "sha512-WhR7FVSYBtkMvPTxOOtkKVEl1pMrkIt8KkVFsas+XBqUgEyOP0FQjoxGiRqLqBOFEtpr0Kg58r0pccrmQtt8nQ=="],
 
     "@floating-ui/core": ["@floating-ui/core@1.7.5", "", { "dependencies": { "@floating-ui/utils": "^0.2.11" } }, "sha512-1Ih4WTWyw0+lKyFMcBHGbb5U5FtuHJuujoyyr5zTaWS5EYMeT6Jb2AuDeftsCsEuchO+mM2ij5+q9crhydzLhQ=="],
 
