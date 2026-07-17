@@ -103,7 +103,7 @@ services:
       retries: 3
 
   typesense:
-    image: 'typesense/typesense:29.0'
+    image: 'typesense/typesense:29.1'
     command: ["--data-dir=/data", "--api-key=${TYPESENSE_API_KEY}", "--enable-cors"]
     environment:
       TYPESENSE_API_KEY: "${TYPESENSE_API_KEY}"
