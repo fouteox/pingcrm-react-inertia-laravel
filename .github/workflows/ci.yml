@@ -19,7 +19,7 @@ jobs:
         runs-on: ubuntu-24.04
 
         steps:
-            - uses: actions/checkout@v6
+            - uses: actions/checkout@v7
 
             - name: Setup PHP
               uses: shivammathur/setup-php@v2
@@ -30,7 +30,7 @@ jobs:
                   tools: composer:v2
 
             - name: Install Composer dependencies
-              uses: ramsey/composer-install@v3
+              uses: ramsey/composer-install@v4
 
             - name: Prepare Laravel environment
               run: |
@@ -48,7 +48,7 @@ jobs:
         runs-on: ubuntu-24.04
 
         steps:
-            - uses: actions/checkout@v6
+            - uses: actions/checkout@v7
 
             - name: Setup PHP
               uses: shivammathur/setup-php@v2
@@ -59,7 +59,7 @@ jobs:
                   tools: composer:v2
 
             - name: Install Composer dependencies
-              uses: ramsey/composer-install@v3
+              uses: ramsey/composer-install@v4
 
             - uses: voidzero-dev/setup-vp@v1
               with:
@@ -85,7 +85,7 @@ jobs:
         runs-on: ubuntu-24.04
 
         steps:
-            - uses: actions/checkout@v6
+            - uses: actions/checkout@v7
 
             - name: Setup PHP
               uses: shivammathur/setup-php@v2
@@ -96,7 +96,7 @@ jobs:
                   tools: composer:v2
 
             - name: Install Composer dependencies
-              uses: ramsey/composer-install@v3
+              uses: ramsey/composer-install@v4
 
             - uses: voidzero-dev/setup-vp@v1
               with:
@@ -133,7 +133,7 @@ jobs:
         runs-on: ubuntu-24.04
 
         steps:
-            - uses: actions/checkout@v6
+            - uses: actions/checkout@v7
 
             - name: Setup PHP
               uses: shivammathur/setup-php@v2
@@ -144,7 +144,7 @@ jobs:
                   tools: composer:v2
 
             - name: Install Composer dependencies
-              uses: ramsey/composer-install@v3
+              uses: ramsey/composer-install@v4
 
             - uses: voidzero-dev/setup-vp@v1
               with:
