@@ -1,0 +1,30 @@
+# Dependabot: version updates on the build supply chain (Dockerfile FROMs —
+# digest-pinned, tag + digest kept in sync — and GitHub Actions). Composer
+# version noise is deliberately excluded: its security PRs come from
+# Dependabot security updates, enabled at the repository level.
+#
+# bun: Dependabot security updates don't support it yet (alerts via bun.lock
+# yes, auto-fix no — GitHub changelog). Compensation: a monthly grouped
+# version-updates PR keeps the JS lockfile fresh.
+version: 2
+updates:
+  - package-ecosystem: docker
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+    groups:
+      actions:
+        patterns: ["*"]
+  - package-ecosystem: bun
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      js-dependencies:
+        patterns: ["*"]
