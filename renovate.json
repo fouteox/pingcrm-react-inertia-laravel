@@ -1,7 +1,7 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
-    "local>fouteox/infra//renovate-presets/default",
-    "local>fouteox/infra//renovate-presets/apps"
+    "github>fouteox/renovate-config",
+    "github>fouteox/renovate-config:apps"
   ]
 }
