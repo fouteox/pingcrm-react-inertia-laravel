@@ -5,6 +5,12 @@ on:
     types: [closed]
     branches: [main]
   workflow_dispatch:
+  schedule:
+    # Weekly security rebuild (Mondays 05:00 UTC, staggered after fadogen and
+    # footeox): base images ship security fixes under the SAME tag — they only
+    # reach us on a fresh build. The run produces a new run-N tag, so Flux
+    # Image Automation rolls it out.
+    - cron: '0 5 * * 1'
 
 env:
   REGISTRY: ghcr.io
@@ -12,7 +18,7 @@ env:
 
 jobs:
   build:
-    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch' || github.event_name == 'schedule'
     runs-on: ${{ vars.SYSTEM_ARCH == 'aarch64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
     permissions:
       contents: read
@@ -88,6 +94,12 @@ jobs:
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}-app
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:run-${{ github.run_number }}
+          # Scheduled runs bypass the layer cache and re-pull bases: a cached
+          # rebuild would reuse the old (potentially vulnerable) layers and
+          # defeat the purpose. cache-to still refreshes the cache for the
+          # week's push builds.
+          no-cache: ${{ github.event_name == 'schedule' }}
+          pull: ${{ github.event_name == 'schedule' }}
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
 

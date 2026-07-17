@@ -1,9 +1,11 @@
-ARG PHP_VERSION=8.5
-
 ############################################
 # Base Stage
 ############################################
-FROM serversideup/php:${PHP_VERSION}-frankenphp AS base
+# Digest-pinned (supply chain): reproducible builds, and every upstream
+# rebuild of the tag lands as a reviewable Dependabot PR (tag + digest kept
+# in sync). Bumping PHP stays a deliberate move: Dockerfile, setup-php
+# (build.yml/ci.yml) and composer.json move together.
+FROM serversideup/php:8.5-frankenphp@sha256:a0f4447da7612f9bca3c982d0cf33a607cbddf828f4b96a44bfa9f6f037007b6 AS base
 
 USER root
 
@@ -61,11 +63,18 @@ COPY --link . .
 RUN composer dump-autoload --classmap-authoritative --no-dev
 
 ############################################
+# Bun Stage (alias only — the binary is copied into the app image below).
+# Declared as a FROM so Dependabot sees and bumps it: images referenced only
+# in a COPY --from are invisible to its docker ecosystem.
+############################################
+FROM oven/bun:1.3-debian@sha256:9dba1a1b43ce28c9d7931bfc4eb00feb63b0114720a0277a8f939ae4dfc9db6f AS bun
+
+############################################
 # App Image (also runs SSR via `php artisan inertia:start-ssr --runtime=bun`)
 ############################################
 FROM base AS app
 
-COPY --from=oven/bun:1.3-debian /usr/local/bin/bun /usr/local/bin/bun
+COPY --from=bun /usr/local/bin/bun /usr/local/bin/bun
 
 COPY --link --chown=33:33 --from=builder /var/www/html/vendor ./vendor
 
