@@ -21,6 +21,14 @@ jobs:
         steps:
             - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
+            - name: Reject production env secrets in workflows
+              run: |
+                  forbidden='ENV_FILE_'
+                  if git grep -n "${forbidden}BASE64" -- .github/workflows; then
+                      echo '::error::Production runtime environments must never be CI build inputs.'
+                      exit 1
+                  fi
+
             - name: Setup PHP
               uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
               with:

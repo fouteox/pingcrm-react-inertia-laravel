@@ -7,6 +7,7 @@ namespace App\Http\Middleware;
 use App\Http\Resources\UserResource;
 use App\Services\I18NextTranslationsLoader;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Config;
 use Inertia\Middleware;
 
 final class HandleInertiaRequests extends Middleware
@@ -41,6 +42,9 @@ final class HandleInertiaRequests extends Middleware
                 'user' => $request->user() ? new UserResource($request->user()) : null,
             ],
             'locale' => fn () => $locale,
+            // Public Reverb application key, delivered at runtime so the
+            // production value never becomes a CI build input.
+            'reverbKey' => Config::string('broadcasting.connections.reverb.key'),
             'translations' => ! $request->inertia() ? [
                 $locale => [
                     'translation' => $this->translationsLoader->loadTranslations($locale),

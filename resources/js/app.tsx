@@ -11,10 +11,6 @@ import AppLayout from '@/layouts/app-layout';
 import AuthLayout from '@/layouts/auth-layout';
 import { initI18n, setLocale } from './i18n';
 
-configureEcho({
-    broadcaster: import.meta.env.SSR ? 'null' : 'reverb',
-});
-
 const appName = import.meta.env.VITE_APP_NAME || 'Ping CRM';
 
 void createInertiaApp({
@@ -31,6 +27,20 @@ void createInertiaApp({
         return AppLayout;
     },
     setup: ({ el, App, props }) => {
+        if (import.meta.env.SSR) {
+            configureEcho({ broadcaster: 'null' });
+        } else {
+            configureEcho({
+                broadcaster: 'reverb',
+                key: props.initialPage.props.reverbKey,
+                wsHost: window.location.hostname,
+                wsPort: 443,
+                wssPort: 443,
+                forceTLS: true,
+                enabledTransports: ['ws', 'wss'],
+            });
+        }
+
         const locale = props.initialPage.props.locale;
         const i18nInstance = initI18n(locale, props.initialPage.props.translations ?? {});
         setLocale(locale);

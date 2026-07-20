@@ -72,12 +72,22 @@ jobs:
           node-version-file: .node-version
           cache: true
 
-      - name: Load env, migrate PostgreSQL and pre-build assets
+      # Use only versioned, non-production defaults plus the isolated PostgreSQL
+      # service above. The generated APP_KEY lives for this job only.
+      - name: Prepare isolated env, migrate PostgreSQL and pre-build assets
+        env:
+          APP_ENV: production
+          APP_DEBUG: 'false'
+          CACHE_STORE: array
+          SESSION_DRIVER: array
+          QUEUE_CONNECTION: sync
+          MAIL_MAILER: log
         run: |
-          echo "${{ secrets.ENV_FILE_BASE64 }}" | base64 -d > .env
+          umask 077
+          cp .env.example .env
           php artisan key:generate --force --ansi
           php artisan migrate --force --no-interaction
-          vp install
+          vp install --frozen-lockfile
           vp run build:ssr
 
       - uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
@@ -153,6 +163,6 @@ jobs:
               throw new Error(`Flux webhook returned HTTP ${response.status}: ${await response.text()}`)
             }
 
-      - name: Cleanup pre-build env
+      - name: Cleanup isolated build env
         if: always()
         run: rm -f .env
