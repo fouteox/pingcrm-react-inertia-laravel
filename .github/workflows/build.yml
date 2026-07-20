@@ -121,22 +121,42 @@ jobs:
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
 
-      # The final tags remain invisible until the keyless signature has been
-      # verified against this exact GitHub repository and workflow identity.
-      - name: Sign, verify and publish image tags
+      # Keep the plain OCI 1.1 signature and add a signed SLSA v1 provenance
+      # bundle that policy-controller can enforce natively.
+      - name: Sign, attest, verify and publish image tags
         shell: bash
         env:
           IMAGE: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           DIGEST: ${{ steps.build.outputs.digest }}
           CERTIFICATE_IDENTITY: https://github.com/${{ github.workflow_ref }}
+          EXPECTED_BUILDER_ID: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/attempts/${{ github.run_attempt }}
         run: |
           set -euo pipefail
           image_ref="$IMAGE@$DIGEST"
+          provenance_path="$RUNNER_TEMP/provenance-${DIGEST#sha256:}.json"
+
+          docker buildx imagetools inspect "$image_ref" \
+            --format '{{ json .Provenance.SLSA }}' > "$provenance_path"
+          jq -e --arg expected_builder "$EXPECTED_BUILDER_ID" '
+            (.buildDefinition.buildType | type == "string" and length > 0) and
+            (.runDetails.builder.id == $expected_builder) and
+            (.runDetails.metadata.finishedOn | type == "string" and length > 0)
+          ' "$provenance_path" >/dev/null
 
           cosign sign --yes "$image_ref"
           cosign verify \
             --certificate-identity "$CERTIFICATE_IDENTITY" \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            "$image_ref" >/dev/null
+
+          cosign attest --yes \
+            --predicate "$provenance_path" \
+            --type slsaprovenance1 \
+            "$image_ref"
+          cosign verify-attestation \
+            --certificate-identity "$CERTIFICATE_IDENTITY" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            --type slsaprovenance1 \
             "$image_ref" >/dev/null
 
           docker buildx imagetools create \
