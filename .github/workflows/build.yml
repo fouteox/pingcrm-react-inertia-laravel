@@ -22,6 +22,7 @@ jobs:
     runs-on: ${{ vars.SYSTEM_ARCH == 'aarch64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
     permissions:
       contents: read
+      id-token: write
       packages: write
     services:
       # Wayfinder (dev-next) introspects the live DB schema at generate time.
@@ -102,6 +103,24 @@ jobs:
           pull: ${{ github.event_name == 'schedule' }}
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:buildcache,mode=max
+
+      # Le Receiver Flux authentifie ce workflow avec le JWT OIDC éphémère ;
+      # aucun secret webhook longue durée n'est stocké dans GitHub Actions.
+      - name: Notify Flux image automation
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        env:
+          FLUX_WEBHOOK_URL: https://flux-webhook.florianoster.com/hook/254e94b07f012e3ecc5b179910a1da8aaa952c1ba87a3e00f41d653aaf50fc0c
+        with:
+          script: |
+            const token = await core.getIDToken('notification-controller')
+            const response = await fetch(process.env.FLUX_WEBHOOK_URL, {
+              method: 'POST',
+              headers: { Authorization: `Bearer ${token}` },
+            })
+
+            if (!response.ok) {
+              throw new Error(`Flux webhook returned HTTP ${response.status}: ${await response.text()}`)
+            }
 
       - name: Cleanup pre-build env
         if: always()
