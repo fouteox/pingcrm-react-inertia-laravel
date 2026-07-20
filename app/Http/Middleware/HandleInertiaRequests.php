@@ -41,6 +41,9 @@ final class HandleInertiaRequests extends Middleware
                 'user' => $request->user() ? new UserResource($request->user()) : null,
             ],
             'locale' => fn () => $locale,
+            // Public Reverb application key, delivered at runtime so the
+            // production value never becomes a CI build input.
+            'reverbKey' => (string) config('broadcasting.connections.reverb.key'),
             'translations' => ! $request->inertia() ? [
                 $locale => [
                     'translation' => $this->translationsLoader->loadTranslations($locale),
