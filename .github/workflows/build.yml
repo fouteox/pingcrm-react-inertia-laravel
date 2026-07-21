@@ -33,7 +33,9 @@ jobs:
       # generated TS types match runtime PDO behaviour (column types are engine
       # specific).
       postgres:
-        image: postgres:18
+        # Tag lisible + digest multi-architecture immuable ; Renovate suit les
+        # reconstructions de postgres:18 via le preset docker:pinDigests.
+        image: postgres:18@sha256:3a82e1f56c8f0f5616a11103ac3d47e632c3938698946a7ad26da0df1334744a
         env:
           POSTGRES_PASSWORD: secret
           POSTGRES_DB: pingcrm
