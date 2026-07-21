@@ -137,11 +137,16 @@ jobs:
 
           docker buildx imagetools inspect "$image_ref" \
             --format '{{ json .Provenance.SLSA }}' > "$provenance_path"
-          jq -e --arg expected_builder "$EXPECTED_BUILDER_ID" '
-            (.buildDefinition.buildType | type == "string" and length > 0) and
-            (.runDetails.builder.id == $expected_builder) and
-            (.runDetails.metadata.finishedOn | type == "string" and length > 0)
-          ' "$provenance_path" >/dev/null
+          actual_builder_id="$(docker buildx imagetools inspect "$image_ref" \
+            --format '{{ .Provenance.SLSA.runDetails.builder.id }}')"
+          build_type="$(docker buildx imagetools inspect "$image_ref" \
+            --format '{{ .Provenance.SLSA.buildDefinition.buildType }}')"
+          finished_on="$(docker buildx imagetools inspect "$image_ref" \
+            --format '{{ .Provenance.SLSA.runDetails.metadata.finishedOn }}')"
+
+          [[ "$actual_builder_id" == "$EXPECTED_BUILDER_ID" ]]
+          [[ "$build_type" == "https://github.com/moby/buildkit/blob/master/docs/attestations/slsa-definitions.md" ]]
+          [[ -n "$finished_on" && "$finished_on" != "<nil>" && "$finished_on" != "<no value>" ]]
 
           cosign sign --yes "$image_ref"
           cosign verify \
