@@ -19,5 +19,10 @@ export interface NavItem {
 
 export type SharedData = Omit<Inertia.SharedData, 'flash'> & {
     flash: FlashMessages;
-    reverbKey: string;
+    reverb: {
+        key: string;
+        host: string;
+        port: number;
+        scheme: string;
+    };
 };

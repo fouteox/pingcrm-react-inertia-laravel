@@ -13,14 +13,24 @@ beforeEach(function () {
 });
 
 it('renders the reverb example page for authenticated users', function () {
-    config()->set('broadcasting.connections.reverb.key', 'runtime-public-key');
+    config()->set([
+        'broadcasting.connections.reverb.key' => 'runtime-public-key',
+        'broadcasting.connections.reverb.options.host' => 'reverb.example.test',
+        'broadcasting.connections.reverb.options.port' => '8443',
+        'broadcasting.connections.reverb.options.scheme' => 'https',
+    ]);
 
     $this->actingAs($this->user)
         ->get('/reverb')
         ->assertSuccessful()
         ->assertInertia(fn (Assert $assert) => $assert
             ->component('reverb-example')
-            ->where('reverbKey', 'runtime-public-key'));
+            ->where('reverb', [
+                'key' => 'runtime-public-key',
+                'host' => 'reverb.example.test',
+                'port' => 8443,
+                'scheme' => 'https',
+            ]));
 });
 
 it('dispatches the reverb job with a delay when a valid uuid is posted', function () {
