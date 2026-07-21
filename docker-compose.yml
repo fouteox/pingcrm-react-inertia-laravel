@@ -72,7 +72,7 @@ services:
       retries: 2
 
   valkey:
-    image: 'valkey/valkey:9-alpine'
+    image: 'valkey/valkey:9-alpine@sha256:c9b77919daeba2c02ad954d0c844cc4e7142069d177b89c5fd771f405daf9e02'
     ulimits:
       nofile:
         soft: 20000
@@ -88,7 +88,7 @@ services:
       timeout: 5s
 
   postgres:
-    image: postgres:18
+    image: postgres:18@sha256:3a82e1f56c8f0f5616a11103ac3d47e632c3938698946a7ad26da0df1334744a
     environment:
       POSTGRES_DB: "${DB_DATABASE}"
       POSTGRES_USER: "${DB_USERNAME}"
@@ -103,7 +103,7 @@ services:
       retries: 3
 
   typesense:
-    image: 'typesense/typesense:30.2'
+    image: 'typesense/typesense:30.2@sha256:610f2d34b1f93d00762869da2c67736775e5798d19a2c8b91b014b8a0cc1e110'
     command: ["--data-dir=/data", "--api-key=${TYPESENSE_API_KEY}", "--enable-cors"]
     environment:
       TYPESENSE_API_KEY: "${TYPESENSE_API_KEY}"
