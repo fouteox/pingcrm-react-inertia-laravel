@@ -30,13 +30,15 @@ void createInertiaApp({
         if (import.meta.env.SSR) {
             configureEcho({ broadcaster: 'null' });
         } else {
+            const reverb = props.initialPage.props.reverb;
+
             configureEcho({
                 broadcaster: 'reverb',
-                key: props.initialPage.props.reverbKey,
-                wsHost: window.location.hostname,
-                wsPort: 443,
-                wssPort: 443,
-                forceTLS: true,
+                key: reverb.key,
+                wsHost: reverb.host,
+                wsPort: reverb.port,
+                wssPort: reverb.port,
+                forceTLS: reverb.scheme === 'https',
                 enabledTransports: ['ws', 'wss'],
             });
         }
