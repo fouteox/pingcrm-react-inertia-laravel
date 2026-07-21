@@ -47,7 +47,7 @@ final class HandleInertiaRequests extends Middleware
             'reverb' => [
                 'key' => Config::string('broadcasting.connections.reverb.key'),
                 'host' => Config::string('broadcasting.connections.reverb.options.host'),
-                'port' => (int) config('broadcasting.connections.reverb.options.port'),
+                'port' => Config::integer('broadcasting.connections.reverb.options.port'),
                 'scheme' => Config::string('broadcasting.connections.reverb.options.scheme'),
             ],
             'translations' => ! $request->inertia() ? [
