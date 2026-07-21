@@ -15,9 +15,9 @@ beforeEach(function () {
 it('renders the reverb example page for authenticated users', function () {
     config()->set([
         'broadcasting.connections.reverb.key' => 'runtime-public-key',
-        'broadcasting.connections.reverb.options.host' => 'reverb.example.test',
-        'broadcasting.connections.reverb.options.port' => 8443,
-        'broadcasting.connections.reverb.options.scheme' => 'https',
+        'reverb.client.host' => 'reverb.example.test',
+        'reverb.client.port' => 8443,
+        'reverb.client.scheme' => 'https',
     ]);
 
     $this->actingAs($this->user)
@@ -31,6 +31,25 @@ it('renders the reverb example page for authenticated users', function () {
                 'port' => 8443,
                 'scheme' => 'https',
             ]));
+});
+
+it('uses the public request origin when no browser endpoint is configured', function () {
+    config()->set([
+        'broadcasting.connections.reverb.key' => 'runtime-public-key',
+        'reverb.client.host' => '',
+        'reverb.client.port' => 0,
+        'reverb.client.scheme' => '',
+    ]);
+
+    $this->actingAs($this->user)
+        ->get('https://pingcrm.fadogen.app/reverb')
+        ->assertSuccessful()
+        ->assertInertia(fn (Assert $assert) => $assert->where('reverb', [
+            'key' => 'runtime-public-key',
+            'host' => 'pingcrm.fadogen.app',
+            'port' => 443,
+            'scheme' => 'https',
+        ]));
 });
 
 it('dispatches the reverb job with a delay when a valid uuid is posted', function () {

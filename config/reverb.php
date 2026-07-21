@@ -19,6 +19,24 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | Browser Endpoint
+    |--------------------------------------------------------------------------
+    |
+    | REVERB_HOST / PORT / SCHEME configure Laravel's server-side broadcast
+    | destination. The browser may need a different, publicly reachable
+    | endpoint. Empty values make the Inertia middleware use the current
+    | request's trusted proxy-aware host, port, and scheme.
+    |
+    */
+
+    'client' => [
+        'host' => env('REVERB_PUBLIC_HOST', ''),
+        'port' => (int) env('REVERB_PUBLIC_PORT', 0),
+        'scheme' => env('REVERB_PUBLIC_SCHEME', ''),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Reverb Servers
     |--------------------------------------------------------------------------
     |

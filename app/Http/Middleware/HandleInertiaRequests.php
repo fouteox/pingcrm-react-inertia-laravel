@@ -35,6 +35,9 @@ final class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $locale = app()->getLocale();
+        $reverbHost = Config::string('reverb.client.host');
+        $reverbPort = Config::integer('reverb.client.port');
+        $reverbScheme = Config::string('reverb.client.scheme');
 
         return [
             ...parent::share($request),
@@ -42,13 +45,13 @@ final class HandleInertiaRequests extends Middleware
                 'user' => $request->user() ? new UserResource($request->user()) : null,
             ],
             'locale' => fn () => $locale,
-            // Public Reverb endpoint, delivered at runtime so production
-            // values never become CI build inputs.
+            // REVERB_HOST/PORT target the server from Laravel. The browser gets
+            // its separate public endpoint, or the current request origin.
             'reverb' => [
                 'key' => Config::string('broadcasting.connections.reverb.key'),
-                'host' => Config::string('broadcasting.connections.reverb.options.host'),
-                'port' => Config::integer('broadcasting.connections.reverb.options.port'),
-                'scheme' => Config::string('broadcasting.connections.reverb.options.scheme'),
+                'host' => $reverbHost !== '' ? $reverbHost : $request->getHost(),
+                'port' => $reverbPort > 0 ? $reverbPort : $request->getPort(),
+                'scheme' => $reverbScheme !== '' ? $reverbScheme : $request->getScheme(),
             ],
             'translations' => ! $request->inertia() ? [
                 $locale => [
