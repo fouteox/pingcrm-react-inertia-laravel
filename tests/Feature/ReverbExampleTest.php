@@ -16,7 +16,7 @@ it('renders the reverb example page for authenticated users', function () {
     config()->set([
         'broadcasting.connections.reverb.key' => 'runtime-public-key',
         'broadcasting.connections.reverb.options.host' => 'reverb.example.test',
-        'broadcasting.connections.reverb.options.port' => '8443',
+        'broadcasting.connections.reverb.options.port' => 8443,
         'broadcasting.connections.reverb.options.scheme' => 'https',
     ]);
 
