@@ -2,6 +2,7 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": [
     "github>fouteox/renovate-config",
-    "github>fouteox/renovate-config:apps"
+    "github>fouteox/renovate-config:apps",
+    "docker:pinDigests"
   ]
 }
