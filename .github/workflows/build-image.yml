@@ -48,6 +48,8 @@ jobs:
       DB_PASSWORD: secret
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
 
       - name: Setup PHP
         uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
@@ -61,6 +63,10 @@ jobs:
         uses: ramsey/composer-install@65e4f84970763564f46a70b8a54b90d033b3bdda # 4.0.0
         with:
           composer-options: '--no-dev'
+          # Pas de cache dans le workflow qui publie l'image signée :
+          # un cache empoisonnable ne doit pas alimenter un artefact de
+          # release (zizmor cache-poisoning).
+          ignore-cache: '1'
 
       - uses: voidzero-dev/setup-vp@250f29ce396baf5e8f24498e17c0dfdebabc26eb # v1.15.0
         with:
