@@ -24,6 +24,23 @@ test('strict types everywhere in app/', function () {
     expect($offenders)->toBeEmpty();
 });
 
+test('legacy local container configuration is absent', function (string $relativePath) {
+    expect(file_exists(dirname(__DIR__, 2).'/'.$relativePath))->toBeFalse();
+})->with([
+    '.env.docker',
+    '.env.native',
+    'docker-compose.dev.yml',
+    'docker-compose.yml',
+]);
+
+test('Makefile does not expose legacy environment switches', function () {
+    $makefile = (string) file_get_contents(dirname(__DIR__, 2).'/Makefile');
+
+    expect($makefile)
+        ->not->toContain('.env.docker')
+        ->not->toContain('.env.native');
+});
+
 arch('no debug helpers shipped to production')
     ->expect(['dd', 'dump', 'var_dump', 'ray'])
     ->not->toBeUsed();
