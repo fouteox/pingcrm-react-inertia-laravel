@@ -184,13 +184,15 @@ jobs:
               with:
                 persist-credentials: false
 
-            # ≥ 1.28.0 obligatoire : la 1.27.0 loggait les credentials en
-            # clair (GHSA-f42p-wjw5-97qh). Bloquant via annotations + exit
+            # 1.26.1 = dernière version saine du manifeste embarqué par
+            # l'action v0.6.0 (jamais 1.27.0 : fuite de credentials,
+            # GHSA-f42p-wjw5-97qh) ; repasser à >= 1.28.0 à la prochaine
+            # release de zizmor-action. Bloquant via annotations + exit
             # codes ; le mode SARIF (advanced-security) ne fait jamais
             # échouer le job.
             - uses: zizmorcore/zizmor-action@6599ee8b7a49aef6a770f63d261d214911a7ce02 # v0.6.0
               with:
-                version: v1.28.0
+                version: 1.26.1
                 persona: regular
                 advanced-security: false
                 annotations: true
