@@ -16,8 +16,8 @@
         "@laravel/vite-plugin-wayfinder": "^0.1.7",
         "concurrently": "^10.0.3",
         "playwright": "^1.61.1",
-        "vite": "npm:@voidzero-dev/vite-plus-core@latest",
-        "vite-plus": "latest"
+        "vite": "npm:@voidzero-dev/vite-plus-core@0.2.5",
+        "vite-plus": "0.2.5"
     },
     "dependencies": {
         "@base-ui/react": "^1.6.0",
@@ -49,7 +49,7 @@
         "uuid": "^14.0.1"
     },
     "overrides": {
-        "vite": "npm:@voidzero-dev/vite-plus-core@latest"
+        "vite": "npm:@voidzero-dev/vite-plus-core@0.2.5"
     },
     "trustedDependencies": [
         "@tailwindcss/oxide"
