@@ -14,6 +14,61 @@ env:
     FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
 jobs:
+    base-image-policy:
+        name: Validate ServerSideUp base image
+        runs-on: ubuntu-24.04
+        timeout-minutes: 20
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+
+            - name: Verify pinned ServerSideUp provenance
+              env:
+                  GH_TOKEN: ${{ github.token }}
+              run: .github/scripts/verify-serversideup-base.sh
+
+            - name: Install checksum-verified Trivy
+              env:
+                  TRIVY_VERSION: 0.72.0
+              run: |
+                  case "$RUNNER_ARCH" in
+                    X64)
+                      archive="trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
+                      checksum=bbb64b9695866ce4a7a8f5c9592002c5961cab378577fa3f8a040df362b9b2ea
+                      ;;
+                    ARM64)
+                      archive="trivy_${TRIVY_VERSION}_Linux-ARM64.tar.gz"
+                      checksum=2ca2c023109c2db6b2b77366b6717291452d4531167377d95c79547f0c8e3467
+                      ;;
+                    *)
+                      echo "Unsupported runner architecture: $RUNNER_ARCH" >&2
+                      exit 1
+                      ;;
+                  esac
+
+                  archive_path="$RUNNER_TEMP/$archive"
+                  curl --fail --silent --show-error --location \
+                    --retry 3 --retry-all-errors \
+                    "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/${archive}" \
+                    --output "$archive_path"
+                  printf '%s  %s\n' "$checksum" "$archive_path" | sha256sum --check -
+                  tar -xzf "$archive_path" -C "$RUNNER_TEMP" trivy
+                  echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
+                  "$RUNNER_TEMP/trivy" --version
+
+            - name: Reject newly introduced fixable HIGH/CRITICAL vulnerabilities
+              env:
+                  BASE_SHA: ${{ github.event.pull_request.base.sha }}
+                  GH_TOKEN: ${{ github.token }}
+                  TRIVY_CACHE_DIR: ${{ runner.temp }}/trivy-cache
+              run: .github/scripts/compare-base-vulnerabilities.sh
+
     php:
         name: PHP (Pint + Pest)
         runs-on: ubuntu-24.04
@@ -174,6 +229,92 @@ jobs:
 
             - name: Build production bundle
               run: vp run build
+
+    production-image:
+        name: Validate production image
+        runs-on: ${{ vars.SYSTEM_ARCH == 'aarch64' && 'ubuntu-24.04-arm' || 'ubuntu-24.04' }}
+        timeout-minutes: 30
+
+        services:
+            postgres:
+                image: postgres:18@sha256:3a82e1f56c8f0f5616a11103ac3d47e632c3938698946a7ad26da0df1334744a
+                env:
+                    POSTGRES_PASSWORD: secret
+                    POSTGRES_DB: pingcrm_image_smoke
+                ports:
+                    - 5432:5432
+                options: >-
+                    --health-cmd="pg_isready -U postgres -d pingcrm_image_smoke"
+                    --health-interval=5s
+                    --health-timeout=5s
+                    --health-retries=10
+
+        env:
+            DB_CONNECTION: pgsql
+            DB_HOST: 127.0.0.1
+            DB_PORT: '5432'
+            DB_DATABASE: pingcrm_image_smoke
+            DB_USERNAME: postgres
+            DB_PASSWORD: secret
+
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+
+            - name: Setup PHP
+              uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+              with:
+                  php-version: '8.5'
+                  extensions: dom, curl, libxml, mbstring, zip, pdo, pdo_pgsql, bcmath, intl
+                  coverage: none
+                  tools: composer:v2
+
+            - name: Install production Composer dependencies
+              uses: ramsey/composer-install@65e4f84970763564f46a70b8a54b90d033b3bdda # 4.0.0
+              with:
+                  composer-options: '--no-dev'
+                  ignore-cache: '1'
+
+            - uses: voidzero-dev/setup-vp@250f29ce396baf5e8f24498e17c0dfdebabc26eb # v1.15.0
+              with:
+                  node-version-file: .node-version
+                  cache: true
+
+            - name: Prepare isolated PostgreSQL environment and assets
+              env:
+                  APP_ENV: production
+                  APP_DEBUG: 'false'
+                  CACHE_STORE: array
+                  SESSION_DRIVER: array
+                  QUEUE_CONNECTION: sync
+                  MAIL_MAILER: log
+              run: |
+                  umask 077
+                  cp .env.example .env
+                  php artisan key:generate --force --ansi
+                  php artisan migrate --force --no-interaction
+                  vp install --frozen-lockfile
+                  vp run build:ssr
+
+            - name: Set up Docker Buildx
+              uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
+
+            - name: Build production image locally
+              uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7.3.0
+              with:
+                  context: .
+                  target: app
+                  load: true
+                  tags: pingcrm-image-smoke:${{ github.sha }}
+                  provenance: false
+                  sbom: false
+
+            - name: Smoke-test production image
+              env:
+                  EXPECTED_ARCHITECTURE: ${{ vars.SYSTEM_ARCH == 'aarch64' && 'arm64' || 'amd64' }}
+              run: .github/scripts/smoke-production-image.sh pingcrm-image-smoke:${{ github.sha }}
 
     zizmor:
         name: zizmor (audit workflows)
