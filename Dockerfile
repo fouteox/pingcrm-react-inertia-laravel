@@ -5,7 +5,7 @@
 # rebuild of the tag lands as a reviewable Renovate PR (tag + digest kept
 # in sync). Bumping PHP stays a deliberate move: Dockerfile, setup-php
 # (build.yml/ci.yml) and composer.json move together.
-FROM serversideup/php:8.5.8-frankenphp@sha256:7880f853f6bcd5a4926d9312c4d2f52d91d394f3af18ed2662b86e7e17a219f1 AS base
+FROM serversideup/php:8.5.8-frankenphp@sha256:0e3ccba461b7054bac70f42f379bfa9d45614e62ac221003ef9271551516706f AS base
 
 USER root
 
