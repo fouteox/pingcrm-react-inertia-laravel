@@ -8,8 +8,15 @@ image_ref=${IMAGE_REF:-}
 if [[ -z "$image_ref" ]]; then
     image_ref=$(awk '
         $1 == "FROM" && $2 ~ /^serversideup\/php:[^@[:space:]]+@sha256:[0-9a-f]{64}$/ {
-            print $2
-            exit
+            references[++count] = $2
+        }
+        END {
+            if (count != 1) {
+                printf "Expected exactly one digest-pinned ServerSideUp base, found %d.\n", count > "/dev/stderr"
+                exit 1
+            }
+
+            print references[1]
         }
     ' "$dockerfile")
 fi
