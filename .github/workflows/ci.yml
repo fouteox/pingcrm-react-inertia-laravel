@@ -341,15 +341,14 @@ jobs:
               with:
                 persist-credentials: false
 
-            # 1.26.1 = dernière version saine du manifeste embarqué par
-            # l'action v0.6.0 (jamais 1.27.0 : fuite de credentials,
-            # GHSA-f42p-wjw5-97qh) ; repasser à >= 1.28.0 à la prochaine
-            # release de zizmor-action. Bloquant via annotations + exit
-            # codes ; le mode SARIF (advanced-security) ne fait jamais
-            # échouer le job.
+            # Le SHA de zizmor-action fige à la fois l'action et le digest
+            # de la version Zizmor « latest » recensée dans support/versions.
+            # Ne pas surcharger version : les mises à jour Renovate font ainsi
+            # évoluer l'action et son moteur atomiquement. Bloquant via
+            # annotations + exit codes ; le mode SARIF (advanced-security) ne
+            # fait jamais échouer le job.
             - uses: zizmorcore/zizmor-action@3dc1ecc9bcb9e94e9b2c709687979e1298497054 # v0.6.2
               with:
-                version: 1.26.1
                 persona: regular
                 advanced-security: false
                 annotations: true
