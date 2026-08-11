@@ -3,8 +3,8 @@
 ############################################
 # Digest-pinned (supply chain): reproducible builds, and every upstream
 # rebuild of the tag lands as a reviewable Renovate PR (tag + digest kept
-# in sync). Bumping PHP stays a deliberate move: Dockerfile, setup-php
-# (build.yml/ci.yml) and composer.json move together.
+# in sync). Renovate moves this base, the exact CI parity container and
+# Composer's constraints/lock together; setup-php tracks the same minor line.
 FROM serversideup/php:8.5.8-frankenphp@sha256:0e3ccba461b7054bac70f42f379bfa9d45614e62ac221003ef9271551516706f AS base
 
 USER root

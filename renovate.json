@@ -6,17 +6,15 @@
   ],
   "customManagers": [
     {
-      "description": "Keep Composer's platform and setup-php aligned with the production ServerSideUp PHP image.",
+      "description": "Keep Composer's platform aligned with the production ServerSideUp PHP image.",
       "customType": "regex",
       "managerFilePatterns": [
-        "/^composer\\.json$/",
-        "/^\\.github/workflows/(?:build-image|ci)\\.yml$/"
+        "/^composer\\.json$/"
       ],
       "matchStrings": [
-        "\\\"platform\\\"\\s*:\\s*\\{[^}]*\\\"php\\\"\\s*:\\s*\\\"(?<currentValue>\\d+\\.\\d+\\.\\d+)\\\"",
-        "php-version:\\s*'(?<currentValue>\\d+\\.\\d+\\.\\d+)'"
+        "\\\"platform\\\"\\s*:\\s*\\{[^}]*\\\"php\\\"\\s*:\\s*\\\"(?<currentValue>\\d+\\.\\d+\\.\\d+)\\\""
       ],
-      "depNameTemplate": "serversideup/php",
+      "depNameTemplate": "php",
       "packageNameTemplate": "serversideup/php",
       "datasourceTemplate": "docker",
       "versioningTemplate": "semver",
@@ -25,9 +23,23 @@
   ],
   "packageRules": [
     {
-      "description": "Update the production image, Composer platform and CI runtime atomically.",
+      "description": "Bump the application PHP floor so Composer updates its lock artifact.",
+      "matchManagers": [
+        "composer"
+      ],
+      "matchDepNames": [
+        "php"
+      ],
       "matchPackageNames": [
-        "serversideup/php"
+        "containerbase/php-prebuild"
+      ],
+      "rangeStrategy": "bump"
+    },
+    {
+      "description": "Update the production image, exact CI container and Composer platform atomically.",
+      "matchPackageNames": [
+        "serversideup/php",
+        "containerbase/php-prebuild"
       ],
       "groupName": "PHP runtime",
       "groupSlug": "php-runtime"
