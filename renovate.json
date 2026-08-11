@@ -3,5 +3,46 @@
   "extends": [
     "github>fouteox/renovate-config",
     "github>fouteox/renovate-config:apps"
+  ],
+  "customManagers": [
+    {
+      "description": "Keep Composer's platform aligned with the production ServerSideUp PHP image.",
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/^composer\\.json$/"
+      ],
+      "matchStrings": [
+        "\\\"platform\\\"\\s*:\\s*\\{[^}]*\\\"php\\\"\\s*:\\s*\\\"(?<currentValue>\\d+\\.\\d+\\.\\d+)\\\""
+      ],
+      "depNameTemplate": "php",
+      "packageNameTemplate": "serversideup/php",
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "semver",
+      "extractVersionTemplate": "^(?<version>\\d+\\.\\d+\\.\\d+)-frankenphp$"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Bump the application PHP floor so Composer updates its lock artifact.",
+      "matchManagers": [
+        "composer"
+      ],
+      "matchDepNames": [
+        "php"
+      ],
+      "matchPackageNames": [
+        "containerbase/php-prebuild"
+      ],
+      "rangeStrategy": "bump"
+    },
+    {
+      "description": "Update the production image, exact CI container and Composer platform atomically.",
+      "matchPackageNames": [
+        "serversideup/php",
+        "containerbase/php-prebuild"
+      ],
+      "groupName": "PHP runtime",
+      "groupSlug": "php-runtime"
+    }
   ]
 }
