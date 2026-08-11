@@ -124,6 +124,87 @@ jobs:
             - name: Run Pest tests
               run: php artisan test --compact --testsuite=Unit,Feature,Arch
 
+    demo-reset-integration:
+        name: Demo reset (PostgreSQL 18.4 + Typesense 30.2)
+        runs-on: ubuntu-24.04
+        timeout-minutes: 20
+
+        services:
+            postgres:
+                image: postgres:18@sha256:3a82e1f56c8f0f5616a11103ac3d47e632c3938698946a7ad26da0df1334744a
+                env:
+                    POSTGRES_PASSWORD: secret
+                    POSTGRES_DB: pingcrm_integration
+                ports:
+                    - 5432:5432
+                options: >-
+                    --health-cmd="pg_isready -U postgres -d pingcrm_integration"
+                    --health-interval=5s
+                    --health-timeout=5s
+                    --health-retries=10
+
+        env:
+            RUN_DEMO_RESET_INTEGRATION: 'true'
+            APP_ENV: testing
+            APP_KEY: base64:MDEyMzQ1Njc4OWFiY2RlZjAxMjM0NTY3ODlhYmNkZWY=
+            CACHE_STORE: array
+            QUEUE_CONNECTION: sync
+            DB_CONNECTION: pgsql
+            DB_HOST: 127.0.0.1
+            DB_PORT: '5432'
+            DB_DATABASE: pingcrm_integration
+            DB_USERNAME: postgres
+            DB_PASSWORD: secret
+            SCOUT_DRIVER: typesense
+            SCOUT_QUEUE: 'false'
+            TYPESENSE_API_KEY: integration-key
+            TYPESENSE_HOST: 127.0.0.1
+            TYPESENSE_PORT: '8108'
+            TYPESENSE_PROTOCOL: http
+
+        steps:
+            - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+              with:
+                  persist-credentials: false
+
+            - name: Setup PHP
+              uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
+              with:
+                  php-version: '8.5.8'
+                  extensions: dom, curl, libxml, mbstring, zip, pdo, pdo_pgsql, bcmath, intl
+                  coverage: none
+                  tools: composer:v2
+
+            - name: Install Composer dependencies
+              uses: ramsey/composer-install@65e4f84970763564f46a70b8a54b90d033b3bdda # 4.0.0
+
+            - name: Start digest-pinned Typesense
+              run: |
+                  docker run --detach --rm \
+                    --name pingcrm-typesense-integration \
+                    --tmpfs /data \
+                    --publish 8108:8108 \
+                    typesense/typesense:30.2@sha256:610f2d34b1f93d00762869da2c67736775e5798d19a2c8b91b014b8a0cc1e110 \
+                    --data-dir=/data \
+                    --api-key="$TYPESENSE_API_KEY"
+
+                  for _attempt in {1..30}; do
+                    if curl --fail --silent http://127.0.0.1:8108/health; then
+                      exit 0
+                    fi
+                    sleep 1
+                  done
+
+                  docker logs pingcrm-typesense-integration
+                  exit 1
+
+            - name: Run PostgreSQL and Typesense integration tests
+              run: php artisan test --compact --testsuite=Integration
+
+            - name: Stop Typesense
+              if: always()
+              run: docker stop pingcrm-typesense-integration || true
+
     browser:
         name: Browser (Pest 4)
         runs-on: ubuntu-24.04

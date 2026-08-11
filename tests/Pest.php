@@ -18,6 +18,7 @@ use Tests\TestCase;
 */
 
 uses(TestCase::class, RefreshDatabase::class)->in('Feature');
+uses(TestCase::class)->in('Integration');
 uses(BrowserTestCase::class, RefreshDatabase::class)->in('Browser');
 
 /*
