@@ -25,6 +25,9 @@ jobs:
               with:
                   persist-credentials: false
 
+            - name: Verify PHP runtime alignment
+              run: .github/scripts/verify-php-runtime-alignment.sh
+
             - name: Set up Docker Buildx
               uses: docker/setup-buildx-action@bb05f3f5519dd87d3ba754cc423b652a5edd6d2c # v4.2.0
 
@@ -89,13 +92,18 @@ jobs:
             - name: Setup PHP
               uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
               with:
-                  php-version: '8.5'
+                  php-version: '8.5.8'
                   extensions: dom, curl, libxml, mbstring, zip, pdo, pdo_sqlite, sqlite3, bcmath, intl
                   coverage: none
                   tools: composer:v2
 
             - name: Install Composer dependencies
               uses: ramsey/composer-install@65e4f84970763564f46a70b8a54b90d033b3bdda # 4.0.0
+
+            - name: Verify Composer platform requirements
+              run: |
+                  test "$(php -r 'echo PHP_VERSION;')" = "$(composer config platform.php)"
+                  composer check-platform-reqs --lock
 
             - name: Prepare Laravel environment
               run: |
@@ -120,7 +128,7 @@ jobs:
             - name: Setup PHP
               uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
               with:
-                  php-version: '8.5'
+                  php-version: '8.5.8'
                   extensions: dom, curl, libxml, mbstring, zip, pdo, pdo_sqlite, sqlite3, bcmath, intl
                   coverage: none
                   tools: composer:v2
@@ -159,7 +167,7 @@ jobs:
             - name: Setup PHP
               uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
               with:
-                  php-version: '8.5'
+                  php-version: '8.5.8'
                   extensions: dom, curl, libxml, mbstring, zip, pdo, pdo_sqlite, sqlite3, bcmath, intl
                   coverage: none
                   tools: composer:v2
@@ -209,7 +217,7 @@ jobs:
             - name: Setup PHP
               uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
               with:
-                  php-version: '8.5'
+                  php-version: '8.5.8'
                   extensions: dom, curl, libxml, mbstring, zip, pdo, pdo_sqlite, sqlite3, bcmath, intl
                   coverage: none
                   tools: composer:v2
@@ -266,7 +274,7 @@ jobs:
             - name: Setup PHP
               uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # 2.37.2
               with:
-                  php-version: '8.5'
+                  php-version: '8.5.8'
                   extensions: dom, curl, libxml, mbstring, zip, pdo, pdo_pgsql, bcmath, intl
                   coverage: none
                   tools: composer:v2

@@ -50,13 +50,15 @@ FROM base AS builder
 
 COPY --link composer.json composer.lock ./
 
-RUN composer install \
+RUN test "$(php -r 'echo PHP_VERSION;')" = "$(composer config platform.php)" \
+    && composer install \
     --no-dev \
     --no-interaction \
     --no-autoloader \
     --no-ansi \
     --no-scripts \
-    --audit
+    --audit \
+    && composer check-platform-reqs --lock --no-dev
 
 COPY --link . .
 

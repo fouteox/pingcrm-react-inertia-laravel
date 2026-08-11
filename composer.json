@@ -8,7 +8,7 @@
     ],
     "license": "MIT",
     "require": {
-        "php": ">=8.4",
+        "php": "^8.5",
         "fakerphp/faker": "^1.24",
         "inertiajs/inertia-laravel": "^3.0",
         "laravel-lang/common": "^6.7",
@@ -89,6 +89,10 @@
     },
     "config": {
         "optimize-autoloader": true,
+        "platform": {
+            "php": "8.5.8"
+        },
+        "platform-check": true,
         "preferred-install": "dist",
         "sort-packages": true,
         "allow-plugins": {
