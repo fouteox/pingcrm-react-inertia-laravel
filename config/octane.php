@@ -57,6 +57,24 @@ return [
 
     /*
     |--------------------------------------------------------------------------
+    | FrankenPHP Caddy Environment
+    |--------------------------------------------------------------------------
+    |
+    | Octane builds an explicit environment for the FrankenPHP child process.
+    | These opt-in values allow production to add Caddy directives without
+    | replacing Octane's native defaults when no override is configured.
+    |
+    */
+
+    'caddy' => [
+        'env' => array_filter([
+            'CADDY_GLOBAL_OPTIONS' => env('OCTANE_CADDY_GLOBAL_OPTIONS'),
+            'CADDY_SERVER_EXTRA_DIRECTIVES' => env('OCTANE_CADDY_SERVER_EXTRA_DIRECTIVES'),
+        ], static fn (mixed $value): bool => $value !== null),
+    ],
+
+    /*
+    |--------------------------------------------------------------------------
     | Octane Listeners
     |--------------------------------------------------------------------------
     |
