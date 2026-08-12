@@ -151,8 +151,6 @@ it('invalidates a removed user session without ever reusing its identity', funct
 });
 
 it('rolls the complete reset back before dispatching search work when seeding fails', function () {
-    Queue::fake();
-
     $demoAccount = Account::factory()->create([
         'name' => 'Demo before failure',
         'demo_key' => DatabaseSeeder::DEMO_ACCOUNT_KEY,
@@ -167,6 +165,8 @@ it('rolls the complete reset back before dispatching search work when seeding fa
         'account_id' => $demoAccount->id,
         'organization_id' => $organization->id,
     ]);
+
+    Queue::fake();
 
     $creatingOrganization = 'eloquent.creating: '.Organization::class;
     Event::listen($creatingOrganization, fn () => throw new RuntimeException('Injected seeding failure'));
@@ -212,13 +212,13 @@ it('never adopts an unrelated account that has the canonical demo name', functio
 });
 
 it('fails safe instead of adopting an unmarked account through the demo email', function () {
-    Queue::fake();
-
     $unmarkedAccount = Account::factory()->create();
     $user = User::factory()->create([
         'account_id' => $unmarkedAccount->id,
         'email' => DatabaseSeeder::DEMO_USER_EMAIL,
     ]);
+
+    Queue::fake();
 
     expect(fn () => $this->artisan('demo:reset')->run())
         ->toThrow(
@@ -233,8 +233,6 @@ it('fails safe instead of adopting an unmarked account through the demo email', 
 });
 
 it('aborts without mutation when a cross-tenant organization reference exists', function () {
-    Queue::fake();
-
     $demoAccount = Account::factory()->create([
         'demo_key' => DatabaseSeeder::DEMO_ACCOUNT_KEY,
     ]);
@@ -248,6 +246,8 @@ it('aborts without mutation when a cross-tenant organization reference exists', 
         'account_id' => $otherAccount->id,
         'organization_id' => $demoOrganization->id,
     ]);
+
+    Queue::fake();
 
     expect(fn () => $this->artisan('demo:reset')->run())
         ->toThrow(
