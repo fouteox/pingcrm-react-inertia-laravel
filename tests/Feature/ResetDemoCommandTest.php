@@ -21,6 +21,8 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
+use Laravel\Scout\EngineManager;
+use Laravel\Scout\Engines\Engine;
 
 it('resets only the demo tenant without rebuilding the schema or identities', function () {
     config()->set([
@@ -286,6 +288,44 @@ it('queues an authoritative search reconciliation after the database commit', fu
         ReconcileDemoSearchIndex::class,
         fn (ReconcileDemoSearchIndex $job): bool => $job->accountId === $account->id
     );
+});
+
+it('reindexes a model changed after the first search snapshot', function () {
+    $account = Account::factory()->create();
+    $contact = Contact::factory()->create([
+        'account_id' => $account->id,
+        'first_name' => 'Before',
+    ]);
+    $contactUpdates = [];
+
+    config()->set([
+        'scout.driver' => 'concurrent-update-test',
+        'scout.queue' => false,
+    ]);
+
+    $engine = Mockery::mock(Engine::class);
+    $engine->shouldReceive('update')->andReturnUsing(
+        function ($models) use ($contact, &$contactUpdates): void {
+            if (! $models->first() instanceof Contact) {
+                return;
+            }
+
+            $contactUpdates[] = $models->first()->toSearchableArray();
+
+            if (count($contactUpdates) === 1) {
+                Contact::whereKey($contact->getKey())->update(['first_name' => 'After']);
+            }
+        }
+    );
+
+    app(EngineManager::class)->extend('concurrent-update-test', fn () => $engine);
+    app(EngineManager::class)->forgetEngines();
+
+    (new ReconcileDemoSearchIndex($account->id))->handle();
+
+    expect($contactUpdates)->toHaveCount(2)
+        ->and($contactUpdates[0]['first_name'])->toBe('Before')
+        ->and($contactUpdates[1]['first_name'])->toBe('After');
 });
 
 it('rejects overlapping manual resets without mutating data', function () {

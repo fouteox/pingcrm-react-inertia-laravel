@@ -10,12 +10,14 @@ use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Queue\Queueable;
 use Illuminate\Queue\Attributes\Backoff;
 use Illuminate\Queue\Attributes\Timeout;
 use Illuminate\Queue\Attributes\Tries;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
 use Laravel\Scout\Engines\TypesenseEngine;
+use RuntimeException;
 
 #[Tries(12)]
 #[Backoff(5, 15, 30, 60, 120, 300)]
@@ -23,6 +25,8 @@ use Laravel\Scout\Engines\TypesenseEngine;
 final class ReconcileDemoSearchIndex implements ShouldQueue
 {
     use Queueable;
+
+    private const int MAX_CONVERGENCE_PASSES = 3;
 
     public function __construct(public int $accountId) {}
 
@@ -50,15 +54,7 @@ final class ReconcileDemoSearchIndex implements ShouldQueue
     private function reconcile(string $modelClass): void
     {
         $model = new $modelClass;
-        $query = $modelClass::query()->where('account_id', $this->accountId);
-
-        if ($modelClass === Contact::class) {
-            $query->with('organization');
-        }
-
-        /** @var Collection<int, Contact|Organization|User> $models */
-        $models = $query->get();
-        $models->searchableSync();
+        $this->indexStableSnapshot($modelClass, $model);
 
         $engine = $model->searchableUsing();
 
@@ -81,8 +77,8 @@ final class ReconcileDemoSearchIndex implements ShouldQueue
                 return (string) $decoded['id'];
             });
 
-        // Read the database again after the export so concurrent creations are
-        // never classified as stale and concurrent deletions cannot be reintroduced.
+        // Read IDs after the export so a concurrently indexed creation is never
+        // mistaken for a stale document.
         $currentIds = $modelClass::query()
             ->where('account_id', $this->accountId)
             ->pluck($model->getKeyName())
@@ -104,5 +100,65 @@ final class ReconcileDemoSearchIndex implements ShouldQueue
                     ->getDocuments()
                     ->delete(['filter_by' => $filter]);
             });
+    }
+
+    /**
+     * @param  class-string<Contact|Organization|User>  $modelClass
+     * @param  Contact|Organization|User  $model
+     */
+    private function indexStableSnapshot(string $modelClass, Model $model): void
+    {
+        for ($pass = 1; $pass <= self::MAX_CONVERGENCE_PASSES; $pass++) {
+            $models = $this->loadModels($modelClass, $model);
+            $fingerprints = $this->searchFingerprints($models);
+
+            $models->searchableSync();
+
+            $currentModels = $this->loadModels($modelClass, $model);
+
+            if ($fingerprints === $this->searchFingerprints($currentModels)) {
+                return;
+            }
+        }
+
+        throw new RuntimeException(sprintf(
+            'Search data for account %d kept changing during reconciliation.',
+            $this->accountId
+        ));
+    }
+
+    /**
+     * @param  class-string<Contact|Organization|User>  $modelClass
+     * @param  Contact|Organization|User  $model
+     * @return Collection<int, Contact|Organization|User>
+     */
+    private function loadModels(string $modelClass, Model $model): Collection
+    {
+        $query = $modelClass::query()->where('account_id', $this->accountId);
+
+        if ($modelClass === Contact::class) {
+            $query->with('organization');
+        }
+
+        /** @var Collection<int, Contact|Organization|User> $models */
+        $models = $query->orderBy($model->getKeyName())->get();
+
+        return $models;
+    }
+
+    /**
+     * @param  Collection<int, Contact|Organization|User>  $models
+     * @return array<int|string, string>
+     */
+    private function searchFingerprints(Collection $models): array
+    {
+        return $models
+            ->mapWithKeys(fn (Model $model): array => [
+                $model->getKey() => hash(
+                    'sha256',
+                    json_encode($model->toSearchableArray(), JSON_THROW_ON_ERROR)
+                ),
+            ])
+            ->all();
     }
 }
