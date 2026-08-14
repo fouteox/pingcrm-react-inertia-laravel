@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Support\ReverbAllowedOrigins;
+use Dotenv\Dotenv;
 use Laravel\Reverb\Application;
 use Laravel\Reverb\Contracts\Connection;
 use Laravel\Reverb\Contracts\WebSocketConnection;
@@ -85,7 +86,7 @@ it('normalizes an explicit exact origin allowlist', function () {
     expect(ReverbAllowedOrigins::fromEnvironment(
         origins: ' pingcrm.fadogen.app,ADMIN.FADOGEN.APP,pingcrm.fadogen.app ',
         environment: 'production',
-        fallbackHost: 'pingcrm.fadogen.app',
+        fallbackOrigin: 'https://pingcrm.fadogen.app',
     ))->toBe([
         'pingcrm.fadogen.app',
         'admin.fadogen.app',
@@ -97,34 +98,59 @@ it('loads the parsed environment allowlist into the Reverb configuration', funct
     $expected = ReverbAllowedOrigins::fromEnvironment(
         origins: env('REVERB_ALLOWED_ORIGINS'),
         environment: (string) env('APP_ENV', 'production'),
-        fallbackHost: env('REVERB_HOST', 'localhost'),
+        fallbackOrigin: env('APP_URL', 'http://localhost'),
     );
 
     expect($reverb['apps']['apps'][0]['allowed_origins'])->toBe($expected)
         ->not->toContain('*');
 });
 
+it('allows the default local application page origin', function () {
+    $environment = Dotenv::parse(file_get_contents(base_path('.env.example')));
+
+    expect($environment)->toHaveKeys([
+        'APP_HOST',
+        'APP_URL',
+        'REVERB_ALLOWED_ORIGINS',
+        'REVERB_HOST',
+    ])->and(parse_url($environment['APP_URL'], PHP_URL_HOST))
+        ->toBe($environment['REVERB_ALLOWED_ORIGINS'])
+        ->and($environment['REVERB_ALLOWED_ORIGINS'])
+        ->not->toBe($environment['REVERB_HOST']);
+});
+
 it('fails closed outside local development without an explicit origin allowlist', function (string $environment) {
     expect(ReverbAllowedOrigins::fromEnvironment(
         origins: null,
         environment: $environment,
-        fallbackHost: 'pingcrm.fadogen.app',
+        fallbackOrigin: 'https://pingcrm.fadogen.app',
     ))->toBe([]);
 })->with(['production', 'staging']);
 
-it('uses the exact Reverb host as the local development default', function () {
+it('uses the application page host as the local development default', function () {
     expect(ReverbAllowedOrigins::fromEnvironment(
         origins: null,
         environment: 'local',
-        fallbackHost: 'reverb.dev.localhost',
-    ))->toBe(['reverb.dev.localhost']);
+        fallbackOrigin: 'https://pingcrm-react-inertia-laravel.dev.localhost',
+    ))->toBe(['pingcrm-react-inertia-laravel.dev.localhost']);
 });
+
+it('requires an absolute HTTP application URL for the local default', function (string $applicationUrl) {
+    expect(fn (): array => ReverbAllowedOrigins::fromEnvironment(
+        origins: null,
+        environment: 'local',
+        fallbackOrigin: $applicationUrl,
+    ))->toThrow(InvalidArgumentException::class);
+})->with([
+    'hostname only' => 'pingcrm-react-inertia-laravel.dev.localhost',
+    'non-HTTP URL' => 'ftp://pingcrm-react-inertia-laravel.dev.localhost',
+]);
 
 it('rejects unsafe or ambiguous explicit origin values', function (string $origins) {
     expect(fn (): array => ReverbAllowedOrigins::fromEnvironment(
         origins: $origins,
         environment: 'production',
-        fallbackHost: 'pingcrm.fadogen.app',
+        fallbackOrigin: 'https://pingcrm.fadogen.app',
     ))->toThrow(InvalidArgumentException::class);
 })->with([
     'empty' => '',

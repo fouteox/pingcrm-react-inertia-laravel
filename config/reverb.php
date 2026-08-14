@@ -105,9 +105,9 @@ return [
                     'useTLS' => env('REVERB_SCHEME', 'https') === 'https',
                 ],
                 'allowed_origins' => ReverbAllowedOrigins::fromEnvironment(
-                    env('REVERB_ALLOWED_ORIGINS'),
-                    (string) env('APP_ENV', 'production'),
-                    env('REVERB_HOST', 'localhost'),
+                    origins: env('REVERB_ALLOWED_ORIGINS'),
+                    environment: (string) env('APP_ENV', 'production'),
+                    fallbackOrigin: env('APP_URL', 'http://localhost'),
                 ),
                 'ping_interval' => env('REVERB_APP_PING_INTERVAL', 60),
                 'activity_timeout' => env('REVERB_APP_ACTIVITY_TIMEOUT', 30),

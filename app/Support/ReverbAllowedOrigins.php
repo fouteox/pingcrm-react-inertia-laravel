@@ -14,7 +14,7 @@ final class ReverbAllowedOrigins
     public static function fromEnvironment(
         ?string $origins,
         string $environment,
-        ?string $fallbackHost,
+        ?string $fallbackOrigin,
     ): array {
         if ($origins === null) {
             $environment = mb_strtolower(mb_trim($environment));
@@ -23,7 +23,7 @@ final class ReverbAllowedOrigins
                 return [];
             }
 
-            $origins = $fallbackHost ?? 'localhost';
+            $origins = self::hostFromApplicationUrl($fallbackOrigin ?? 'http://localhost');
         }
 
         $allowedOrigins = array_values(array_unique(array_filter(
@@ -49,6 +49,25 @@ final class ReverbAllowedOrigins
         }
 
         return $allowedOrigins;
+    }
+
+    private static function hostFromApplicationUrl(string $applicationUrl): string
+    {
+        $scheme = parse_url($applicationUrl, PHP_URL_SCHEME);
+        $host = parse_url($applicationUrl, PHP_URL_HOST);
+
+        if (
+            ! is_string($scheme)
+            || ! in_array(mb_strtolower($scheme), ['http', 'https'], true)
+            || ! is_string($host)
+            || $host === ''
+        ) {
+            throw new InvalidArgumentException(
+                'APP_URL must be an absolute HTTP or HTTPS URL to derive the local Reverb origin.',
+            );
+        }
+
+        return $host;
     }
 
     private static function isExactHost(string $origin): bool
