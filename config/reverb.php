@@ -2,6 +2,8 @@
 
 declare(strict_types=1);
 
+use App\Support\ReverbAllowedOrigins;
+
 return [
 
     /*
@@ -102,7 +104,11 @@ return [
                     'scheme' => env('REVERB_SCHEME', 'https'),
                     'useTLS' => env('REVERB_SCHEME', 'https') === 'https',
                 ],
-                'allowed_origins' => ['*'],
+                'allowed_origins' => ReverbAllowedOrigins::fromEnvironment(
+                    origins: env('REVERB_ALLOWED_ORIGINS'),
+                    environment: (string) env('APP_ENV', 'production'),
+                    fallbackOrigin: env('APP_URL', 'http://localhost'),
+                ),
                 'ping_interval' => env('REVERB_APP_PING_INTERVAL', 60),
                 'activity_timeout' => env('REVERB_APP_ACTIVITY_TIMEOUT', 30),
                 'max_connections' => env('REVERB_APP_MAX_CONNECTIONS'),
