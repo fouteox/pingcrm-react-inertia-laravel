@@ -36,6 +36,19 @@
       "rangeStrategy": "bump"
     },
     {
+      "description": "Composer's platform field stores a PHP version, not an image reference, so it cannot carry an OCI digest.",
+      "matchManagers": [
+        "custom.regex"
+      ],
+      "matchFileNames": [
+        "composer.json"
+      ],
+      "matchPackageNames": [
+        "serversideup/php"
+      ],
+      "pinDigests": false
+    },
+    {
       "description": "Update the production image, exact CI container and Composer platform atomically.",
       "matchPackageNames": [
         "serversideup/php",
