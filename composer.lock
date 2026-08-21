@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "15bcc078cd40b653ffd84a5cd4457897",
+    "content-hash": "19e7d1ad0f147bcfba9aca2b3b7751c0",
     "packages": [
         {
             "name": "archtechx/enums",
@@ -15599,11 +15599,11 @@
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {
-        "php": "^8.5.8"
+        "php": "^8.5.9"
     },
     "platform-dev": {},
     "platform-overrides": {
-        "php": "8.5.8"
+        "php": "8.5.9"
     },
     "plugin-api-version": "2.9.0"
 }
