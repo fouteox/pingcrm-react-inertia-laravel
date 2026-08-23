@@ -1,9 +1,6 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "github>fouteox/renovate-config",
-    "github>fouteox/renovate-config:apps"
-  ],
+  "description": "Configuration spécifique à PingCRM pour Renovate self-hosted. La politique commune est fournie par fouteox/renovate-runner.",
   "customManagers": [
     {
       "description": "Keep Composer's platform aligned with the production ServerSideUp PHP image.",
