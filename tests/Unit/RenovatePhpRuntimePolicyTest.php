@@ -25,3 +25,21 @@ test('php runtime updates remain atomic across every managed surface', function 
         ->and(data_get(json_decode(file_get_contents($repositoryRoot.'/composer.json'), true, 512, JSON_THROW_ON_ERROR), 'require.php'))->not->toBeNull()
         ->and(data_get(json_decode(file_get_contents($repositoryRoot.'/composer.json'), true, 512, JSON_THROW_ON_ERROR), 'config.platform.php'))->not->toBeNull();
 });
+
+test('same-tag image digest refreshes do not wait for Composer surfaces', function () {
+    $repositoryRoot = dirname(__DIR__, 2);
+    $configuration = json_decode(
+        file_get_contents($repositoryRoot.'/renovate.json'),
+        true,
+        512,
+        JSON_THROW_ON_ERROR,
+    );
+
+    $digestRule = collect($configuration['packageRules'])
+        ->firstWhere('groupSlug', 'php-runtime-digest');
+
+    expect($digestRule)->not->toBeNull()
+        ->and($digestRule['matchPackageNames'])->toBe(['serversideup/php'])
+        ->and($digestRule['matchUpdateTypes'])->toBe(['digest'])
+        ->and($digestRule['minimumGroupSize'])->toBe(1);
+});

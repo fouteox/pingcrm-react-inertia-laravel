@@ -54,6 +54,18 @@
       "groupName": "PHP runtime",
       "groupSlug": "php-runtime",
       "minimumGroupSize": 4
+    },
+    {
+      "description": "Keep same-tag ServerSideUp image rebuilds reviewable without waiting for Composer fields that have no digest.",
+      "matchPackageNames": [
+        "serversideup/php"
+      ],
+      "matchUpdateTypes": [
+        "digest"
+      ],
+      "groupName": "PHP runtime digest refresh",
+      "groupSlug": "php-runtime-digest",
+      "minimumGroupSize": 1
     }
   ]
 }
