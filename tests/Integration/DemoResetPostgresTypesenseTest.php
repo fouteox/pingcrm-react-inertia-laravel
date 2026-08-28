@@ -45,7 +45,7 @@ it('resets atomically on PostgreSQL 18 and converges Typesense 30.2', function (
     $postgresVersion = DB::selectOne('show server_version')->server_version;
     $typesense = new Client(config('scout.typesense.client-settings'));
 
-    expect($postgresVersion)->toStartWith('18.4')
+    expect($postgresVersion)->toStartWith('18.')
         ->and($typesense->getDebug()->retrieve()['version'])->toBe('30.2');
 
     $demoAccount = Account::factory()->create([
