@@ -125,7 +125,7 @@ jobs:
               run: php artisan test --compact --testsuite=Unit,Feature,Arch
 
     demo-reset-integration:
-        name: Demo reset (PostgreSQL 18.4 + Typesense 30.2)
+        name: Demo reset (PostgreSQL 18 + Typesense 30.2)
         runs-on: ubuntu-24.04
         timeout-minutes: 20
 
