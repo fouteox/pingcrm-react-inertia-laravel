@@ -46,13 +46,26 @@
       "pinDigests": false
     },
     {
-      "description": "Update the production image, exact CI container and Composer platform atomically.",
+      "description": "Update the production image, exact CI container, Composer platform and PHP requirement atomically.",
       "matchPackageNames": [
         "serversideup/php",
         "containerbase/php-prebuild"
       ],
       "groupName": "PHP runtime",
-      "groupSlug": "php-runtime"
+      "groupSlug": "php-runtime",
+      "minimumGroupSize": 4
+    },
+    {
+      "description": "Keep same-tag ServerSideUp image rebuilds reviewable without waiting for Composer fields that have no digest.",
+      "matchPackageNames": [
+        "serversideup/php"
+      ],
+      "matchUpdateTypes": [
+        "digest"
+      ],
+      "groupName": "PHP runtime digest refresh",
+      "groupSlug": "php-runtime-digest",
+      "minimumGroupSize": 1
     }
   ]
 }
