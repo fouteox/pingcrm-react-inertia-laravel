@@ -46,13 +46,14 @@
       "pinDigests": false
     },
     {
-      "description": "Update the production image, exact CI container and Composer platform atomically.",
+      "description": "Update the production image, exact CI container, Composer platform and PHP requirement atomically.",
       "matchPackageNames": [
         "serversideup/php",
         "containerbase/php-prebuild"
       ],
       "groupName": "PHP runtime",
-      "groupSlug": "php-runtime"
+      "groupSlug": "php-runtime",
+      "minimumGroupSize": 4
     }
   ]
 }
