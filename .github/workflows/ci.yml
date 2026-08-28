@@ -76,7 +76,7 @@ jobs:
         name: PHP (Pint + Pest)
         runs-on: ubuntu-24.04
         container:
-            image: serversideup/php:8.5.8-frankenphp@sha256:0e3ccba461b7054bac70f42f379bfa9d45614e62ac221003ef9271551516706f
+            image: serversideup/php:8.5.9-frankenphp@sha256:c8e9d95cd6b83180662f63de646937f3b304041ac4edfbd95ff8bd684467d035
             options: --user root
 
         defaults:
