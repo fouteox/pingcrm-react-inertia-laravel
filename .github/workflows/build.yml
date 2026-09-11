@@ -27,4 +27,4 @@ jobs:
       contents: read
       id-token: write
       packages: write
-    uses: ./.github/workflows/build-image.yml
+    uses: $/.github/workflows/build-image.yml
