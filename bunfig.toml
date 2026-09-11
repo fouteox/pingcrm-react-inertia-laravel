@@ -1,0 +1,3 @@
+# Keep new dependencies exact; Renovate updates the manifest and lock together.
+[install]
+exact = true
