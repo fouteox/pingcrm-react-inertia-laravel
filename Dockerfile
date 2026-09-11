@@ -5,7 +5,7 @@
 # rebuild of the tag lands as a reviewable Renovate PR (tag + digest kept
 # in sync). Renovate moves this base, the exact CI parity container and
 # Composer's constraints/lock together; setup-php tracks the same minor line.
-FROM serversideup/php:8.5.9-frankenphp@sha256:c8e9d95cd6b83180662f63de646937f3b304041ac4edfbd95ff8bd684467d035 AS base
+FROM serversideup/php:8.5.10-frankenphp@sha256:558d9d93d8f63a08ea6c99a48475faff557d8bd315bb81a876181e9ec1e50865 AS base
 
 USER root
 
@@ -69,7 +69,7 @@ RUN composer dump-autoload --classmap-authoritative --no-dev
 # Declared as a FROM so Dependabot sees and bumps it: images referenced only
 # in a COPY --from are invisible to its docker ecosystem.
 ############################################
-FROM oven/bun:1.4-debian@sha256:5bb0f9be3a1a36a03e27c9a9dd894a3b1ad26657155c7df4dda771e17bf872ef AS bun
+FROM oven/bun:1.4-debian@sha256:4f6e31d1a54d6a3dd312daef655fc998101b5043d52e12592ac293ef04b9bc73 AS bun
 
 ############################################
 # App Image (also runs SSR via `php artisan inertia:start-ssr --runtime=bun`)

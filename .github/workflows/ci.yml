@@ -76,7 +76,7 @@ jobs:
         name: PHP (Pint + Pest)
         runs-on: ubuntu-24.04
         container:
-            image: serversideup/php:8.5.9-frankenphp@sha256:c8e9d95cd6b83180662f63de646937f3b304041ac4edfbd95ff8bd684467d035
+            image: serversideup/php:8.5.10-frankenphp@sha256:558d9d93d8f63a08ea6c99a48475faff557d8bd315bb81a876181e9ec1e50865
             options: --user root
 
         defaults:
@@ -225,7 +225,7 @@ jobs:
             - name: Install Composer dependencies
               uses: ramsey/composer-install@65e4f84970763564f46a70b8a54b90d033b3bdda # 4.0.0
 
-            - uses: voidzero-dev/setup-vp@1b32467adbe183473499fd9d5d372c3ed9641754 # v1.18.0
+            - uses: voidzero-dev/setup-vp@49c3e4e92c52e7f8392712a9267bbe71c5ab30e5 # v1.19.0
               with:
                   node-version-file: .node-version
                   cache: true
@@ -264,7 +264,7 @@ jobs:
             - name: Install Composer dependencies
               uses: ramsey/composer-install@65e4f84970763564f46a70b8a54b90d033b3bdda # 4.0.0
 
-            - uses: voidzero-dev/setup-vp@1b32467adbe183473499fd9d5d372c3ed9641754 # v1.18.0
+            - uses: voidzero-dev/setup-vp@49c3e4e92c52e7f8392712a9267bbe71c5ab30e5 # v1.19.0
               with:
                   node-version-file: .node-version
                   cache: true
@@ -314,7 +314,7 @@ jobs:
             - name: Install Composer dependencies
               uses: ramsey/composer-install@65e4f84970763564f46a70b8a54b90d033b3bdda # 4.0.0
 
-            - uses: voidzero-dev/setup-vp@1b32467adbe183473499fd9d5d372c3ed9641754 # v1.18.0
+            - uses: voidzero-dev/setup-vp@49c3e4e92c52e7f8392712a9267bbe71c5ab30e5 # v1.19.0
               with:
                   node-version-file: .node-version
                   cache: true
@@ -374,7 +374,7 @@ jobs:
                   composer-options: '--no-dev'
                   ignore-cache: '1'
 
-            - uses: voidzero-dev/setup-vp@1b32467adbe183473499fd9d5d372c3ed9641754 # v1.18.0
+            - uses: voidzero-dev/setup-vp@49c3e4e92c52e7f8392712a9267bbe71c5ab30e5 # v1.19.0
               with:
                   node-version-file: .node-version
                   cache: true
