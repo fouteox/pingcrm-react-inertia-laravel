@@ -372,3 +372,89 @@ it('reindexes active and trashed contacts when their organization changes', func
     'deleted' => ['deleted', ''],
     'restored' => ['restored', 'Old name'],
 ]);
+
+it('serves the native user page when an unrelated contact changes before or during the search', function (bool $duringSearch) {
+    $actor = User::factory()->create(['first_name' => 'Ada', 'owner' => true]);
+    $contact = Contact::factory()->for($actor->account)->create();
+    config()->set('search.synchronous', false);
+    $change = fn () => app(App\Services\SearchIndex::class)->mutate(
+        $actor->account_id,
+        fn () => tap($contact)->update(['last_name' => 'Changed']),
+    );
+    useTypesenseSearchResponse('users', function (array $parameters) use ($actor, $duringSearch, $change): array {
+        assertNativeTypesenseFilters($parameters, $actor->account_id, 'owner');
+
+        if ($duringSearch) {
+            $change();
+        }
+
+        return ['found' => 1, 'hits' => [['document' => ['id' => (string) $actor->id]]]];
+    });
+
+    if (! $duringSearch) {
+        $change();
+    }
+
+    $this->actingAs($actor)->get('/users?search=Ada&role=owner')->assertOk()
+        ->assertInertia(fn (Assert $assert) => $assert
+            ->where('users.meta.total', 1)
+            ->where('users.data.0.id', $actor->id));
+})->with(['pending before search' => false, 'committed during search' => true]);
+
+it('retries the complete search once when its retired collection is removed during a generation switch', function () {
+    $actor = User::factory()->create(['first_name' => 'Ada', 'owner' => true]);
+    $old = '11111111-1111-4111-8111-111111111111';
+    $new = '22222222-2222-4222-8222-222222222222';
+    DB::table('search_index_manifest')->update(['active_generation' => $old]);
+    $requests = [];
+    $handler = GuzzleHttp\HandlerStack::create(new GuzzleHttp\Handler\MockHandler([
+        function () use ($new) {
+            DB::table('search_index_manifest')->update(['active_generation' => $new]);
+
+            return new GuzzleHttp\Psr7\Response(404, body: '{"message":"Collection not found"}');
+        },
+        new GuzzleHttp\Psr7\Response(200, body: json_encode([
+            'found' => 1,
+            'hits' => [['document' => ['id' => (string) $actor->id]]],
+        ], JSON_THROW_ON_ERROR)),
+    ]));
+    $handler->push(GuzzleHttp\Middleware::history($requests));
+    $client = new Client([
+        'api_key' => 'test-key',
+        'nodes' => [['host' => 'localhost', 'port' => '8108', 'protocol' => 'http']],
+        'num_retries' => 0,
+        'client' => new GuzzleHttp\Client(['handler' => $handler]),
+    ]);
+    app()->instance(Client::class, $client);
+    app(EngineManager::class)->extend('typesense', fn () => new TypesenseEngine($client, 1000));
+    config()->set('scout.driver', 'typesense');
+
+    $this->actingAs($actor)->get('/users?search=Ada&role=owner&trashed=with&page=1')
+        ->assertOk()->assertInertia(fn (Assert $assert) => $assert
+        ->where('users.meta.total', 1)
+        ->where('users.data.0.id', $actor->id));
+
+    expect($requests)->toHaveCount(2)
+        ->and($requests[0]['request']->getUri()->getPath())->toContain('users__'.$old)
+        ->and($requests[1]['request']->getUri()->getPath())->toContain('users__'.$new)
+        ->and($requests[1]['request']->getUri()->getQuery())->toBe($requests[0]['request']->getUri()->getQuery());
+});
+
+it('bounds retries when retired collections disappear during repeated generation switches', function () {
+    $actor = User::factory()->create();
+    $api = Mockery::mock(ApiCall::class);
+    $api->shouldReceive('get')->twice()->with(Mockery::type('string'), Mockery::type('array'))
+        ->andReturnUsing(function () {
+            DB::table('search_index_manifest')->update(['active_generation' => (string) Illuminate\Support\Str::uuid()]);
+
+            throw new Typesense\Exceptions\ObjectNotFound('Collection retired');
+        });
+    $client = Mockery::mock(Client::class);
+    $client->shouldReceive('getCollections')->twice()->andReturn(new Collections($api));
+    app()->instance(Client::class, $client);
+    app(EngineManager::class)->extend('typesense', fn () => new TypesenseEngine($client, 1000));
+    config()->set('scout.driver', 'typesense');
+
+    $this->expectException(SearchIndexUnavailable::class);
+    $this->actingAs($actor)->get('/users?search=Ada');
+});

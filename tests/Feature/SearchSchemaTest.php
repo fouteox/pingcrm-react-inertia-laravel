@@ -11,7 +11,7 @@ use Typesense\Client;
 use Typesense\Collections;
 use Typesense\Exceptions\ObjectNotFound;
 
-it('updates existing sort indexes once without accessing SQL or importing documents', function () {
+it('updates existing sort indexes once without reading business records or importing documents', function () {
     config()->set('scout.prefix', '');
     Queue::fake();
     config()->set([
@@ -59,7 +59,11 @@ it('updates existing sort indexes once without accessing SQL or importing docume
 
     expect(config('scout.driver'))->toBe('collection')
         ->and(config('scout.queue'))->toBeTrue()
-        ->and(DB::getQueryLog())->toBe([]);
+        ->and(DB::getQueryLog())->toHaveCount(2);
+
+    foreach (DB::getQueryLog() as $query) {
+        expect($query['query'])->toStartWith('select ')->toContain('search_index_manifest');
+    }
     DB::disableQueryLog();
     Queue::assertNothingPushed();
 });

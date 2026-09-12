@@ -136,7 +136,7 @@ it('fences existing accounts during migration and starts new empty accounts read
     expect($search->assertReady($new->id))->toBe(0);
 });
 
-it('records a full projection when hard deletion detaches organization contacts', function () {
+it('records an organization projection when hard deletion detaches its contacts', function () {
     $organization = Organization::withoutSyncingToSearch(fn () => Organization::factory()->create());
     $contact = Contact::withoutSyncingToSearch(fn () => Contact::factory()->create([
         'account_id' => $organization->account_id,
@@ -148,9 +148,9 @@ it('records a full projection when hard deletion detaches organization contacts'
     $job = unserialize($payload['data']['command']);
 
     expect($contact->fresh()->organization_id)->toBeNull()
-        ->and($contact->account->fresh()->search_rebuild_revision)->toBe(1)
-        ->and($job->modelClass)->toBeNull()
-        ->and($job->modelId)->toBeNull()
+        ->and($contact->account->fresh()->search_rebuild_revision)->toBe(0)
+        ->and($job->modelClass)->toBe(Organization::class)
+        ->and($job->modelId)->toBe($organization->id)
         ->and($job->revision)->toBe(1);
 });
 

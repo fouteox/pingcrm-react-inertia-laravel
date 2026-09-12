@@ -8,6 +8,7 @@ use App\Models\Account;
 use App\Models\Contact;
 use App\Models\Organization;
 use App\Models\User;
+use App\Services\SearchGenerations;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
@@ -25,13 +26,14 @@ use Typesense\Exceptions\ObjectNotFound;
 #[Description('Prepare Typesense name sorting and search revision fields without deleting collections')]
 final class SearchSyncSchemaCommand extends Command
 {
-    public function handle(Client $client): int
+    public function handle(Client $client, SearchGenerations $generations): int
     {
         /** @var array<class-string<Contact|Organization|User>, array{collection-schema: SearchSchema}> $settings */
         $settings = Config::array('scout.typesense.model-settings');
+        $generation = $generations->activeGeneration();
 
         foreach ($settings as $modelClass => $configuration) {
-            $index = (new $modelClass)->indexableAs();
+            $index = SearchGenerations::collection(new $modelClass, $generation);
             $schema = $configuration['collection-schema'];
 
             try {

@@ -21,6 +21,7 @@ it('renders an initial unavailable page with its retry status and preserves the 
         ->assertHeader('Retry-After', '3')
         ->assertInertia(fn (Assert $assert) => $assert
             ->component('search-unavailable')
+            ->where('retryAfter', 3)
             ->where('retryUrl', 'https://search.example.test/testing/search-unavailable?page=2&role=owner&search=0&trashed=with')
             ->where('listUrl', 'https://search.example.test/testing/search-unavailable?role=owner&trashed=with')
             ->missing('users')
@@ -41,6 +42,7 @@ it('returns a valid Inertia error response during client navigation', function (
         ->assertHeader('Retry-After', '3')
         ->assertHeader('X-Inertia', 'true')
         ->assertJsonPath('component', 'search-unavailable')
+        ->assertJsonPath('props.retryAfter', 3)
         ->assertJsonPath('props.retryUrl', 'https://search.example.test/testing/search-unavailable?page=82&role=owner&search=0')
         ->assertJsonPath('props.listUrl', 'https://search.example.test/testing/search-unavailable?role=owner')
         ->assertJsonMissingPath('props.users');

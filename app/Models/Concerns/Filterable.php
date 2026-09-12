@@ -7,6 +7,7 @@ namespace App\Models\Concerns;
 use App\Enums\Role;
 use App\Enums\TrashedFilter;
 use App\Exceptions\SearchIndexUnavailable;
+use App\Services\SearchGenerations;
 use App\Services\SearchIndex;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Attributes\Scope;
@@ -16,6 +17,7 @@ use Laravel\Scout\Engines\TypesenseEngine;
 use Laravel\Scout\Searchable;
 use Psr\Http\Client\ClientExceptionInterface;
 use Typesense\Documents;
+use Typesense\Exceptions\ObjectNotFound;
 use Typesense\Exceptions\TypesenseClientError;
 
 /**
@@ -80,11 +82,13 @@ trait Filterable
      * @param  array{search?: string, role?: string, trashed?: string}  $filters
      * @return LengthAwarePaginator<int, self>
      */
-    private function paginateTypesense(Builder $databaseQuery, string $search, array $filters, int $accountId): LengthAwarePaginator
+    private function paginateTypesense(Builder $databaseQuery, string $search, array $filters, int $accountId, bool $retryOnGenerationChange = true): LengthAwarePaginator
     {
         $index = app(SearchIndex::class);
-        $state = $index->readyState($accountId);
+        $state = $index->readyState($accountId, static::class);
+        $generation = app(SearchGenerations::class)->activeGeneration();
         $query = static::search($search, fn (Documents $documents, string $term, array $parameters): array => $documents->search($parameters))
+            ->within(SearchGenerations::collection($this, $generation))
             ->where('account_id', $accountId)
             ->where('search_deleted', false)
             ->where('search_revision', '>=', $state['rebuildRevision'])
@@ -98,6 +102,12 @@ trait Filterable
 
         try {
             $paginator = $this->paginateSearch($query);
+        } catch (ObjectNotFound $exception) {
+            if ($retryOnGenerationChange && $generation !== app(SearchGenerations::class)->activeGeneration()) {
+                return $this->paginateTypesense($databaseQuery, $search, $filters, $accountId, retryOnGenerationChange: false);
+            }
+
+            throw new SearchIndexUnavailable($exception);
         } catch (TypesenseClientError|ClientExceptionInterface $exception) {
             throw new SearchIndexUnavailable($exception);
         }
@@ -109,7 +119,7 @@ trait Filterable
             throw new SearchIndexUnavailable;
         }
 
-        $index->assertUnchanged($accountId, $state['revision']);
+        $index->assertUnchanged($accountId, $state['revision'], static::class);
 
         return $paginator;
     }

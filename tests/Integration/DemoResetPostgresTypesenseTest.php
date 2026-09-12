@@ -86,7 +86,11 @@ it('upgrades the old Typesense schema from stored documents while legacy writers
     DB::enableQueryLog();
     $this->artisan('search:sync-schema')->assertSuccessful();
     $this->artisan('search:sync-schema')->assertSuccessful();
-    expect(DB::getQueryLog())->toBe([]);
+    expect(DB::getQueryLog())->toHaveCount(2);
+
+    foreach (DB::getQueryLog() as $query) {
+        expect($query['query'])->toStartWith('select ')->toContain('search_index_manifest');
+    }
     DB::disableQueryLog();
 
     $fields = collect($collection->retrieve()['fields'])->keyBy('name');
