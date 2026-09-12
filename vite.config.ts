@@ -31,7 +31,14 @@ export default defineConfig({
         },
     },
     lint: {
-        ignorePatterns: ['**/*', '!resources/**'],
+        ignorePatterns: ['**/*', '!resources/**', 'resources/js/wayfinder/**'],
+        plugins: ['unicorn', 'typescript', 'oxc', 'react', 'jsx-a11y'],
+        rules: {
+            'react/rules-of-hooks': 'error',
+            'react/exhaustive-deps': 'error',
+            // Composite controls and SVGs need explicit roles without changing their element.
+            'jsx-a11y/prefer-tag-over-role': 'off',
+        },
     },
     plugins: [
         laravel({

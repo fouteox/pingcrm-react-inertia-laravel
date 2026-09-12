@@ -9,28 +9,28 @@ use App\Http\Requests\UserRequest;
 use App\Http\Resources\UserCollection;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Services\SearchIndex;
+use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
 
 final class UsersController extends Controller
 {
+    public function __construct(private readonly SearchIndex $search) {}
+
     #[Authorize('viewAny', User::class)]
-    public function index(Request $request): Response
+    public function index(Request $request, #[CurrentUser] User $authenticatedUser): Response
     {
         $filters = UsersFilters::fromRequest($request);
 
         return Inertia::render('users/index', [
             'filters' => $filters->toArray(),
             'users' => new UserCollection(
-                Auth::user()->account->users()
-                    ->orderByName()
-                    ->filter($filters->toArray(), Auth::user()->account_id)
-                    ->paginate()
+                User::paginateFiltered($filters->toArray(), $authenticatedUser->account_id)
                     ->withQueryString()
             ),
         ]);
@@ -43,11 +43,15 @@ final class UsersController extends Controller
     }
 
     #[Authorize('create', User::class)]
-    public function store(UserRequest $request): RedirectResponse
+    public function store(UserRequest $request, #[CurrentUser] User $authenticatedUser): RedirectResponse
     {
-        Auth::user()->account->users()->create($request->validated());
+        $this->search->mutate($authenticatedUser->account_id,
+            fn () => $authenticatedUser->account()->firstOrFail()->users()->create($request->validated())
+        );
 
-        return Redirect::route('users.index')->with('success', translate_with_gender('created', 'User'));
+        Inertia::flash('success', translate_with_gender('created', 'User'));
+
+        return Redirect::route('users.index');
     }
 
     #[Authorize('update', 'user')]
@@ -65,28 +69,36 @@ final class UsersController extends Controller
             return Redirect::back();
         }
 
-        $user->update($request->validated());
+        $this->search->mutate($user->account_id, fn () => tap($user)->update($request->validated()));
 
-        return Redirect::back()->with('success', translate_with_gender('updated', 'User'));
+        Inertia::flash('success', translate_with_gender('updated', 'User'));
+
+        return Redirect::back();
     }
 
     #[Authorize('delete', 'user')]
     public function destroy(User $user): RedirectResponse
     {
         if ($user->isProtectedDemoUser()) {
-            return Redirect::back()->with('error', __('Deleting the demo user is not allowed.'));
+            Inertia::flash('error', __('Deleting the demo user is not allowed.'));
+
+            return Redirect::back();
         }
 
-        $user->delete();
+        $this->search->mutate($user->account_id, fn () => tap($user)->delete());
 
-        return Redirect::back()->with('success', translate_with_gender('deleted', 'User'));
+        Inertia::flash('success', translate_with_gender('deleted', 'User'));
+
+        return Redirect::back();
     }
 
     #[Authorize('restore', 'user')]
     public function restore(User $user): RedirectResponse
     {
-        $user->restore();
+        $this->search->mutate($user->account_id, fn () => tap($user)->restore());
 
-        return Redirect::back()->with('success', translate_with_gender('restored', 'User'));
+        Inertia::flash('success', translate_with_gender('restored', 'User'));
+
+        return Redirect::back();
     }
 }

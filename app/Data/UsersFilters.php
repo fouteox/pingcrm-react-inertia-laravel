@@ -18,11 +18,10 @@ final readonly class UsersFilters
 
     public static function fromRequest(Request $request): self
     {
-        $search = $request->string('search')->trim()->toString() ?: null;
-        $role = Role::tryFrom((string) $request->input('role'));
-        $trashed = TrashedFilter::tryFrom((string) $request->input('trashed'));
+        $filters = ResourceFilters::fromRequest($request);
+        $role = is_string($request->input('role')) ? $request->enum('role', Role::class) : null;
 
-        return new self($search, $role, $trashed);
+        return new self($filters->search, $role, $filters->trashed);
     }
 
     /**

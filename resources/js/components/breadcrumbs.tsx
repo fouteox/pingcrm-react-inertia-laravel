@@ -2,11 +2,10 @@ import { Link } from '@inertiajs/react';
 import { Fragment } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Breadcrumb, BreadcrumbItem, BreadcrumbLink, BreadcrumbList, BreadcrumbPage, BreadcrumbSeparator } from '@/components/ui/breadcrumb';
-import { usePageContext } from '@/contexts/page-context';
+import type { BreadcrumbItem as BreadcrumbItemData } from '@/types';
 
-export function Breadcrumbs() {
+export function Breadcrumbs({ breadcrumbs }: { breadcrumbs: BreadcrumbItemData[] }) {
     const { t } = useTranslation();
-    const { breadcrumbs } = usePageContext();
 
     return (
         <>

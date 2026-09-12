@@ -1,4 +1,4 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, Link, usePage } from '@inertiajs/react';
 import { ChevronRight, Trash } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import AnchorLink from '@/components/anchor-link';
@@ -7,8 +7,6 @@ import SearchFilter from '@/components/search-filter';
 import { TableContainer } from '@/components/table-container';
 import { Button } from '@/components/ui/button';
 import { TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { useAppPage } from '@/hooks/use-app-page';
-import { useBreadcrumbs } from '@/hooks/use-breadcrumbs';
 import type { UsersFilters } from '@/types/filters';
 import type { UserCollection } from '@/types/resources';
 import users from '@/wayfinder/routes/users';
@@ -21,15 +19,7 @@ type IndexPageProps = {
 export default function Index() {
     const { t } = useTranslation();
 
-    useBreadcrumbs([
-        {
-            title: 'User',
-            count: 2,
-            href: users.index().url,
-        },
-    ]);
-
-    const { users: usersData } = useAppPage<IndexPageProps>().props;
+    const { users: usersData } = usePage<IndexPageProps>().props;
     const {
         data,
         meta: { links },
@@ -41,7 +31,7 @@ export default function Index() {
 
             <div className="flex h-full w-full flex-col">
                 <div className="mb-6 flex items-center justify-between gap-2">
-                    <SearchFilter />
+                    <SearchFilter action={users.index()} showRole />
 
                     <div className="flex-shrink-0">
                         <AnchorLink href={users.create().url}>
@@ -66,7 +56,9 @@ export default function Index() {
                                 <TableCell className="relative p-2">
                                     <div className="absolute inset-0 z-10">
                                         <Link href={users.edit(id)} prefetch className="block h-full w-full">
-                                            <span className="sr-only">Modifier {name}</span>
+                                            <span className="sr-only">
+                                                {t('Edit')} {name}
+                                            </span>
                                         </Link>
                                     </div>
                                     <div className="relative z-0 max-w-full overflow-hidden text-ellipsis whitespace-nowrap">
@@ -77,7 +69,9 @@ export default function Index() {
                                 <TableCell className="relative p-2">
                                     <div className="absolute inset-0 z-10">
                                         <Link href={users.edit(id)} prefetch tabIndex={-1} className="block h-full w-full">
-                                            <span className="sr-only">Modifier {name}</span>
+                                            <span className="sr-only">
+                                                {t('Edit')} {name}
+                                            </span>
                                         </Link>
                                     </div>
                                     <div className="relative z-0 max-w-full overflow-hidden text-ellipsis whitespace-nowrap">{email}</div>
@@ -85,7 +79,9 @@ export default function Index() {
                                 <TableCell className="relative p-2">
                                     <div className="absolute inset-0 z-10">
                                         <Link href={users.edit(id)} prefetch tabIndex={-1} className="block h-full w-full">
-                                            <span className="sr-only">Modifier {name}</span>
+                                            <span className="sr-only">
+                                                {t('Edit')} {name}
+                                            </span>
                                         </Link>
                                     </div>
                                     <div className="relative z-0 max-w-full overflow-hidden text-ellipsis whitespace-nowrap">
@@ -94,6 +90,7 @@ export default function Index() {
                                 </TableCell>
                                 <TableCell className="w-px">
                                     <Button
+                                        aria-label={`${t('Edit')} ${name}`}
                                         render={<Link tabIndex={-1} href={users.edit(id)} prefetch />}
                                         nativeButton={false}
                                         variant="ghost"
@@ -121,3 +118,13 @@ export default function Index() {
         </>
     );
 }
+
+Index.layout = () => ({
+    breadcrumbs: [
+        {
+            title: 'User',
+            count: 2,
+            href: users.index().url,
+        },
+    ],
+});

@@ -57,7 +57,8 @@ return [
     |
     */
 
-    'after_commit' => true,
+    // SearchIndex records its jobs inside the mutation transaction and publishes after commit.
+    'after_commit' => false,
 
     /*
     |--------------------------------------------------------------------------
@@ -177,6 +178,7 @@ return [
                 'protocol' => env('TYPESENSE_PROTOCOL', 'http'),
             ],
             'connection_timeout_seconds' => env('TYPESENSE_CONNECTION_TIMEOUT_SECONDS', 2),
+            'request_timeout_seconds' => env('TYPESENSE_REQUEST_TIMEOUT_SECONDS', 5),
             'healthcheck_interval_seconds' => env('TYPESENSE_HEALTHCHECK_INTERVAL_SECONDS', 30),
             'num_retries' => env('TYPESENSE_NUM_RETRIES', 3),
             'retry_interval_seconds' => env('TYPESENSE_RETRY_INTERVAL_SECONDS', 1),
@@ -188,12 +190,14 @@ return [
                     'fields' => [
                         ['name' => 'id', 'type' => 'string'],
                         ['name' => 'account_id', 'type' => 'int32'],
-                        ['name' => 'first_name', 'type' => 'string'],
-                        ['name' => 'last_name', 'type' => 'string'],
+                        ['name' => 'first_name', 'type' => 'string', 'sort' => true],
+                        ['name' => 'last_name', 'type' => 'string', 'sort' => true],
                         ['name' => 'email', 'type' => 'string'],
                         ['name' => 'organization_name', 'type' => 'string'],
                         ['name' => 'created_at', 'type' => 'int64'],
                         ['name' => '__soft_deleted', 'type' => 'int32', 'optional' => true],
+                        ['name' => 'search_revision', 'type' => 'int64', 'optional' => true],
+                        ['name' => 'search_deleted', 'type' => 'bool', 'optional' => true],
                     ],
                     'default_sorting_field' => 'created_at',
                 ],
@@ -206,9 +210,11 @@ return [
                     'fields' => [
                         ['name' => 'id', 'type' => 'string'],
                         ['name' => 'account_id', 'type' => 'int32'],
-                        ['name' => 'name', 'type' => 'string'],
+                        ['name' => 'name', 'type' => 'string', 'sort' => true],
                         ['name' => 'created_at', 'type' => 'int64'],
                         ['name' => '__soft_deleted', 'type' => 'int32', 'optional' => true],
+                        ['name' => 'search_revision', 'type' => 'int64', 'optional' => true],
+                        ['name' => 'search_deleted', 'type' => 'bool', 'optional' => true],
                     ],
                     'default_sorting_field' => 'created_at',
                 ],
@@ -221,12 +227,14 @@ return [
                     'fields' => [
                         ['name' => 'id', 'type' => 'string'],
                         ['name' => 'account_id', 'type' => 'int32'],
-                        ['name' => 'first_name', 'type' => 'string'],
-                        ['name' => 'last_name', 'type' => 'string'],
+                        ['name' => 'first_name', 'type' => 'string', 'sort' => true],
+                        ['name' => 'last_name', 'type' => 'string', 'sort' => true],
                         ['name' => 'email', 'type' => 'string'],
                         ['name' => 'owner', 'type' => 'bool'],
                         ['name' => 'created_at', 'type' => 'int64'],
                         ['name' => '__soft_deleted', 'type' => 'int32', 'optional' => true],
+                        ['name' => 'search_revision', 'type' => 'int64', 'optional' => true],
+                        ['name' => 'search_deleted', 'type' => 'bool', 'optional' => true],
                     ],
                     'default_sorting_field' => 'created_at',
                 ],

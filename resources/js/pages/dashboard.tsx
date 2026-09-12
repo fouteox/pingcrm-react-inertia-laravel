@@ -1,12 +1,9 @@
 import { Head } from '@inertiajs/react';
 import { Trans, useTranslation } from 'react-i18next';
-import { useBreadcrumbs } from '@/hooks/use-breadcrumbs';
 import { dashboard } from '@/wayfinder/routes';
 
 export default function Dashboard() {
     const { t } = useTranslation();
-
-    useBreadcrumbs([{ title: 'Dashboard', href: dashboard().url }]);
 
     return (
         <>
@@ -18,9 +15,21 @@ export default function Dashboard() {
                 <Trans
                     i18nKey="welcome_message"
                     components={{
-                        inertia_link: <a href="https://inertiajs.com" className="underline underline-offset-4" />,
-                        react_link: <a href="https://react.dev/" className="underline underline-offset-4" />,
-                        github_link: <a href="https://github.com/fouteox/pingcrm-react-inertia-laravel" className="underline underline-offset-4" />,
+                        inertia_link: (
+                            <a href="https://inertiajs.com" className="underline underline-offset-4">
+                                Inertia.js
+                            </a>
+                        ),
+                        react_link: (
+                            <a href="https://react.dev/" className="underline underline-offset-4">
+                                React
+                            </a>
+                        ),
+                        github_link: (
+                            <a href="https://github.com/fouteox/pingcrm-react-inertia-laravel" className="underline underline-offset-4">
+                                GitHub
+                            </a>
+                        ),
                     }}
                 />
             </p>
@@ -29,8 +38,16 @@ export default function Dashboard() {
                 <Trans
                     i18nKey="original_react_credit"
                     components={{
-                        app_link: <a href="https://github.com/liorocks/pingcrm-react" className="underline underline-offset-4" />,
-                        author_link: <a href="https://github.com/liorocks" className="underline underline-offset-4" />,
+                        app_link: (
+                            <a href="https://github.com/liorocks/pingcrm-react" className="underline underline-offset-4">
+                                Ping CRM React
+                            </a>
+                        ),
+                        author_link: (
+                            <a href="https://github.com/liorocks" className="underline underline-offset-4">
+                                liorocks
+                            </a>
+                        ),
                     }}
                 />
             </p>
@@ -39,11 +56,21 @@ export default function Dashboard() {
                 <Trans
                     i18nKey="original_vue_credit"
                     components={{
-                        app_link: <a href="https://demo.inertiajs.com/" className="underline underline-offset-4" />,
-                        author_link: <a href="https://github.com/reinink" className="underline underline-offset-4" />,
+                        app_link: (
+                            <a href="https://demo.inertiajs.com/" className="underline underline-offset-4">
+                                Ping CRM
+                            </a>
+                        ),
+                        author_link: (
+                            <a href="https://github.com/reinink" className="underline underline-offset-4">
+                                Jonathan Reinink
+                            </a>
+                        ),
                     }}
                 />
             </p>
         </>
     );
 }
+
+Dashboard.layout = () => ({ breadcrumbs: [{ title: 'Dashboard', href: dashboard().url }] });

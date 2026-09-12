@@ -1,0 +1,15 @@
+{
+    "$schema": "https://unpkg.com/knip@6/schema.json",
+    "entry": [
+        "resources/js/pages/**/*.tsx",
+        "resources/js/types/*.d.ts"
+    ],
+    "project": [
+        "resources/**/*.{ts,tsx,css}",
+        "*.config.ts"
+    ],
+    "ignoreDependencies": [
+        "concurrently",
+        "laravel-echo"
+    ]
+}

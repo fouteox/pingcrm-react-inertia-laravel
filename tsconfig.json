@@ -5,6 +5,8 @@
         "moduleResolution": "bundler",
         "jsx": "react-jsx",
         "strict": true,
+        "noUnusedLocals": true,
+        "noUnusedParameters": true,
         "isolatedModules": true,
         "target": "ESNext",
         "forceConsistentCasingInFileNames": true,

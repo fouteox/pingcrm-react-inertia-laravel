@@ -1,4 +1,4 @@
-import { router } from '@inertiajs/react';
+import { router, usePage } from '@inertiajs/react';
 import { Filter, X } from 'lucide-react';
 import * as React from 'react';
 import { useTranslation } from 'react-i18next';
@@ -8,7 +8,7 @@ import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '
 import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useAppPage } from '@/hooks/use-app-page';
+import type { RouteDefinition } from '@/wayfinder';
 
 interface Values {
     role: string;
@@ -16,15 +16,13 @@ interface Values {
     trashed: string;
 }
 
-// Use constants for special values
-const ANY_VALUE = 'any'; // Instead of empty string
+const ANY_VALUE = 'any';
 
 function pickBy(object: Values): Partial<Values> {
     const keys: Array<keyof Values> = ['role', 'search', 'trashed'];
     return keys.reduce<Partial<Values>>((acc, key) => {
         const value = object[key];
-        // If the value is ANY_VALUE, don't include it in the query
-        if (value !== '' && value !== undefined && value !== null && value !== ANY_VALUE) {
+        if (value !== '' && (key === 'search' || value !== ANY_VALUE)) {
             acc[key] = value;
         }
         return acc;
@@ -39,13 +37,12 @@ type SearchFilterPageProps = {
     };
 };
 
-export default function SearchFilter() {
+export default function SearchFilter({ action, showRole = false }: { action: RouteDefinition<'get'>; showRole?: boolean }) {
     const { t } = useTranslation();
-    const { filters } = useAppPage<SearchFilterPageProps>().props;
+    const { filters } = usePage<SearchFilterPageProps>().props;
     const [open, setOpen] = React.useState(false);
 
     const [values, setValues] = React.useState<Values>({
-        // Convert empty strings in filters to ANY_VALUE
         role: filters.role || ANY_VALUE,
         search: filters.search || '',
         trashed: filters.trashed || ANY_VALUE,
@@ -79,7 +76,7 @@ export default function SearchFilter() {
 
         const query = pickBy(newValues);
 
-        router.get(window.location.pathname, query, {
+        router.get(action.url, query, {
             replace: true,
             preserveState: true,
         });
@@ -93,7 +90,7 @@ export default function SearchFilter() {
                 </PopoverTrigger>
                 <PopoverContent className="w-auto min-w-72" align="start">
                     <div className="grid gap-4">
-                        {Object.prototype.hasOwnProperty.call(filters, 'role') && (
+                        {showRole && (
                             <div className="grid gap-2">
                                 <Label htmlFor="role">{t('Role')}</Label>
                                 <Select items={roleItems} value={values.role} onValueChange={(value) => handleChange('role', value ?? '')}>
@@ -132,6 +129,7 @@ export default function SearchFilter() {
                 <InputGroupInput
                     type="text"
                     placeholder={t('Search')}
+                    aria-label={t('Search')}
                     value={values.search}
                     onChange={(e) => handleChange('search', e.target.value)}
                 />

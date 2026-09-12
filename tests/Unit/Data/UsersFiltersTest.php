@@ -26,6 +26,7 @@ describe('fromRequest', function () {
     })->with([
         'plain term' => ['Alice', 'Alice'],
         'padded term' => ['  Alice  ', 'Alice'],
+        'zero term' => ['0', '0'],
         'empty string' => ['', null],
         'whitespace only' => ['   ', null],
     ]);

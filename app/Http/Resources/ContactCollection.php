@@ -10,8 +10,11 @@ use Illuminate\Support\Collection;
 
 final class ContactCollection extends ResourceCollection
 {
+    /** @var Collection<int, ContactResource> */
+    public $collection;
+
     /**
-     * Transform the resource collection into an array.
+     * @return Collection<int, array{id: int, name: string, phone: string|null, city: string|null, deleted_at: \Carbon\Carbon|null, organization: array{id: int, name: string}|null}>
      */
     public function toArray(Request $request): Collection
     {

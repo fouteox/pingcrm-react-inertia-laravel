@@ -11,6 +11,10 @@ use Illuminate\Support\Collection;
 
 final class UserOrganizationCollection extends ResourceCollection
 {
+    /** @var Collection<int, Organization> */
+    public $collection;
+
+    /** @return Collection<int, array{id: int, name: string}> */
     public function toArray(Request $request): Collection
     {
         return $this->collection->map(fn (Organization $organization): array => [

@@ -14,7 +14,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 final class ContactResource extends JsonResource
 {
     /**
-     * Transform the resource into an array.
+     * @return array{id: int, first_name: string, last_name: string, email: string|null, phone: string|null, address: string|null, city: string|null, region: string|null, country: string|null, postal_code: string|null, deleted_at: \Carbon\CarbonInterface|null, organization_id: int|null}
      */
     public function toArray(Request $request): array
     {

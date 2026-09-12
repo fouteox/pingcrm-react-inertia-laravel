@@ -22,14 +22,6 @@ final class HandleInertiaRequests extends Middleware
     public function __construct(private readonly I18NextTranslationsLoader $translationsLoader) {}
 
     /**
-     * Determine the current asset version.
-     */
-    public function version(Request $request): ?string
-    {
-        return parent::version($request);
-    }
-
-    /**
      * Define the props that are shared by default.
      */
     public function share(Request $request): array
@@ -45,6 +37,7 @@ final class HandleInertiaRequests extends Middleware
                 'user' => $request->user() ? new UserResource($request->user()) : null,
             ],
             'locale' => fn () => $locale,
+            'sidebarOpen' => $request->cookie('sidebar_state') !== 'false',
             // REVERB_HOST/PORT target the server from Laravel. The browser gets
             // its separate public endpoint, or the current request origin.
             'reverb' => [
@@ -58,10 +51,6 @@ final class HandleInertiaRequests extends Middleware
                     'translation' => $this->translationsLoader->loadTranslations($locale),
                 ],
             ] : null,
-            'flash' => fn () => [
-                'success' => $request->session()->get('success'),
-                'error' => $request->session()->get('error'),
-            ],
         ];
     }
 }

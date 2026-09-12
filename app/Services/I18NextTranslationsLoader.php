@@ -5,10 +5,9 @@ declare(strict_types=1);
 namespace App\Services;
 
 use Illuminate\Filesystem\Filesystem;
+use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Illuminate\Translation\FileLoader;
-use RecursiveArrayIterator;
-use RecursiveIteratorIterator;
 use SplFileInfo;
 
 final readonly class I18NextTranslationsLoader
@@ -19,9 +18,10 @@ final readonly class I18NextTranslationsLoader
         private string $langPath,
     ) {}
 
+    /** @return array<string, string> */
     public function loadTranslations(string $locale): array
     {
-        $fallbackLocale = config('app.fallback_locale', 'en');
+        $fallbackLocale = config()->string('app.fallback_locale', 'en');
         $useLocale = $this->localeExists($locale) ? $locale : $fallbackLocale;
 
         if (! $this->localeExists($useLocale)) {
@@ -51,46 +51,31 @@ final readonly class I18NextTranslationsLoader
         return $this->fs->exists($this->langPath.'/'.$locale);
     }
 
+    /**
+     * @param  array<string|int, mixed>  $translations
+     * @return array<string, string>
+     */
     private function prepare(array $translations): array
     {
         $i18nTranslations = [];
 
-        foreach ($translations as $laravelKey => $laravelValue) {
-            $i18nKey = preg_replace("/:(\w+)/", '{{$1}}', is_int($laravelKey) ? (string) $laravelKey : $laravelKey);
+        foreach (Arr::dot($translations) as $laravelKey => $laravelValue) {
+            if (! is_string($laravelValue)) {
+                continue;
+            }
 
-            if (is_array($laravelValue)) {
-                $i18nTranslations[$i18nKey] = $this->prepare($laravelValue);
+            $i18nKey = Str::of((string) $laravelKey)->replaceMatches('/:(\w+)/', '{{$1}}')->toString();
+            $value = Str::of($laravelValue)->replaceMatches('/:(\w+)/', '{{$1}}')->toString();
+
+            if (Str::contains($value, '|')) {
+                [$one, $other] = explode('|', $value);
+                $i18nTranslations[$i18nKey.'_one'] = $one;
+                $i18nTranslations[$i18nKey.'_other'] = $other;
             } else {
-                $translationWithReplacedVariableSyntax = preg_replace("/:(\w+)/", '{{$1}}', $laravelValue);
-                // handle pluralisation
-                if (Str::contains($translationWithReplacedVariableSyntax, '|')) {
-                    [$one, $other] = explode('|', $translationWithReplacedVariableSyntax);
-                    $i18nTranslations[$i18nKey.'_one'] = $one;
-                    $i18nTranslations[$i18nKey.'_other'] = $other;
-                } else {
-                    $i18nTranslations[$i18nKey] = $translationWithReplacedVariableSyntax;
-                }
+                $i18nTranslations[$i18nKey] = $value;
             }
         }
 
-        return $this->flatten($i18nTranslations);
-    }
-
-    private function flatten($translations): array
-    {
-        $iterator = new RecursiveIteratorIterator(new RecursiveArrayIterator($translations));
-        $flattened = [];
-
-        foreach ($iterator as $leafValue) {
-            $keys = [];
-
-            foreach (range(0, $iterator->getDepth()) as $depth) {
-                $keys[] = $iterator->getSubIterator($depth)->key();
-            }
-
-            $flattened[implode('.', $keys)] = $leafValue;
-        }
-
-        return $flattened;
+        return $i18nTranslations;
     }
 }

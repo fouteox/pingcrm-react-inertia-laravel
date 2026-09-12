@@ -13,8 +13,3 @@ export type UsersFilters = {
     role?: 'user' | 'owner';
     trashed?: 'with' | 'only';
 };
-
-export type FlashMessages = {
-    success: string | null;
-    error: string | null;
-};

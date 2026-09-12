@@ -8,21 +8,10 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Symfony\Component\Finder\Finder;
 
-test('strict types everywhere in app/', function () {
-    $offenders = [];
-
-    foreach (Finder::create()->in(dirname(__DIR__, 2).'/app')->files()->name('*.php') as $file) {
-        $content = (string) file_get_contents($file->getRealPath());
-
-        if (preg_match('/^<\?php\s*(\/\*[\s\S]*?\*\/|\/\/[^\r\n]*(?:\r?\n|$)|\s)*declare\s*\(\s*strict_types\s*=\s*1\s*\)\s*;/m', $content) !== 1) {
-            $offenders[] = $file->getRelativePathname();
-        }
-    }
-
-    expect($offenders)->toBeEmpty();
-});
+arch('app classes and the translation helper use strict types')
+    ->expect(['App', 'translate_with_gender'])
+    ->toUseStrictTypes();
 
 test('legacy local container configuration is absent', function (string $relativePath) {
     expect(file_exists(dirname(__DIR__, 2).'/'.$relativePath))->toBeFalse();

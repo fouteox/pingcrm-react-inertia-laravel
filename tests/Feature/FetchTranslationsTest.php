@@ -12,5 +12,9 @@ it('returns a flat translations map for a known locale', function () {
 });
 
 it('falls back gracefully when the locale does not exist', function () {
-    $this->get('/locales/zz/translation.json')->assertSuccessful();
+    config()->set('app.fallback_locale', 'en');
+
+    $this->get('/locales/zz/translation.json')
+        ->assertSuccessful()
+        ->assertJsonPath('Dashboard', __('Dashboard', [], 'en'));
 });

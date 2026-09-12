@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use App\Models\Account;
+use App\Models\Contact;
 use App\Models\Organization;
 use App\Models\User;
 use Inertia\Testing\AssertableInertia as Assert;
@@ -21,7 +22,7 @@ beforeEach(function () {
         'name' => 'Example Organization Inc.',
     ]);
 
-    $account->contacts()->createMany([
+    $account->contacts()->createMany(array_reverse([
         [
             'organization_id' => $organization->id,
             'first_name' => 'Martin',
@@ -46,7 +47,7 @@ beforeEach(function () {
             'country' => 'US',
             'postal_code' => '11623',
         ],
-    ]);
+    ]));
 });
 
 it('lists the account contacts ordered by name', function () {
@@ -85,6 +86,91 @@ it('filters contacts by search term', function () {
             ->has('contacts.data', 1)
             ->where('contacts.data.0.name', 'Martin Abbott')
         );
+});
+
+it('sorts contacts with the same last name by first name', function () {
+    Contact::factory()->for($this->user->account)->create(['first_name' => 'Zoe', 'last_name' => 'Brown']);
+    Contact::factory()->for($this->user->account)->create(['first_name' => 'Alice', 'last_name' => 'Brown']);
+
+    $this->actingAs($this->user)->get('/contacts')->assertInertia(fn (Assert $assert) => $assert
+        ->where('contacts.data.1.name', 'Alice Brown')
+        ->where('contacts.data.2.name', 'Zoe Brown')
+    );
+});
+
+it('creates a contact belonging to the current account', function () {
+    $organization = $this->user->account->organizations()->firstOrFail();
+
+    $this->actingAs($this->user)->post('/contacts', [
+        'first_name' => 'Alice',
+        'last_name' => 'Brown',
+        'organization_id' => $organization->id,
+        'email' => 'alice@example.com',
+    ])
+        ->assertRedirect('/contacts')
+        ->assertInertiaFlash('success', translate_with_gender('created', 'Contact'));
+
+    $this->assertDatabaseHas('contacts', [
+        'account_id' => $this->user->account_id,
+        'organization_id' => $organization->id,
+        'first_name' => 'Alice',
+        'last_name' => 'Brown',
+        'email' => 'alice@example.com',
+    ]);
+});
+
+it('rejects array values for contact text fields', function (string $field) {
+    $this->actingAs($this->user)->postJson('/contacts', [
+        'first_name' => 'Alice',
+        'last_name' => 'Brown',
+        $field => ['invalid'],
+    ])
+        ->assertUnprocessable()
+        ->assertInvalid([$field]);
+
+    $this->assertDatabaseCount('contacts', 2);
+})->with(['first_name', 'last_name', 'email', 'phone', 'address', 'city', 'region', 'country', 'postal_code']);
+
+it('rejects an organization from another account on create and update', function (string $method) {
+    $foreignOrganization = Organization::factory()->create();
+    $contact = $this->user->account->contacts()->firstOrFail();
+    $originalOrganization = $contact->organization_id;
+    $path = $method === 'postJson' ? '/contacts' : "/contacts/{$contact->id}";
+
+    $this->actingAs($this->user)->{$method}($path, [
+        'first_name' => 'Alice',
+        'last_name' => 'Brown',
+        'organization_id' => $foreignOrganization->id,
+    ])
+        ->assertUnprocessable()
+        ->assertInvalid(['organization_id']);
+
+    $this->assertDatabaseCount('contacts', 2);
+    expect($contact->fresh()->organization_id)->toBe($originalOrganization);
+})->with(['postJson', 'putJson']);
+
+it('updates, deletes and restores a contact from the account', function () {
+    $contact = $this->user->account->contacts()->firstOrFail();
+
+    $this->actingAs($this->user)->put("/contacts/{$contact->id}", [
+        'first_name' => 'Alice',
+        'last_name' => 'Brown',
+        'organization_id' => null,
+    ])
+        ->assertRedirect()
+        ->assertInertiaFlash('success', translate_with_gender('updated', 'Contact'));
+
+    expect($contact->fresh())->first_name->toBe('Alice')->organization_id->toBeNull();
+
+    $this->delete("/contacts/{$contact->id}")
+        ->assertRedirect()
+        ->assertInertiaFlash('success', translate_with_gender('deleted', 'Contact'));
+    $this->assertSoftDeleted($contact);
+
+    $this->put("/contacts/{$contact->id}/restore")
+        ->assertRedirect()
+        ->assertInertiaFlash('success', translate_with_gender('restored', 'Contact'));
+    $this->assertNotSoftDeleted($contact);
 });
 
 describe('soft-deleted contacts', function () {

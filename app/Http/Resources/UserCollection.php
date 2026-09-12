@@ -10,12 +10,15 @@ use Illuminate\Support\Collection;
 
 final class UserCollection extends ResourceCollection
 {
+    /** @var Collection<int, UserResource> */
+    public $collection;
+
     /**
-     * Transform the resource collection into an array.
+     * @return Collection<int, array{id: int, name: string, email: string, owner: bool, deleted_at: \Carbon\Carbon|null}>
      */
     public function toArray(Request $request): Collection
     {
-        return $this->collection->map(fn ($user) => [
+        return $this->collection->map(fn (UserResource $user): array => [
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,

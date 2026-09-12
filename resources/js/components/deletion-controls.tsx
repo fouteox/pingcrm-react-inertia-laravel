@@ -1,5 +1,6 @@
+import { useForm } from '@inertiajs/react';
 import { Trash } from 'lucide-react';
-import React from 'react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
@@ -12,25 +13,36 @@ import {
     AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Button } from '@/components/ui/button';
+import type { RouteDefinition } from '@/wayfinder';
 
-export interface DeletionControlsProps {
+interface DeletionControlsProps {
     resourceType: 'contact' | 'organization' | 'user';
     isDeleted: boolean;
-    processing: boolean;
-    onAction: (e: React.MouseEvent<HTMLButtonElement>) => Promise<void>;
+    canDelete?: boolean;
+    deleteAction: RouteDefinition<'delete'>;
+    restoreAction: RouteDefinition<'put'>;
 }
 
-export const DeletionControls: React.FC<DeletionControlsProps> = ({ resourceType, isDeleted, processing, onAction }) => {
+export function DeletionControls({ resourceType, isDeleted, canDelete = true, deleteAction, restoreAction }: DeletionControlsProps) {
     const { t } = useTranslation();
+    const [open, setOpen] = useState(false);
+    const form = useForm({});
 
-    const getResourceName = () => {
-        return t(resourceType.charAt(0).toUpperCase() + resourceType.slice(1));
-    };
+    if (!canDelete) {
+        return null;
+    }
 
-    const resourceName = getResourceName();
+    const resourceName = resourceType.charAt(0).toUpperCase() + resourceType.slice(1);
+
+    function onAction() {
+        form.submit(isDeleted ? restoreAction : deleteAction, {
+            preserveScroll: true,
+            onSuccess: () => setOpen(false),
+        });
+    }
 
     return (
-        <AlertDialog>
+        <AlertDialog open={open} onOpenChange={setOpen}>
             {isDeleted ? (
                 <Alert className="mb-6 max-w-3xl items-center border-yellow-500 bg-yellow-100 text-yellow-800 dark:border-yellow-600/30 dark:bg-yellow-600/10 dark:text-yellow-500">
                     <Trash className="text-yellow-800 dark:text-yellow-500" />
@@ -50,7 +62,7 @@ export const DeletionControls: React.FC<DeletionControlsProps> = ({ resourceType
                     </AlertDescription>
                 </Alert>
             ) : (
-                <AlertDialogTrigger render={<Button variant="destructive" />}>{t(`Delete ${resourceName}`)}</AlertDialogTrigger>
+                <AlertDialogTrigger render={<Button type="button" variant="destructive" />}>{t(`Delete ${resourceName}`)}</AlertDialogTrigger>
             )}
 
             <AlertDialogContent>
@@ -67,11 +79,11 @@ export const DeletionControls: React.FC<DeletionControlsProps> = ({ resourceType
 
                 <AlertDialogFooter className="gap-2">
                     <AlertDialogCancel variant="secondary">{t('Cancel')}</AlertDialogCancel>
-                    <Button variant={isDeleted ? 'default' : 'destructive'} disabled={processing} onClick={onAction}>
+                    <Button type="button" variant={isDeleted ? 'default' : 'destructive'} disabled={form.processing} onClick={onAction}>
                         {isDeleted ? t(`Restore ${resourceName}`) : t(`Delete ${resourceName}`)}
                     </Button>
                 </AlertDialogFooter>
             </AlertDialogContent>
         </AlertDialog>
     );
-};
+}

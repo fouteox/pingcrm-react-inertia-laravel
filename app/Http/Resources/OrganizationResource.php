@@ -14,7 +14,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 final class OrganizationResource extends JsonResource
 {
     /**
-     * Transform the resource into an array.
+     * @return array{id: int, name: string, email: string|null, phone: string|null, address: string|null, city: string|null, region: string|null, country: string|null, postal_code: string|null, deleted_at: \Carbon\CarbonInterface|null, contacts: \Illuminate\Http\Resources\Json\AnonymousResourceCollection}
      */
     public function toArray(Request $request): array
     {

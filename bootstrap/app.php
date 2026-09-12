@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Exceptions\SearchIndexUnavailable;
 use App\Http\Middleware\HandleAppearanceMiddleware;
 use App\Http\Middleware\SetLocaleMiddleware;
 use App\Providers\AppServiceProvider;
@@ -22,7 +23,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->redirectGuestsTo(fn () => route('login'));
         $middleware->redirectUsersTo(AppServiceProvider::HOME);
-        $middleware->encryptCookies(except: ['appearance']);
+        $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
         $middleware->web(append: [
             HandleAppearanceMiddleware::class,
@@ -40,20 +41,35 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->respond(function (Response $response, Throwable $exception, Request $request) {
+            if ($exception instanceof SearchIndexUnavailable) {
+                if ($request->expectsJson() && ! $request->inertia()) {
+                    return $response;
+                }
+
+                $response = Inertia::render('search-unavailable', [
+                    'retryUrl' => $request->fullUrl(),
+                    'listUrl' => $request->fullUrlWithoutQuery(['search', 'page']),
+                ])->toResponse($request);
+
+                $response->headers->add($exception->getHeaders());
+
+                return $response->setStatusCode($exception->getStatusCode());
+            }
+
             if (! app()->environment(['local', 'testing']) && in_array($response->getStatusCode(), [500, 503, 404, 403])) {
                 return Inertia::render('error', ['status' => $response->getStatusCode()])
                     ->toResponse($request)
                     ->setStatusCode($response->getStatusCode());
             }
             if ($response->getStatusCode() === 419) {
-                return back()->with([
-                    'message' => __('The page expired, please try again.'),
-                ]);
+                Inertia::flash('error', __('The page expired, please try again.'));
+
+                return back();
             }
             if ($response->getStatusCode() === 429) {
-                return back()->with([
-                    'error' => __('Sorry, you are making too many requests to our servers.'),
-                ]);
+                Inertia::flash('error', __('Sorry, you are making too many requests to our servers.'));
+
+                return back();
             }
 
             return $response;

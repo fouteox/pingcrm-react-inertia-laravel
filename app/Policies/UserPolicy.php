@@ -20,7 +20,7 @@ final class UserPolicy
 
     public function create(User $user): bool
     {
-        return $user->account_id !== null;
+        return true;
     }
 
     public function update(User $user, User $model): bool

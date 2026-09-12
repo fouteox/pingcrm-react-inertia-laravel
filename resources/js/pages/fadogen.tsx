@@ -1,14 +1,11 @@
 import { Head } from '@inertiajs/react';
 import { Trans, useTranslation } from 'react-i18next';
-import { useBreadcrumbs } from '@/hooks/use-breadcrumbs';
 import { fadogen } from '@/wayfinder/routes';
 
 export default function Dashboard() {
     const { t, i18n } = useTranslation();
 
     const docsUrl = i18n.language === 'fr' ? 'https://docs.fadogen.app/fr' : 'https://docs.fadogen.app';
-
-    useBreadcrumbs([{ title: 'Fadogen', href: fadogen().url }]);
 
     return (
         <>
@@ -20,10 +17,16 @@ export default function Dashboard() {
                 <Trans
                     i18nKey="fadogen_presentation"
                     components={{
-                        fadogen_link: <a href={docsUrl} className="underline underline-offset-4" />,
+                        fadogen_link: (
+                            <a href={docsUrl} className="underline underline-offset-4">
+                                Fadogen
+                            </a>
+                        ),
                     }}
                 />
             </p>
         </>
     );
 }
+
+Dashboard.layout = () => ({ breadcrumbs: [{ title: 'Fadogen', href: fadogen().url }] });
