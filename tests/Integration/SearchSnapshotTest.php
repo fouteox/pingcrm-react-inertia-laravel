@@ -110,7 +110,7 @@ it('returns 503 on a real transport failure without holding a SQL write lock', f
     }
 });
 
-it('rejects an HTTP search when its account revision changes during the engine response', function (bool $changeMatch, bool $acknowledged) {
+it('serves an HTTP search when its account revision changes during the engine response', function (bool $changeMatch, bool $acknowledged) {
     $account = Account::factory()->create();
     $search = app(SearchIndex::class);
     $actor = $search->mutate($account->id, fn () => User::factory()->for($account)->create(['first_name' => 'Administrator', 'owner' => true]));
@@ -131,7 +131,11 @@ it('rejects an HTTP search when its account revision changes during the engine r
     });
 
     try {
-        $this->actingAs($actor)->get('/users?search=Ada&role=user')->assertServiceUnavailable();
+        $this->actingAs($actor)->get('/users?search=Ada&role=user')->assertOk()
+            ->assertInertia(fn (Assert $assert) => $assert
+                ->where('users.meta.total', 1)
+                ->where('users.data.0.id', $match->id)
+                ->where('users.data.0.name', 'Ada '.($changeMatch ? 'Concurrent' : $match->last_name)));
 
         expect(User::findOrFail($changedId)->last_name)->toBe('Concurrent')
             ->and($search->readState($account->id)['revision'])->toBe($revision + 1)
@@ -168,7 +172,11 @@ it('reads the committed revision while another connection holds an uncommitted m
                     ->where('users.data.0.name', 'Ada Lovelace'));
         });
         $writer->commit();
-        $this->get('/users?search=Ada&role=user')->assertServiceUnavailable();
+        $this->get('/users?search=Ada&role=user')->assertOk()
+            ->assertInertia(fn (Assert $assert) => $assert
+                ->where('users.meta.total', 1)
+                ->where('users.data.0.id', $match->id)
+                ->where('users.data.0.name', 'Ada Uncommitted'));
 
         expect($search->readState($account->id))->toBe(['revision' => $revision + 1, 'indexedRevision' => $revision, 'rebuildRevision' => 0]);
     } finally {

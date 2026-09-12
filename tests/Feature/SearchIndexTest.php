@@ -109,7 +109,7 @@ it('keeps database-backed Scout mutations transactional without projection jobs'
         ->and(DB::table('jobs')->count())->toBe(0);
 });
 
-it('refuses pending or changed account revisions instead of returning stale readiness', function () {
+it('reports pending account projections until their current revision is acknowledged', function () {
     $account = Account::factory()->create();
     $search = app(SearchIndex::class);
 
@@ -119,8 +119,7 @@ it('refuses pending or changed account revisions instead of returning stale read
     DB::table('accounts')->where('id', $account->id)->update(['indexed_revision' => 1]);
 
     expect($search->readState($account->id))->toBe(['revision' => 1, 'indexedRevision' => 1, 'rebuildRevision' => 0]);
-    expect(fn () => $search->assertUnchanged($account->id, 0))->toThrow(SearchIndexUnavailable::class);
-    $search->assertUnchanged($account->id, 1);
+    expect($search->assertReady($account->id))->toBe(1);
 });
 
 it('fences existing accounts during migration and starts new empty accounts ready', function () {
@@ -136,7 +135,7 @@ it('fences existing accounts during migration and starts new empty accounts read
     expect($search->assertReady($new->id))->toBe(0);
 });
 
-it('records a full projection when hard deletion detaches organization contacts', function () {
+it('records an organization projection when hard deletion detaches its contacts', function () {
     $organization = Organization::withoutSyncingToSearch(fn () => Organization::factory()->create());
     $contact = Contact::withoutSyncingToSearch(fn () => Contact::factory()->create([
         'account_id' => $organization->account_id,
@@ -148,9 +147,9 @@ it('records a full projection when hard deletion detaches organization contacts'
     $job = unserialize($payload['data']['command']);
 
     expect($contact->fresh()->organization_id)->toBeNull()
-        ->and($contact->account->fresh()->search_rebuild_revision)->toBe(1)
-        ->and($job->modelClass)->toBeNull()
-        ->and($job->modelId)->toBeNull()
+        ->and($contact->account->fresh()->search_rebuild_revision)->toBe(0)
+        ->and($job->modelClass)->toBe(Organization::class)
+        ->and($job->modelId)->toBe($organization->id)
         ->and($job->revision)->toBe(1);
 });
 

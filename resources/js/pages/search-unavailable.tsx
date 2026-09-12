@@ -1,14 +1,46 @@
-import { Head, Link } from '@inertiajs/react';
+import { Head, router, usePoll } from '@inertiajs/react';
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 
 type SearchUnavailableProps = {
+    retryAfter: number;
     retryUrl: string;
     listUrl: string;
 };
 
-export default function SearchUnavailable({ retryUrl, listUrl }: SearchUnavailableProps) {
+export default function SearchUnavailable({ retryAfter, retryUrl, listUrl }: SearchUnavailableProps) {
     const { t } = useTranslation();
+    const [retrying, setRetrying] = useState(false);
+    const { start, stop } = usePoll(
+        retryAfter * 1000,
+        {
+            onStart: () => setRetrying(true),
+            onFinish: () => setRetrying(false),
+            onNetworkError: () => false,
+        },
+        { mode: 'rest' },
+    );
+
+    const visit = (url: string, replace = false) => {
+        router.get(
+            url,
+            {},
+            {
+                replace,
+                onStart: () => {
+                    stop();
+                    setRetrying(true);
+                },
+                onFinish: () => setRetrying(false),
+                onNetworkError: () => {
+                    start();
+
+                    return false;
+                },
+            },
+        );
+    };
 
     return (
         <section className="mx-auto flex max-w-xl flex-col gap-6 py-12" aria-labelledby="search-unavailable-title">
@@ -19,15 +51,15 @@ export default function SearchUnavailable({ retryUrl, listUrl }: SearchUnavailab
                     {t('Search is temporarily unavailable.')}
                 </h1>
                 <p className="text-muted-foreground">
-                    {t('Search results cannot be shown right now. Try again in a moment, or view the list without searching.')}
+                    {t('We are retrying automatically. You can also try again now or view the list without searching.')}
                 </p>
             </div>
 
             <div className="flex flex-wrap gap-3">
-                <Button render={<Link href={retryUrl} replace />} nativeButton={false}>
+                <Button onClick={() => visit(retryUrl, true)} disabled={retrying} aria-busy={retrying}>
                     {t('Try again')}
                 </Button>
-                <Button render={<Link href={listUrl} />} nativeButton={false} variant="outline">
+                <Button onClick={() => visit(listUrl)} variant="outline">
                     {t('View the list without searching')}
                 </Button>
             </div>

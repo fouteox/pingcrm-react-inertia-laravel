@@ -355,7 +355,7 @@
     "You're logged in!": "You're logged in!",
     "Your email address is unverified.": "Your email address is unverified.",
     "Search is temporarily unavailable.": "Search is temporarily unavailable.",
-    "Search results cannot be shown right now. Try again in a moment, or view the list without searching.": "Search results cannot be shown right now. Try again in a moment, or view the list without searching.",
+    "We are retrying automatically. You can also try again now or view the list without searching.": "We are retrying automatically. You can also try again now or view the list without searching.",
     "Try again": "Try again",
     "View the list without searching": "View the list without searching"
 }

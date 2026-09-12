@@ -4,17 +4,17 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
-use App\Models\Account;
 use App\Models\Contact;
 use App\Models\Organization;
 use App\Models\User;
+use App\Services\SearchGenerations;
 use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Config;
-use Illuminate\Support\Facades\DB;
 use Typesense\Client;
 use Typesense\Collection;
+use Typesense\Exceptions\ObjectAlreadyExists;
 use Typesense\Exceptions\ObjectNotFound;
 
 /**
@@ -25,29 +25,52 @@ use Typesense\Exceptions\ObjectNotFound;
 #[Description('Prepare Typesense name sorting and search revision fields without deleting collections')]
 final class SearchSyncSchemaCommand extends Command
 {
-    public function handle(Client $client): int
+    public function handle(Client $client, SearchGenerations $generations): int
     {
         /** @var array<class-string<Contact|Organization|User>, array{collection-schema: SearchSchema}> $settings */
         $settings = Config::array('scout.typesense.model-settings');
+        $prepared = [];
 
-        foreach ($settings as $modelClass => $configuration) {
-            $index = (new $modelClass)->indexableAs();
-            $schema = $configuration['collection-schema'];
+        while (true) {
+            $targets = array_filter($generations->schemaTargets(), fn (?string $generation): bool => ! isset($prepared[$generation ?? 'legacy']));
 
-            try {
-                $this->prepareSchema($client->getCollections()->{$index}, $schema);
-            } catch (ObjectNotFound) {
-                Account::query()->update([
-                    'indexed_revision' => null,
-                    'search_revision' => DB::raw('search_revision + 1'),
-                ]);
-                $client->getCollections()->create(['name' => $index, ...$schema]);
+            if ($targets === []) {
+                return self::SUCCESS;
             }
 
-            $this->info("Prepared [$index].");
-        }
+            foreach ($targets as $generation) {
+                foreach ($settings as $modelClass => $configuration) {
+                    $index = SearchGenerations::collection(new $modelClass, $generation);
+                    $schema = $configuration['collection-schema'];
 
-        return self::SUCCESS;
+                    try {
+                        $this->prepareSchema($client->getCollections()->{$index}, $schema);
+                    } catch (ObjectNotFound) {
+                        $status = $generations->invalidateMissingCollection($generation);
+
+                        if ($status === 'retired') {
+                            continue 2;
+                        }
+
+                        if ($status === 'abandoned') {
+                            $this->error("Candidate [$generation] lost a collection and was retired; run search:rebuild --background to start a complete replacement.");
+
+                            return self::FAILURE;
+                        }
+
+                        try {
+                            $client->getCollections()->create(['name' => $index, ...$schema]);
+                        } catch (ObjectAlreadyExists) {
+                            $this->prepareSchema($client->getCollections()->{$index}, $schema);
+                        }
+                    }
+
+                    $this->info("Prepared [$index].");
+                }
+
+                $prepared[$generation ?? 'legacy'] = true;
+            }
+        }
     }
 
     /**

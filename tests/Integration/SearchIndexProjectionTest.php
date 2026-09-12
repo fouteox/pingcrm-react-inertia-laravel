@@ -174,9 +174,6 @@ it('projects the complete model lifecycle before declaring search ready', functi
     expect($updatedRevision)->toBeGreaterThan($createdRevision)
         ->and(indexedSearchProjection($model))
         ->toMatchArray([$nameField => 'Difference', 'search_revision' => $updatedRevision, 'search_deleted' => false]);
-    expect(fn () => $index->assertUnchanged($account->id, $createdRevision))
-        ->toThrow(SearchIndexUnavailable::class);
-
     $index->mutate($account->id, fn () => tap($model)->delete());
     expect(indexedSearchProjection($model))
         ->toMatchArray(['__soft_deleted' => 1, 'search_revision' => $index->assertReady($account->id)]);

@@ -23,18 +23,14 @@ beforeEach(function () {
     config()->set('scout.prefix', '');
 });
 
-function useTypesenseSearchResponse(string $index, ?Closure $response): void
+function useTypesenseSearchResponse(string $index, Closure $response): void
 {
     $api = Mockery::mock(ApiCall::class);
     $client = Mockery::mock(Client::class);
 
-    if ($response === null) {
-        $client->shouldNotReceive('getCollections');
-    } else {
-        $api->shouldReceive('get')->once()->with("/collections/$index/documents/search", Mockery::type('array'))
-            ->andReturnUsing(fn (string $path, array $parameters): array => $response($parameters));
-        $client->shouldReceive('getCollections')->once()->andReturn(new Collections($api));
-    }
+    $api->shouldReceive('get')->once()->with("/collections/$index/documents/search", Mockery::type('array'))
+        ->andReturnUsing(fn (string $path, array $parameters): array => $response($parameters));
+    $client->shouldReceive('getCollections')->once()->andReturn(new Collections($api));
 
     $client->shouldNotReceive('getMultiSearch');
 
@@ -181,7 +177,7 @@ it('keeps name ordering stable across search pages when names are identical', fu
             ->where('contacts.data.0.id', $contacts->last()->id));
 });
 
-it('rejects a full native page containing a hit that no longer matches SQL filters', function (string $model, string $resource, string $change, ?string $role, ?string $trashed) {
+it('serves authorized rows when an indexed hit no longer matches SQL filters', function (string $model, string $resource, string $change, ?string $role, ?string $trashed) {
     $account = Account::factory()->create();
     $actor = User::factory()->for($account)->create(['owner' => true]);
     $attributes = $model === User::class ? ['owner' => false] : [];
@@ -208,9 +204,11 @@ it('rejects a full native page containing a hit that no longer matches SQL filte
         return ['found' => 15, 'hits' => $records->map(fn ($record): array => ['document' => ['id' => (string) $record->id]])->all()];
     });
 
-    $this->expectException(SearchIndexUnavailable::class);
-
-    $this->actingAs($actor)->get("/$resource?".http_build_query(['search' => 'common', 'role' => $role, 'trashed' => $trashed]));
+    $this->actingAs($actor)->get("/$resource?".http_build_query(['search' => 'common', 'role' => $role, 'trashed' => $trashed]))
+        ->assertOk()->assertInertia(fn (Assert $assert) => $assert
+        ->where("$resource.meta.total", 15)
+        ->has("$resource.data", 14)
+        ->where("$resource.data", fn ($data) => collect($data)->pluck('id')->all() === $records->take(14)->modelKeys()));
 })->with([
     'contact moved to another tenant' => [Contact::class, 'contacts', 'tenant', null, null],
     'organization moved to another tenant' => [Organization::class, 'organizations', 'tenant', null, null],
@@ -235,18 +233,17 @@ it('reports a failed native Typesense request instead of returning an empty page
         ->toThrow(fn (SearchIndexUnavailable $exception) => expect($exception->getPrevious())->toBe($failure));
 });
 
-it('does not search an index with an unacknowledged revision', function (?int $indexedRevision) {
+it('serves indexed matches while SQL has an unacknowledged revision', function (?int $indexedRevision) {
     $actor = User::factory()->create();
-    Contact::factory()->for($actor->account)->create();
+    $contact = Contact::factory()->for($actor->account)->create();
     $actor->account->forceFill(['search_revision' => 1, 'indexed_revision' => $indexedRevision])->save();
-    useTypesenseSearchResponse('contacts', null);
+    useTypesenseSearchResponse('contacts', fn (): array => ['found' => 1, 'hits' => [['document' => ['id' => (string) $contact->id]]]]);
 
-    $this->expectException(SearchIndexUnavailable::class);
-
-    $this->actingAs($actor)->get('/contacts?search=common');
+    $this->actingAs($actor)->get('/contacts?search=common')->assertOk()
+        ->assertInertia(fn (Assert $assert) => $assert->where('contacts.meta.total', 1)->where('contacts.data.0.id', $contact->id));
 })->with(['not initialized' => [null], 'projection pending' => [0]]);
 
-it('rejects a page when the account revision changes during the search request', function (int $indexedRevision) {
+it('serves indexed matches when the account revision changes during the search request', function (int $indexedRevision) {
     $actor = User::factory()->create();
     $contact = Contact::factory()->for($actor->account)->create();
 
@@ -256,12 +253,11 @@ it('rejects a page when the account revision changes during the search request',
         return ['found' => 1, 'hits' => [['document' => ['id' => (string) $contact->id]]]];
     });
 
-    $this->expectException(SearchIndexUnavailable::class);
-
-    $this->actingAs($actor)->get('/contacts?search=common');
+    $this->actingAs($actor)->get('/contacts?search=common')->assertOk()
+        ->assertInertia(fn (Assert $assert) => $assert->where('contacts.meta.total', 1)->where('contacts.data.0.id', $contact->id));
 })->with(['projection pending' => [0], 'new revision already indexed' => [1]]);
 
-it('rejects a native page with fewer hits than its reported total requires', function (int $page, int $returnedHits) {
+it('serves a short native page without scanning later hits or rewriting its indexed total', function (int $page, int $returnedHits) {
     $actor = User::factory()->create();
     $contacts = Contact::factory(16)->for($actor->account)->create();
 
@@ -270,12 +266,14 @@ it('rejects a native page with fewer hits than its reported total requires', fun
         'hits' => $contacts->take($returnedHits)->map(fn (Contact $contact): array => ['document' => ['id' => (string) $contact->id]])->all(),
     ]);
 
-    $this->expectException(SearchIndexUnavailable::class);
-
-    $this->actingAs($actor)->get('/contacts?search=common&page='.$page);
+    $this->actingAs($actor)->get('/contacts?search=common&page='.$page)->assertOk()
+        ->assertInertia(fn (Assert $assert) => $assert
+            ->where('contacts.meta.total', 16)
+            ->where('contacts.meta.current_page', $page)
+            ->has('contacts.data', $returnedHits));
 })->with(['incomplete first page' => [1, 14], 'missing last hit' => [2, 0]]);
 
-it('rejects a cutoff native search even when its current page is full', function () {
+it('serves the available results of a cutoff native search', function () {
     $actor = User::factory()->create();
     $contacts = Contact::factory(15)->for($actor->account)->create();
     useTypesenseSearchResponse('contacts', fn (): array => [
@@ -284,9 +282,8 @@ it('rejects a cutoff native search even when its current page is full', function
         'hits' => $contacts->map(fn (Contact $contact): array => ['document' => ['id' => (string) $contact->id]])->all(),
     ]);
 
-    $this->expectException(SearchIndexUnavailable::class);
-
-    $this->actingAs($actor)->get('/contacts?search=common');
+    $this->actingAs($actor)->get('/contacts?search=common')->assertOk()
+        ->assertInertia(fn (Assert $assert) => $assert->where('contacts.meta.total', 15)->has('contacts.data', 15));
 });
 
 it('keeps the native total for an empty page beyond the last page', function () {
@@ -372,3 +369,89 @@ it('reindexes active and trashed contacts when their organization changes', func
     'deleted' => ['deleted', ''],
     'restored' => ['restored', 'Old name'],
 ]);
+
+it('serves the native user page when an unrelated contact changes before or during the search', function (bool $duringSearch) {
+    $actor = User::factory()->create(['first_name' => 'Ada', 'owner' => true]);
+    $contact = Contact::factory()->for($actor->account)->create();
+    config()->set('search.synchronous', false);
+    $change = fn () => app(App\Services\SearchIndex::class)->mutate(
+        $actor->account_id,
+        fn () => tap($contact)->update(['last_name' => 'Changed']),
+    );
+    useTypesenseSearchResponse('users', function (array $parameters) use ($actor, $duringSearch, $change): array {
+        assertNativeTypesenseFilters($parameters, $actor->account_id, 'owner');
+
+        if ($duringSearch) {
+            $change();
+        }
+
+        return ['found' => 1, 'hits' => [['document' => ['id' => (string) $actor->id]]]];
+    });
+
+    if (! $duringSearch) {
+        $change();
+    }
+
+    $this->actingAs($actor)->get('/users?search=Ada&role=owner')->assertOk()
+        ->assertInertia(fn (Assert $assert) => $assert
+            ->where('users.meta.total', 1)
+            ->where('users.data.0.id', $actor->id));
+})->with(['pending before search' => false, 'committed during search' => true]);
+
+it('retries the complete search once when its retired collection is removed during a generation switch', function () {
+    $actor = User::factory()->create(['first_name' => 'Ada', 'owner' => true]);
+    $old = '11111111-1111-4111-8111-111111111111';
+    $new = '22222222-2222-4222-8222-222222222222';
+    DB::table('search_index_manifest')->update(['active_generation' => $old]);
+    $requests = [];
+    $handler = GuzzleHttp\HandlerStack::create(new GuzzleHttp\Handler\MockHandler([
+        function () use ($new) {
+            DB::table('search_index_manifest')->update(['active_generation' => $new]);
+
+            return new GuzzleHttp\Psr7\Response(404, body: '{"message":"Collection not found"}');
+        },
+        new GuzzleHttp\Psr7\Response(200, body: json_encode([
+            'found' => 1,
+            'hits' => [['document' => ['id' => (string) $actor->id]]],
+        ], JSON_THROW_ON_ERROR)),
+    ]));
+    $handler->push(GuzzleHttp\Middleware::history($requests));
+    $client = new Client([
+        'api_key' => 'test-key',
+        'nodes' => [['host' => 'localhost', 'port' => '8108', 'protocol' => 'http']],
+        'num_retries' => 0,
+        'client' => new GuzzleHttp\Client(['handler' => $handler]),
+    ]);
+    app()->instance(Client::class, $client);
+    app(EngineManager::class)->extend('typesense', fn () => new TypesenseEngine($client, 1000));
+    config()->set('scout.driver', 'typesense');
+
+    $this->actingAs($actor)->get('/users?search=Ada&role=owner&trashed=with&page=1')
+        ->assertOk()->assertInertia(fn (Assert $assert) => $assert
+        ->where('users.meta.total', 1)
+        ->where('users.data.0.id', $actor->id));
+
+    expect($requests)->toHaveCount(2)
+        ->and($requests[0]['request']->getUri()->getPath())->toContain('users__'.$old)
+        ->and($requests[1]['request']->getUri()->getPath())->toContain('users__'.$new)
+        ->and($requests[1]['request']->getUri()->getQuery())->toBe($requests[0]['request']->getUri()->getQuery());
+});
+
+it('bounds retries when retired collections disappear during repeated generation switches', function () {
+    $actor = User::factory()->create();
+    $api = Mockery::mock(ApiCall::class);
+    $api->shouldReceive('get')->twice()->with(Mockery::type('string'), Mockery::type('array'))
+        ->andReturnUsing(function () {
+            DB::table('search_index_manifest')->update(['active_generation' => (string) Illuminate\Support\Str::uuid()]);
+
+            throw new Typesense\Exceptions\ObjectNotFound('Collection retired');
+        });
+    $client = Mockery::mock(Client::class);
+    $client->shouldReceive('getCollections')->twice()->andReturn(new Collections($api));
+    app()->instance(Client::class, $client);
+    app(EngineManager::class)->extend('typesense', fn () => new TypesenseEngine($client, 1000));
+    config()->set('scout.driver', 'typesense');
+
+    $this->expectException(SearchIndexUnavailable::class);
+    $this->actingAs($actor)->get('/users?search=Ada');
+});

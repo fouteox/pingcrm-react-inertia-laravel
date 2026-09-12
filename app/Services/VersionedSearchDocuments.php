@@ -18,14 +18,14 @@ final class VersionedSearchDocuments
 {
     public function __construct(private readonly Client $client) {}
 
-    public function write(Contact|Organization|User $model, int $accountId, int $revision, bool $deleted = false): void
+    public function write(Contact|Organization|User $model, int $accountId, int $revision, bool $deleted = false, ?string $generation = null): void
     {
         if ($revision < 0 || $accountId < 1 || ! ctype_digit((string) $model->getKey())) {
             throw new InvalidArgumentException('Search documents require a positive account and model ID and a nonnegative revision.');
         }
 
         $document = $this->document($model, $accountId, $revision, $deleted);
-        $documents = $this->client->getCollections()->{$model->indexableAs()}->getDocuments();
+        $documents = $this->client->getCollections()->{SearchGenerations::collection($model, $generation)}->getDocuments();
 
         if ($this->create($documents, $document)) {
             return;
@@ -51,13 +51,13 @@ final class VersionedSearchDocuments
     }
 
     /** @return list<int> */
-    public function staleIds(Contact|Organization|User $model, int $accountId, int $revision, int $limit): array
+    public function staleIds(Contact|Organization|User $model, int $accountId, int $revision, int $limit, ?string $generation = null): array
     {
         if ($accountId < 1 || $revision < 0 || $limit < 1 || $limit > 250) {
             throw new InvalidArgumentException('Obsolete document searches require a positive account, a nonnegative revision, and a limit between 1 and 250.');
         }
 
-        $results = $this->client->getCollections()->{$model->indexableAs()}->getDocuments()->search([
+        $results = $this->client->getCollections()->{SearchGenerations::collection($model, $generation)}->getDocuments()->search([
             'q' => '*',
             'filter_by' => sprintf(
                 'account_id:=%d && search_deleted:!=true && (search_revision:<%d || search_revision:!=[0..%d])',

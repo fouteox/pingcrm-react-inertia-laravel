@@ -27,7 +27,10 @@ final class SearchIndex
     /** @var list<class-string<Contact|Organization|User>> */
     private const array MODELS = [Contact::class, Organization::class, User::class];
 
-    public function __construct(private readonly VersionedSearchDocuments $documents) {}
+    public function __construct(
+        private readonly VersionedSearchDocuments $documents,
+        private readonly SearchGenerations $generations,
+    ) {}
 
     /**
      * @template TModel of Contact|Organization|User
@@ -47,14 +50,8 @@ final class SearchIndex
 
             if ($this->usesTypesense()) {
                 $revision = (int) $account->getAttribute('search_revision') + 1;
-                $fullRebuild = $model instanceof Organization && ! $model->exists;
-                $account->forceFill([
-                    'search_revision' => $revision,
-                    ...($fullRebuild ? ['search_rebuild_revision' => $revision] : []),
-                ])->save();
-                $this->enqueue($fullRebuild
-                    ? new SearchIndexProjection($accountId, $revision)
-                    : new SearchIndexProjection($accountId, $revision, $model::class, $model->getKey()));
+                $account->forceFill(['search_revision' => $revision])->save();
+                $this->enqueue(new SearchIndexProjection($accountId, $revision, $model::class, $model->getKey()));
             }
 
             return $model;
@@ -70,7 +67,10 @@ final class SearchIndex
         return DB::transaction(function () use ($accountId): SearchIndexProjection {
             $account = Account::query()->lockForUpdate()->findOrFail($accountId);
             $revision = (int) $account->getAttribute('search_revision') + 1;
-            $account->forceFill(['search_revision' => $revision, 'search_rebuild_revision' => $revision])->save();
+            $account->forceFill([
+                'search_revision' => $revision,
+                'search_rebuild_revision' => $revision,
+            ])->save();
             $projection = new SearchIndexProjection($accountId, $revision);
             $this->enqueue($projection);
 
@@ -96,26 +96,24 @@ final class SearchIndex
 
     public function assertReady(int $accountId): int
     {
-        return $this->readyState($accountId)['revision'];
-    }
-
-    /** @return array{revision: int, indexedRevision: ?int, rebuildRevision: int} */
-    public function readyState(int $accountId): array
-    {
         $state = $this->readState($accountId);
 
-        if ($state['revision'] !== $state['indexedRevision']) {
+        if ($state['indexedRevision'] === null
+            || $state['revision'] !== $state['indexedRevision']) {
             throw new SearchIndexUnavailable;
         }
 
-        return $state;
+        return $state['revision'];
     }
 
-    public function assertUnchanged(int $accountId, int $revision): void
+    /** Pending repairs keep older indexed matches visible until their rebuild is acknowledged. */
+    public function completedRebuildRevision(int $accountId): int
     {
-        if ($this->assertReady($accountId) !== $revision) {
-            throw new SearchIndexUnavailable;
-        }
+        $state = $this->stateOn(DB::connection(), $accountId);
+
+        return $state['indexedRevision'] !== null && $state['indexedRevision'] >= $state['rebuildRevision']
+            ? $state['rebuildRevision']
+            : 0;
     }
 
     /** Return whether this projection has completed or been superseded by a rebuild. */
@@ -147,22 +145,35 @@ final class SearchIndex
                 $stage = $snapshot['stage'];
                 $lastId = $snapshot['id'];
                 $models = $snapshot['models'];
+                $targets = $snapshot['targets'];
                 $cleanup = $projection->modelClass === null && $stage >= count(self::MODELS);
 
                 if ($cleanup) {
                     $modelClass = self::MODELS[$stage - count(self::MODELS)];
                     $models = array_map(
                         fn (int $id) => (new $modelClass)->forceFill(['id' => $id, 'account_id' => $projection->accountId]),
-                        $this->documents->staleIds(new $modelClass, $projection->accountId, $projection->revision, $remaining),
+                        $this->documents->staleIds(new $modelClass, $projection->accountId, $projection->revision, $remaining, $targets['active']),
                     );
+
+                    if (! $this->withCurrentGeneration($targets, function () use ($targets, $models, $projection, $stage, $lastId): bool {
+                        if (! $this->progressQuery($projection, $stage, $lastId)->exists()) {
+                            return false;
+                        }
+
+                        $this->generations->recordChanges($targets, $models, $projection->accountId, $projection->revision);
+
+                        return true;
+                    })) {
+                        return false;
+                    }
                 }
 
                 if ($models === []) {
-                    if ($this->progressQuery($projection, $stage, $lastId)->update([
+                    if (! $this->withCurrentGeneration($targets, fn (): bool => $this->progressQuery($projection, $stage, $lastId)->update([
                         'search_projection_stage' => $stage + 1,
                         'search_projection_id' => 0,
                         'search_projection_upper_id' => null,
-                    ]) !== 1) {
+                    ]) === 1)) {
                         return false;
                     }
 
@@ -174,15 +185,15 @@ final class SearchIndex
                         return false;
                     }
 
-                    $this->documents->write($model, $projection->accountId, $projection->revision, ! $model->exists);
+                    $this->documents->write($model, $projection->accountId, $projection->revision, ! $model->exists, $targets['active']);
                     $remaining--;
 
                     if ($cleanup) {
-                        if (! $this->progressQuery($projection, $stage, $lastId)->exists()) {
+                        if (! $this->withCurrentGeneration($targets, fn (): bool => $this->progressQuery($projection, $stage, $lastId)->exists())) {
                             return false;
                         }
                     } else {
-                        if ($this->progressQuery($projection, $stage, $lastId)->update(['search_projection_id' => $model->getKey()]) !== 1) {
+                        if (! $this->withCurrentGeneration($targets, fn (): bool => $this->progressQuery($projection, $stage, $lastId)->update(['search_projection_id' => $model->getKey()]) === 1)) {
                             return false;
                         }
 
@@ -197,9 +208,10 @@ final class SearchIndex
         }
     }
 
-    /** @return array{stage: int, id: int, models: list<Contact|Organization|User>}|null */
+    /** @return array{stage: int, id: int, models: list<Contact|Organization|User>, targets: array{active: ?string, building: ?string}}|null */
     private function snapshot(SearchIndexProjection $projection, int $limit): ?array
     {
+        $targets = $this->generations->captureTargets();
         $account = Account::query()->lockForUpdate()->findOrFail($projection->accountId);
         $indexed = $account->getAttribute('indexed_revision');
 
@@ -266,10 +278,14 @@ final class SearchIndex
             $account->forceFill(['search_projection_upper_id' => $upperId])->save();
         }
 
+        $models = $this->models($projection, $stage, $lastId, (int) $account->getAttribute('search_projection_upper_id'), $limit);
+        $this->generations->recordChanges($targets, $models, $projection->accountId, $projection->revision);
+
         return [
             'stage' => $stage,
             'id' => $lastId,
-            'models' => $this->models($projection, $stage, $lastId, (int) $account->getAttribute('search_projection_upper_id'), $limit),
+            'models' => $models,
+            'targets' => $targets,
         ];
     }
 
@@ -313,7 +329,11 @@ final class SearchIndex
         $query = $modelClass::withTrashed()->where('account_id', $projection->accountId);
 
         if ($projection->modelClass === Organization::class) {
-            $query->where('organization_id', $projection->modelId);
+            if (Organization::withTrashed()->whereKey($projection->modelId)->exists()) {
+                $query->where('organization_id', $projection->modelId);
+            } else {
+                $query->whereNull('organization_id');
+            }
         }
 
         if ($modelClass === Contact::class) {
@@ -330,6 +350,15 @@ final class SearchIndex
             ->where('search_projection_stage', $stage)
             ->where('search_projection_id', $lastId)
             ->where('search_rebuild_revision', '<=', $projection->revision);
+    }
+
+    /**
+     * @param  array{active: ?string, building: ?string}  $targets
+     * @param  Closure(): bool  $checkpoint
+     */
+    private function withCurrentGeneration(array $targets, Closure $checkpoint): bool
+    {
+        return DB::transaction(fn (): bool => $this->generations->isCurrent($targets) && $checkpoint());
     }
 
     private function enqueue(SearchIndexProjection $projection): void
