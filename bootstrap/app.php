@@ -48,7 +48,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
                 $response = Inertia::render('search-unavailable', [
                     'retryUrl' => $request->fullUrl(),
-                    'listUrl' => $request->fullUrlWithoutQuery('search'),
+                    'listUrl' => $request->fullUrlWithoutQuery(['search', 'page']),
                 ])->toResponse($request);
 
                 $response->headers->add($exception->getHeaders());
