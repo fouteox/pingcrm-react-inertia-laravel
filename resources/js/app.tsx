@@ -4,12 +4,11 @@ import { configureEcho } from '@laravel/echo-react';
 import { StrictMode } from 'react';
 import { createRoot, hydrateRoot } from 'react-dom/client';
 import { I18nextProvider } from 'react-i18next';
-import { LayoutProvider } from '@/contexts/page-context';
-import { ProcessingProvider } from '@/contexts/processing-context';
+import FlashMessages from '@/components/flash-messages';
 import { initializeTheme } from '@/hooks/use-appearance';
 import AppLayout from '@/layouts/app-layout';
 import AuthLayout from '@/layouts/auth-layout';
-import { initI18n, setLocale } from './i18n';
+import { initI18n } from './i18n';
 
 const appName = import.meta.env.VITE_APP_NAME || 'Ping CRM';
 
@@ -45,17 +44,13 @@ void createInertiaApp({
 
         const locale = props.initialPage.props.locale;
         const i18nInstance = initI18n(locale, props.initialPage.props.translations ?? {});
-        setLocale(locale);
 
         const appElement = (
             <StrictMode>
-                <LayoutProvider>
-                    <ProcessingProvider>
-                        <I18nextProvider i18n={i18nInstance}>
-                            <App {...props} />
-                        </I18nextProvider>
-                    </ProcessingProvider>
-                </LayoutProvider>
+                <I18nextProvider i18n={i18nInstance}>
+                    <App {...props} />
+                    <FlashMessages />
+                </I18nextProvider>
             </StrictMode>
         );
 

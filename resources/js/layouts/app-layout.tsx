@@ -1,5 +1,4 @@
 import { type ReactNode } from 'react';
-import FlashMessages from '@/components/flash-messages';
 import { ReverbNotificationListener } from '@/components/reverb-notification-listener';
 import { ReverbExampleNotificationProvider } from '@/contexts/reverb-context';
 import AppLayoutTemplate from '@/layouts/app-sidebar-layout';
@@ -10,12 +9,13 @@ interface AppLayoutProps {
     breadcrumbs?: BreadcrumbItem[];
 }
 
-export default ({ children }: AppLayoutProps) => (
-    <AppLayoutTemplate>
-        <ReverbExampleNotificationProvider>
-            {children}
-            <FlashMessages />
-            <ReverbNotificationListener />
-        </ReverbExampleNotificationProvider>
-    </AppLayoutTemplate>
-);
+export default function AppLayout({ children, breadcrumbs = [] }: AppLayoutProps) {
+    return (
+        <AppLayoutTemplate breadcrumbs={breadcrumbs}>
+            <ReverbExampleNotificationProvider>
+                {children}
+                <ReverbNotificationListener />
+            </ReverbExampleNotificationProvider>
+        </AppLayoutTemplate>
+    );
+}

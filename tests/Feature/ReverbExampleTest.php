@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Events\ReverbExampleEvent;
 use App\Jobs\ReverbExampleJob;
 use App\Models\Account;
 use App\Models\User;
@@ -60,7 +61,7 @@ it('dispatches the reverb job with a delay when a valid uuid is posted', functio
     $this->actingAs($this->user)
         ->post('/reverb', ['uuid' => $uuid])
         ->assertRedirect()
-        ->assertSessionHas('success');
+        ->assertInertiaFlash('success', __('Job Reverb successfully launched'));
 
     Queue::assertPushed(ReverbExampleJob::class, function ($job) use ($uuid) {
         return $job->uuid === $uuid && $job->delay !== null;
@@ -90,3 +91,16 @@ it('rejects a missing or invalid uuid', function (array $payload) {
     'missing uuid' => [[]],
     'invalid uuid format' => [['uuid' => 'not-a-uuid']],
 ]);
+
+it('broadcasts in the requested language without changing the application locale', function () {
+    app()->setLocale('en');
+    $event = new ReverbExampleEvent('550e8400-e29b-41d4-a716-446655440000', 'fr');
+
+    expect($event->broadcastWith())
+        ->toBe([
+            'type' => 'reverb',
+            'status' => 'completed',
+            'message' => __('Example of reverb notification', [], 'fr'),
+        ])
+        ->and(app()->getLocale())->toBe('en');
+});

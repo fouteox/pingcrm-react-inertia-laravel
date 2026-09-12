@@ -7,7 +7,6 @@ namespace App\Http\Resources;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
-use Illuminate\Support\Facades\App;
 
 /**
  * @mixin User
@@ -16,6 +15,8 @@ final class UserResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
+     *
+     * @return array<string, mixed>
      */
     public function toArray(Request $request): array
     {
@@ -27,7 +28,7 @@ final class UserResource extends JsonResource
             'email' => $this->email,
             'owner' => $this->owner,
             'deleted_at' => $this->deleted_at,
-            'can_delete' => ! App::environment('production') || ! $this->isDemoUser(),
+            'can_delete' => ! $this->isProtectedDemoUser(),
         ];
     }
 }

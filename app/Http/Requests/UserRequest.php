@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
-use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
@@ -14,30 +13,24 @@ final class UserRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, ValidationRule|array|string>
+     * @return array<string, list<mixed>>
      */
     public function rules(): array
     {
-        $userId = $this->route('user') ? $this->route('user')->id : null;
+        $user = $this->route('user');
 
         return [
-            'first_name' => ['required', 'max:25'],
-            'last_name' => ['required', 'max:25'],
+            'first_name' => ['required', 'string', 'max:25'],
+            'last_name' => ['required', 'string', 'max:25'],
             'email' => [
                 'required',
+                'string',
                 'max:50',
                 'email',
-                Rule::unique('users')->ignore($userId),
+                Rule::unique('users')->ignore($user),
             ],
-            'password' => ['sometimes', 'required', Password::defaults()],
+            'password' => [Rule::when($user !== null, 'sometimes'), 'required', 'string', Password::defaults()],
             'owner' => ['required', 'boolean'],
-            'photo' => [
-                'nullable',
-                'image',
-                'mimes:jpeg,png,jpg,gif',
-                'max:2048',
-                'dimensions:min_width=100,min_height=100,max_width=2000,max_height=2000',
-            ],
         ];
     }
 }

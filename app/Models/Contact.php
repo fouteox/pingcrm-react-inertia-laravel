@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Database\Factories\ContactFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -30,15 +30,15 @@ use Laravel\Scout\Searchable;
 ])]
 final class Contact extends Model
 {
+    /** @use HasFactory<ContactFactory> */
     use Concerns\Filterable, HasFactory, Searchable, SoftDeletes;
 
     /**
      * Retrieve the model for a bound value.
      *
-     * @param  mixed  $value
      * @param  string|null  $field
      */
-    public function resolveRouteBinding($value, $field = null): ?Model
+    public function resolveRouteBinding(mixed $value, mixed $field = null): static
     {
         return $this->where($field ?? 'id', $value)
             ->where('account_id', Auth::user()?->account_id)
@@ -46,11 +46,13 @@ final class Contact extends Model
             ->firstOrFail();
     }
 
+    /** @return BelongsTo<Account, $this> */
     public function account(): BelongsTo
     {
         return $this->belongsTo(Account::class);
     }
 
+    /** @return BelongsTo<Organization, $this> */
     public function organization(): BelongsTo
     {
         return $this->belongsTo(Organization::class);
@@ -63,36 +65,34 @@ final class Contact extends Model
     {
         return [
             'id' => (string) $this->id,
+            'sort_id' => $this->id,
             'account_id' => $this->account_id,
             'first_name' => $this->first_name,
             'last_name' => $this->last_name,
             'email' => $this->email ?? '',
-            'organization_name' => $this->organization?->name ?? '',
-            'created_at' => $this->created_at?->timestamp ?? 0,
+            'organization_name' => $this->organization->name ?? '',
+            'created_at' => $this->created_at->timestamp ?? 0,
         ];
     }
 
-    public function name(): Attribute
+    /** @return Attribute<string, never> */
+    protected function name(): Attribute
     {
         return Attribute::make(
             get: fn (): string => $this->first_name.' '.$this->last_name,
         );
     }
 
-    #[Scope]
-    public function orderByName(Builder $query): void
+    /** @return list<string> */
+    protected function searchRelations(): array
     {
-        $query->orderBy('last_name')->orderBy('first_name');
+        return ['organization'];
     }
 
-    #[Scope]
-    public function filter(Builder $query, array $filters, int $accountId): void
-    {
-        $query
-            ->when($filters['search'] ?? null, fn ($query, $search) => $this->applySearchFilter($query, $search, $accountId, $filters['trashed'] ?? null))
-            ->when($filters['trashed'] ?? null, fn ($query, $trashed) => $this->applyTrashedFilter($query, $trashed));
-    }
-
+    /**
+     * @param  Builder<static>  $query
+     * @return Builder<static>
+     */
     protected function makeAllSearchableUsing(Builder $query): Builder
     {
         return $query->with('organization');

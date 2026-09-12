@@ -1,5 +1,4 @@
 import { ChevronsUpDown, Globe, Monitor, Moon, Sun } from 'lucide-react';
-import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { SidebarGroup, SidebarGroupContent, SidebarMenu, SidebarMenuButton, SidebarMenuItem, useSidebar } from '@/components/ui/sidebar';
@@ -15,22 +14,21 @@ const LANGUAGES = [
 type Language = (typeof LANGUAGES)[number];
 
 export function NavFooter() {
-    const { i18n } = useTranslation();
+    const { t, i18n } = useTranslation();
     const { appearance, updateAppearance } = useAppearance();
     const { state } = useSidebar();
     const isMobile = useIsMobile();
 
-    const [currentLang, setCurrentLang] = useState<Language>(LANGUAGES.find((lang) => lang.code === i18n.language) ?? LANGUAGES[0]);
+    const currentLang = LANGUAGES.find((lang) => lang.code === i18n.resolvedLanguage) ?? LANGUAGES[0];
 
     const handleLanguageChange = (language: Language) => {
         void i18n.changeLanguage(language.code);
-        setCurrentLang(language);
     };
 
     const tabs = [
-        { value: 'light' as Appearance, icon: Sun },
-        { value: 'dark' as Appearance, icon: Moon },
-        { value: 'system' as Appearance, icon: Monitor },
+        { value: 'light' as Appearance, icon: Sun, label: t('Light') },
+        { value: 'dark' as Appearance, icon: Moon, label: t('Dark') },
+        { value: 'system' as Appearance, icon: Monitor, label: t('System') },
     ];
 
     return (
@@ -72,7 +70,10 @@ export function NavFooter() {
                             <DropdownMenu>
                                 <DropdownMenuTrigger
                                     render={
-                                        <SidebarMenuButton className="text-neutral-600 hover:text-neutral-800 dark:text-neutral-300 dark:hover:text-neutral-100" />
+                                        <SidebarMenuButton
+                                            aria-label={t('Appearance')}
+                                            className="text-neutral-600 hover:text-neutral-800 dark:text-neutral-300 dark:hover:text-neutral-100"
+                                        />
                                     }
                                 >
                                     {appearance === 'light' && <Sun className="size-5" />}
@@ -80,19 +81,22 @@ export function NavFooter() {
                                     {appearance === 'system' && <Monitor className="size-5" />}
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent className="min-w-32" align="center" side={isMobile ? 'top' : 'right'}>
-                                    {tabs.map(({ value, icon: Icon }) => (
+                                    {tabs.map(({ value, icon: Icon, label }) => (
                                         <DropdownMenuItem key={value} onClick={() => updateAppearance(value)}>
                                             <Icon className="mr-2 size-4" />
-                                            <span>{value.charAt(0).toUpperCase() + value.slice(1)}</span>
+                                            <span>{label}</span>
                                         </DropdownMenuItem>
                                     ))}
                                 </DropdownMenuContent>
                             </DropdownMenu>
                         ) : (
                             <div className="inline-flex w-full gap-1 rounded-md bg-neutral-100 p-1 dark:bg-neutral-800">
-                                {tabs.map(({ value, icon: Icon }) => (
+                                {tabs.map(({ value, icon: Icon, label }) => (
                                     <button
                                         key={value}
+                                        type="button"
+                                        aria-label={label}
+                                        aria-pressed={appearance === value}
                                         onClick={() => updateAppearance(value)}
                                         className={cn(
                                             'flex flex-1 items-center justify-center rounded-md px-3 py-1 transition-colors',

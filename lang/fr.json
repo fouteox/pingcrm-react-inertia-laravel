@@ -357,5 +357,9 @@
     "You are receiving this email because we received a password reset request for your account.": "Vous recevez cet e-mail car nous avons reçu une demande de réinitialisation de mot de passe pour votre compte.",
     "You can navigate to other pages": "Vous pouvez naviguer vers d'autres pages",
     "You're logged in!": "Vous êtes connecté·e !",
-    "Your email address is unverified.": "Votre adresse e-mail n'est pas vérifiée."
+    "Your email address is unverified.": "Votre adresse e-mail n'est pas vérifiée.",
+    "Appearance": "Apparence",
+    "Light": "Clair",
+    "Dark": "Sombre",
+    "System": "Système"
 }

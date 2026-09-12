@@ -16,14 +16,14 @@ final class OrganizationsRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'name' => ['required', 'max:100'],
-            'email' => ['nullable', 'max:50', 'email'],
-            'phone' => ['nullable', 'max:50'],
-            'address' => ['nullable', 'max:150'],
-            'city' => ['nullable', 'max:50'],
-            'region' => ['nullable', 'max:50'],
-            'country' => ['nullable', 'max:2'],
-            'postal_code' => ['nullable', 'max:25'],
+            'name' => ['required', 'string', 'max:100'],
+            'email' => ['nullable', 'string', 'max:50', 'email'],
+            'phone' => ['nullable', 'string', 'max:50'],
+            'address' => ['nullable', 'string', 'max:150'],
+            'city' => ['nullable', 'string', 'max:50'],
+            'region' => ['nullable', 'string', 'max:50'],
+            'country' => ['nullable', 'string', 'max:2'],
+            'postal_code' => ['nullable', 'string', 'max:25'],
         ];
     }
 }

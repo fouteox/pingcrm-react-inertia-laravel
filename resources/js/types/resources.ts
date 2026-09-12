@@ -44,7 +44,7 @@ export type UserCollection = PaginatedResource<{
     deleted_at: string | null;
 }>;
 
-export type OrganizationContactResource = {
+type OrganizationContactResource = {
     id: number;
     name: string;
     city: string | null;

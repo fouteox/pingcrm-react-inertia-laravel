@@ -21,7 +21,7 @@ final class OrganizationPolicy
 
     public function create(User $user): bool
     {
-        return $user->account_id !== null;
+        return true;
     }
 
     public function update(User $user, Organization $organization): bool

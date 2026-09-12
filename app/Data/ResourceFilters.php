@@ -7,7 +7,7 @@ namespace App\Data;
 use App\Enums\TrashedFilter;
 use Illuminate\Http\Request;
 
-final readonly class ContactsFilters
+final readonly class ResourceFilters
 {
     public function __construct(
         public ?string $search = null,
@@ -16,8 +16,9 @@ final readonly class ContactsFilters
 
     public static function fromRequest(Request $request): self
     {
-        $search = $request->string('search')->trim()->toString() ?: null;
-        $trashed = TrashedFilter::tryFrom((string) $request->input('trashed'));
+        $search = is_string($request->input('search')) ? $request->string('search')->trim()->toString() : '';
+        $search = $search === '' ? null : $search;
+        $trashed = is_string($request->input('trashed')) ? $request->enum('trashed', TrashedFilter::class) : null;
 
         return new self($search, $trashed);
     }

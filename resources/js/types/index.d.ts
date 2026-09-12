@@ -1,7 +1,7 @@
 import type { InertiaLinkProps } from '@inertiajs/react';
 import type { LucideIcon } from 'lucide-react';
 import type { Inertia } from '@/wayfinder/types';
-import type { FlashMessages } from './filters';
+import type { UserResource } from './resources';
 
 export interface BreadcrumbItem {
     title: string;
@@ -14,11 +14,11 @@ export interface NavItem {
     count?: number;
     href: NonNullable<InertiaLinkProps['href']>;
     icon?: LucideIcon | null;
-    isActive?: boolean;
 }
 
-export type SharedData = Omit<Inertia.SharedData, 'flash'> & {
-    flash: FlashMessages;
+export type SharedData = Omit<Inertia.SharedData, 'auth'> & {
+    auth: { user: UserResource | null };
+    sidebarOpen: boolean;
     reverb: {
         key: string;
         host: string;

@@ -31,6 +31,8 @@ final class ReverbExampleController extends Controller
         ReverbExampleJob::dispatch($validated['uuid'], App::getLocale())
             ->delay(now()->addSeconds(5));
 
-        return back()->with('success', __('Job Reverb successfully launched'));
+        Inertia::flash('success', __('Job Reverb successfully launched'));
+
+        return back();
     }
 }

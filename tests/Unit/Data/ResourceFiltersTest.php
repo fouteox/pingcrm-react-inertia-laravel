@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-use App\Data\OrganizationsFilters;
+use App\Data\ResourceFilters;
 use App\Enums\TrashedFilter;
 use Illuminate\Http\Request;
 use Tests\TestCase;
@@ -11,25 +11,26 @@ uses(TestCase::class);
 
 describe('fromRequest', function () {
     it('returns null fields when no query params are provided', function () {
-        $filters = OrganizationsFilters::fromRequest(Request::create('/organizations'));
+        $filters = ResourceFilters::fromRequest(Request::create('/contacts'));
 
         expect($filters->search)->toBeNull()
             ->and($filters->trashed)->toBeNull();
     });
 
     it('trims the search term', function (string $input, ?string $expected) {
-        $filters = OrganizationsFilters::fromRequest(Request::create('/organizations', 'GET', ['search' => $input]));
+        $filters = ResourceFilters::fromRequest(Request::create('/contacts', 'GET', ['search' => $input]));
 
         expect($filters->search)->toBe($expected);
     })->with([
-        'plain term' => ['Apple', 'Apple'],
-        'padded term' => ['  Apple  ', 'Apple'],
+        'plain term' => ['Martin', 'Martin'],
+        'padded term' => ['  Martin  ', 'Martin'],
+        'zero term' => ['0', '0'],
         'empty string' => ['', null],
         'whitespace only' => ['   ', null],
     ]);
 
     it('accepts only whitelisted trashed values', function (string $input, ?TrashedFilter $expected) {
-        $filters = OrganizationsFilters::fromRequest(Request::create('/organizations', 'GET', ['trashed' => $input]));
+        $filters = ResourceFilters::fromRequest(Request::create('/contacts', 'GET', ['trashed' => $input]));
 
         expect($filters->trashed)->toBe($expected);
     })->with([
@@ -43,26 +44,26 @@ describe('fromRequest', function () {
 
 describe('toArray', function () {
     it('is empty when all fields are null', function () {
-        expect((new OrganizationsFilters)->toArray())->toBe([]);
+        expect((new ResourceFilters)->toArray())->toBe([]);
     });
 
     it('omits null fields', function () {
-        expect((new OrganizationsFilters(search: 'Apple'))->toArray())
-            ->toBe(['search' => 'Apple']);
+        expect((new ResourceFilters(search: 'Martin'))->toArray())
+            ->toBe(['search' => 'Martin']);
     });
 
     it('returns every field when all are set', function () {
-        expect((new OrganizationsFilters(search: 'Apple', trashed: TrashedFilter::Only))->toArray())
-            ->toBe(['search' => 'Apple', 'trashed' => 'only']);
+        expect((new ResourceFilters(search: 'Martin', trashed: TrashedFilter::With))->toArray())
+            ->toBe(['search' => 'Martin', 'trashed' => 'with']);
     });
 });
 
 it('round-trips a Request through the DTO and back to an array', function () {
-    $array = OrganizationsFilters::fromRequest(Request::create('/organizations', 'GET', [
-        'search' => '  Apple  ',
-        'trashed' => 'only',
+    $array = ResourceFilters::fromRequest(Request::create('/contacts', 'GET', [
+        'search' => '  Martin  ',
+        'trashed' => 'with',
         'ignored' => 'not kept',
     ]))->toArray();
 
-    expect($array)->toBe(['search' => 'Apple', 'trashed' => 'only']);
+    expect($array)->toBe(['search' => 'Martin', 'trashed' => 'with']);
 });

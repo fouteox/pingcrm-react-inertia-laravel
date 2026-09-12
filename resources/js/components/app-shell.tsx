@@ -1,4 +1,5 @@
-import { ReactNode, useState } from 'react';
+import { usePage } from '@inertiajs/react';
+import { type ReactNode } from 'react';
 import { SidebarProvider } from '@/components/ui/sidebar';
 
 interface AppShellProps {
@@ -6,19 +7,7 @@ interface AppShellProps {
 }
 
 export function AppShell({ children }: AppShellProps) {
-    const [isOpen, setIsOpen] = useState(() => (typeof window !== 'undefined' ? localStorage.getItem('sidebar') !== 'false' : true));
+    const { sidebarOpen } = usePage().props;
 
-    const handleSidebarChange = (open: boolean) => {
-        setIsOpen(open);
-
-        if (typeof window !== 'undefined') {
-            localStorage.setItem('sidebar', String(open));
-        }
-    };
-
-    return (
-        <SidebarProvider defaultOpen={isOpen} open={isOpen} onOpenChange={handleSidebarChange}>
-            {children}
-        </SidebarProvider>
-    );
+    return <SidebarProvider defaultOpen={sidebarOpen}>{children}</SidebarProvider>;
 }

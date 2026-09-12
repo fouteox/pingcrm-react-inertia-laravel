@@ -5,7 +5,6 @@ import { toast } from 'sonner';
 import { v4 as uuidv4 } from 'uuid';
 import { Button } from '@/components/ui/button';
 import { useReverbNotification } from '@/contexts/reverb-context';
-import { useBreadcrumbs } from '@/hooks/use-breadcrumbs';
 import reverb from '@/wayfinder/routes/reverb';
 
 interface FormData {
@@ -15,13 +14,6 @@ interface FormData {
 
 export default function ReverbExample() {
     const { t } = useTranslation();
-
-    useBreadcrumbs([
-        {
-            title: 'Reverb Demo',
-            href: reverb.index().url,
-        },
-    ]);
 
     const { addUuid } = useReverbNotification();
     const form = useForm<FormData>({
@@ -70,3 +62,12 @@ export default function ReverbExample() {
         </>
     );
 }
+
+ReverbExample.layout = () => ({
+    breadcrumbs: [
+        {
+            title: 'Reverb Demo',
+            href: reverb.index().url,
+        },
+    ],
+});

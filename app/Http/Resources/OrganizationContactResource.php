@@ -14,7 +14,7 @@ use Illuminate\Http\Resources\Json\JsonResource;
 final class OrganizationContactResource extends JsonResource
 {
     /**
-     * Transform the resource into an array.
+     * @return array{id: int, name: string, city: string|null, phone: string|null, deleted_at: \Carbon\CarbonInterface|null}
      */
     public function toArray(Request $request): array
     {

@@ -4,15 +4,16 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers;
 
-use App\Data\OrganizationsFilters;
+use App\Data\ResourceFilters;
 use App\Http\Requests\OrganizationsRequest;
 use App\Http\Resources\OrganizationCollection;
 use App\Http\Resources\OrganizationResource;
 use App\Models\Organization;
+use App\Models\User;
+use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Routing\Attributes\Controllers\Authorize;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Redirect;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -20,17 +21,14 @@ use Inertia\Response;
 final class OrganizationsController extends Controller
 {
     #[Authorize('viewAny', Organization::class)]
-    public function index(Request $request): Response
+    public function index(Request $request, #[CurrentUser] User $authenticatedUser): Response
     {
-        $filters = OrganizationsFilters::fromRequest($request);
+        $filters = ResourceFilters::fromRequest($request);
 
         return Inertia::render('organizations/index', [
             'filters' => $filters->toArray(),
             'organizations' => new OrganizationCollection(
-                Auth::user()->account->organizations()
-                    ->orderBy('name')
-                    ->filter($filters->toArray(), Auth::user()->account_id)
-                    ->paginate()
+                Organization::paginateFiltered($filters->toArray(), $authenticatedUser->account_id)
                     ->withQueryString()
             ),
         ]);
@@ -43,11 +41,13 @@ final class OrganizationsController extends Controller
     }
 
     #[Authorize('create', Organization::class)]
-    public function store(OrganizationsRequest $request): RedirectResponse
+    public function store(OrganizationsRequest $request, #[CurrentUser] User $authenticatedUser): RedirectResponse
     {
-        Auth::user()->account->organizations()->create($request->validated());
+        $authenticatedUser->account()->firstOrFail()->organizations()->create($request->validated());
 
-        return Redirect::route('organizations.index')->with('success', translate_with_gender('created', 'Organization'));
+        Inertia::flash('success', translate_with_gender('created', 'Organization'));
+
+        return Redirect::route('organizations.index');
     }
 
     #[Authorize('update', 'organization')]
@@ -65,7 +65,9 @@ final class OrganizationsController extends Controller
     {
         $organization->update($request->validated());
 
-        return Redirect::back()->with('success', translate_with_gender('updated', 'Organization'));
+        Inertia::flash('success', translate_with_gender('updated', 'Organization'));
+
+        return Redirect::back();
     }
 
     #[Authorize('delete', 'organization')]
@@ -73,7 +75,9 @@ final class OrganizationsController extends Controller
     {
         $organization->delete();
 
-        return Redirect::back()->with('success', translate_with_gender('deleted', 'Organization'));
+        Inertia::flash('success', translate_with_gender('deleted', 'Organization'));
+
+        return Redirect::back();
     }
 
     #[Authorize('restore', 'organization')]
@@ -81,6 +85,8 @@ final class OrganizationsController extends Controller
     {
         $organization->restore();
 
-        return Redirect::back()->with('success', translate_with_gender('restored', 'Organization'));
+        Inertia::flash('success', translate_with_gender('restored', 'Organization'));
+
+        return Redirect::back();
     }
 }

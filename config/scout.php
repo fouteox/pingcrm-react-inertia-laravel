@@ -187,9 +187,10 @@ return [
                 'collection-schema' => [
                     'fields' => [
                         ['name' => 'id', 'type' => 'string'],
+                        ['name' => 'sort_id', 'type' => 'int64', 'optional' => true],
                         ['name' => 'account_id', 'type' => 'int32'],
-                        ['name' => 'first_name', 'type' => 'string'],
-                        ['name' => 'last_name', 'type' => 'string'],
+                        ['name' => 'first_name', 'type' => 'string', 'sort' => true],
+                        ['name' => 'last_name', 'type' => 'string', 'sort' => true],
                         ['name' => 'email', 'type' => 'string'],
                         ['name' => 'organization_name', 'type' => 'string'],
                         ['name' => 'created_at', 'type' => 'int64'],
@@ -205,8 +206,9 @@ return [
                 'collection-schema' => [
                     'fields' => [
                         ['name' => 'id', 'type' => 'string'],
+                        ['name' => 'sort_id', 'type' => 'int64', 'optional' => true],
                         ['name' => 'account_id', 'type' => 'int32'],
-                        ['name' => 'name', 'type' => 'string'],
+                        ['name' => 'name', 'type' => 'string', 'sort' => true],
                         ['name' => 'created_at', 'type' => 'int64'],
                         ['name' => '__soft_deleted', 'type' => 'int32', 'optional' => true],
                     ],
@@ -220,9 +222,10 @@ return [
                 'collection-schema' => [
                     'fields' => [
                         ['name' => 'id', 'type' => 'string'],
+                        ['name' => 'sort_id', 'type' => 'int64', 'optional' => true],
                         ['name' => 'account_id', 'type' => 'int32'],
-                        ['name' => 'first_name', 'type' => 'string'],
-                        ['name' => 'last_name', 'type' => 'string'],
+                        ['name' => 'first_name', 'type' => 'string', 'sort' => true],
+                        ['name' => 'last_name', 'type' => 'string', 'sort' => true],
                         ['name' => 'email', 'type' => 'string'],
                         ['name' => 'owner', 'type' => 'bool'],
                         ['name' => 'created_at', 'type' => 'int64'],

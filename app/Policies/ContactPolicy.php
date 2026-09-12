@@ -21,7 +21,7 @@ final class ContactPolicy
 
     public function create(User $user): bool
     {
-        return $user->account_id !== null;
+        return true;
     }
 
     public function update(User $user, Contact $contact): bool

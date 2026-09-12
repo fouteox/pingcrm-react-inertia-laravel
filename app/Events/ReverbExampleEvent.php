@@ -15,9 +15,7 @@ final class ReverbExampleEvent implements ShouldBroadcast
 {
     use Dispatchable, InteractsWithSockets, SerializesModels;
 
-    private string $message;
-
-    private string $locale;
+    private readonly string $locale;
 
     public function __construct(
         private readonly string $uuid,
@@ -26,6 +24,9 @@ final class ReverbExampleEvent implements ShouldBroadcast
         $this->locale = $locale ?? App::getLocale();
     }
 
+    /**
+     * @return array<int, PrivateChannel>
+     */
     public function broadcastOn(): array
     {
         return [
@@ -38,14 +39,15 @@ final class ReverbExampleEvent implements ShouldBroadcast
         return 'reverb.completed';
     }
 
+    /**
+     * @return array{type: string, status: string, message: string}
+     */
     public function broadcastWith(): array
     {
-        App::setLocale($this->locale);
-
         return [
             'type' => 'reverb',
             'status' => 'completed',
-            'message' => __('Example of reverb notification'),
+            'message' => __('Example of reverb notification', [], $this->locale),
         ];
     }
 }

@@ -21,6 +21,4 @@ final class TranslationServiceProvider extends ServiceProvider
             );
         });
     }
-
-    public function boot(): void {}
 }

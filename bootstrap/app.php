@@ -22,7 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->redirectGuestsTo(fn () => route('login'));
         $middleware->redirectUsersTo(AppServiceProvider::HOME);
-        $middleware->encryptCookies(except: ['appearance']);
+        $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
 
         $middleware->web(append: [
             HandleAppearanceMiddleware::class,
@@ -46,14 +46,14 @@ return Application::configure(basePath: dirname(__DIR__))
                     ->setStatusCode($response->getStatusCode());
             }
             if ($response->getStatusCode() === 419) {
-                return back()->with([
-                    'message' => __('The page expired, please try again.'),
-                ]);
+                Inertia::flash('error', __('The page expired, please try again.'));
+
+                return back();
             }
             if ($response->getStatusCode() === 429) {
-                return back()->with([
-                    'error' => __('Sorry, you are making too many requests to our servers.'),
-                ]);
+                Inertia::flash('error', __('Sorry, you are making too many requests to our servers.'));
+
+                return back();
             }
 
             return $response;

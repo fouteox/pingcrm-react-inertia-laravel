@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Models\Account;
 use App\Models\User;
+use Illuminate\Support\Facades\Hash;
 use Inertia\Testing\AssertableInertia as Assert;
 
 beforeEach(function () {
@@ -77,13 +78,62 @@ it('stores a new user and redirects to the index', function () {
             'password' => 'SuperSecret123!',
             'owner' => false,
         ])
-        ->assertRedirect('/users');
+        ->assertRedirect('/users')
+        ->assertInertiaFlash('success', translate_with_gender('created', 'User'));
 
     $this->assertDatabaseHas('users', [
         'email' => 'sam.smith@example.com',
         'account_id' => $this->account->id,
         'owner' => false,
     ]);
+
+    expect(Hash::check('SuperSecret123!', User::where('email', 'sam.smith@example.com')->firstOrFail()->password))->toBeTrue();
+});
+
+it('requires a password when creating a user', function () {
+    $this->actingAs($this->owner)
+        ->postJson('/users', [
+            'first_name' => 'Sam',
+            'last_name' => 'Smith',
+            'email' => 'sam.smith@example.com',
+            'owner' => false,
+        ])
+        ->assertUnprocessable()
+        ->assertInvalid(['password']);
+
+    $this->assertDatabaseMissing('users', ['email' => 'sam.smith@example.com']);
+});
+
+it('rejects array values for user names', function (string $field) {
+    $this->actingAs($this->owner)
+        ->postJson('/users', [
+            'first_name' => 'Sam',
+            'last_name' => 'Smith',
+            'email' => 'sam.smith@example.com',
+            'password' => 'SuperSecret123!',
+            'owner' => false,
+            $field => ['invalid'],
+        ])
+        ->assertUnprocessable()
+        ->assertInvalid([$field]);
+
+    $this->assertDatabaseMissing('users', ['email' => 'sam.smith@example.com']);
+})->with(['first_name', 'last_name']);
+
+it('ignores an unsupported photo input when creating a user', function () {
+    $this->actingAs($this->owner)
+        ->post('/users', [
+            'first_name' => 'Sam',
+            'last_name' => 'Smith',
+            'email' => 'sam.smith@example.com',
+            'password' => 'SuperSecret123!',
+            'owner' => false,
+            'photo' => 'untrusted/path.jpg',
+        ])
+        ->assertRedirect('/users')
+        ->assertValid();
+
+    expect(User::where('email', 'sam.smith@example.com')->firstOrFail()->photo)->toBeNull();
 });
 
 it('rejects user creation with validation errors', function (array $payload, array $invalidFields) {
@@ -95,7 +145,7 @@ it('rejects user creation with validation errors', function (array $payload, arr
 })->with([
     'missing required fields' => [
         ['owner' => false],
-        ['first_name', 'last_name', 'email'],
+        ['first_name', 'last_name', 'email', 'password'],
     ],
     'invalid email format' => [
         [
@@ -135,6 +185,7 @@ it('renders the edit page for a user of the account', function () {
 
 it('updates a user of the account', function () {
     $target = User::factory()->for($this->account)->create(['first_name' => 'Old', 'last_name' => 'Name']);
+    $password = $target->password;
 
     $this->actingAs($this->owner)
         ->put("/users/{$target->id}", [
@@ -143,9 +194,29 @@ it('updates a user of the account', function () {
             'email' => $target->email,
             'owner' => false,
         ])
-        ->assertRedirect();
+        ->assertRedirect()
+        ->assertInertiaFlash('success', translate_with_gender('updated', 'User'));
 
-    expect($target->fresh()->first_name)->toBe('New');
+    expect($target->fresh())
+        ->first_name->toBe('New')
+        ->password->toBe($password);
+});
+
+it('replaces a users password only when a valid password is supplied', function () {
+    $target = User::factory()->for($this->account)->create();
+
+    $this->actingAs($this->owner)
+        ->put("/users/{$target->id}", [
+            'first_name' => $target->first_name,
+            'last_name' => $target->last_name,
+            'email' => $target->email,
+            'owner' => false,
+            'password' => 'ChangedSecret123!',
+        ])
+        ->assertRedirect()
+        ->assertValid();
+
+    expect(Hash::check('ChangedSecret123!', $target->fresh()->password))->toBeTrue();
 });
 
 it('soft deletes a user', function () {
@@ -153,7 +224,8 @@ it('soft deletes a user', function () {
 
     $this->actingAs($this->owner)
         ->delete("/users/{$target->id}")
-        ->assertRedirect();
+        ->assertRedirect()
+        ->assertInertiaFlash('success', translate_with_gender('deleted', 'User'));
 
     expect($target->fresh()->deleted_at)->not->toBeNull();
 });
@@ -164,7 +236,8 @@ it('restores a trashed user', function () {
 
     $this->actingAs($this->owner)
         ->put("/users/{$target->id}/restore")
-        ->assertRedirect();
+        ->assertRedirect()
+        ->assertInertiaFlash('success', translate_with_gender('restored', 'User'));
 
     expect($target->fresh()->deleted_at)->toBeNull();
 });
@@ -179,4 +252,31 @@ it('shows trashed users when filter is applied', function () {
             ->component('users/index')
             ->has('users.data', 2)
         );
+});
+
+it('exposes the demo protection consistently in user resources', function (string $environment, string $email, bool $canDelete) {
+    app()->detectEnvironment(fn () => $environment);
+    $this->owner->update(['email' => $email]);
+
+    $this->actingAs($this->owner)->get("/users/{$this->owner->id}/edit")
+        ->assertInertia(fn (Assert $assert) => $assert
+            ->where('user.can_delete', $canDelete)
+            ->where('auth.user.can_delete', $canDelete)
+        );
+})->with([
+    'demo in production' => ['production', 'johndoe@example.com', false],
+    'ordinary user in production' => ['production', 'alice@example.com', true],
+    'demo outside production' => ['testing', 'johndoe@example.com', true],
+]);
+
+it('preserves the protected demo user and flashes the refusal to delete it', function () {
+    app()->detectEnvironment(fn () => 'production');
+
+    $this->actingAs($this->owner)
+        ->withSession(['_token' => 'demo-test-token'])
+        ->delete("/users/{$this->owner->id}", ['_token' => 'demo-test-token'])
+        ->assertRedirect()
+        ->assertInertiaFlash('error', __('Deleting the demo user is not allowed.'));
+
+    $this->assertNotSoftDeleted($this->owner);
 });

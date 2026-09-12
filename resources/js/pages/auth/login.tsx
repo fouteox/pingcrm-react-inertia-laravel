@@ -1,13 +1,11 @@
 import { Head, useForm } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
-import { FormEvent, useEffect } from 'react';
+import type { FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
-import InputError from '@/components/input-error';
+import { InputField } from '@/components/resource-form-fields';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { usePageActions } from '@/contexts/page-context';
 import login from '@/wayfinder/routes/login';
 
 type LoginForm = {
@@ -22,11 +20,6 @@ interface LoginProps {
 
 export default function Login({ status }: LoginProps) {
     const { t } = useTranslation();
-    const { setAuthInfo } = usePageActions();
-
-    useEffect(() => {
-        setAuthInfo(t('Log in to your account'), t('Enter your email and password below to log in'));
-    }, [setAuthInfo, t]);
 
     const { data, setData, submit, processing, errors, reset } = useForm<Required<LoginForm>>({
         email: 'johndoe@example.com',
@@ -48,35 +41,27 @@ export default function Login({ status }: LoginProps) {
 
             <form className="flex flex-col gap-6" onSubmit={onSubmit}>
                 <div className="grid gap-6">
-                    <div className="grid gap-2">
-                        <Label htmlFor="email">{t('Email')}</Label>
-                        <Input
-                            id="email"
-                            type="email"
-                            required
-                            autoFocus
-                            autoComplete="email"
-                            value={data.email}
-                            onChange={(e) => setData('email', e.target.value)}
-                        />
-                        <InputError message={errors.email} />
-                    </div>
+                    <InputField
+                        label={t('Email')}
+                        error={errors.email}
+                        id="email"
+                        type="email"
+                        required
+                        autoComplete="email"
+                        value={data.email}
+                        onChange={(e) => setData('email', e.target.value)}
+                    />
 
-                    <div className="grid gap-2">
-                        <div className="flex items-center">
-                            <Label htmlFor="password">{t('Password')}</Label>
-                        </div>
-                        <Input
-                            id="password"
-                            type="password"
-                            required
-                            autoComplete="current-password"
-                            value={data.password}
-                            onChange={(e) => setData('password', e.target.value)}
-                            placeholder="Password"
-                        />
-                        <InputError message={errors.password} />
-                    </div>
+                    <InputField
+                        label={t('Password')}
+                        error={errors.password}
+                        id="password"
+                        type="password"
+                        required
+                        autoComplete="current-password"
+                        value={data.password}
+                        onChange={(e) => setData('password', e.target.value)}
+                    />
 
                     <div className="flex items-center space-x-3">
                         <Checkbox
@@ -99,3 +84,8 @@ export default function Login({ status }: LoginProps) {
         </>
     );
 }
+
+Login.layout = () => ({
+    authTitle: 'Log in to your account',
+    authDescription: 'Enter your email and password below to log in',
+});

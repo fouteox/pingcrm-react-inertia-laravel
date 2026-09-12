@@ -16,7 +16,7 @@ beforeEach(function () {
         'owner' => true,
     ]);
 
-    $account->organizations()->createMany([
+    $account->organizations()->createMany(array_reverse([
         [
             'name' => 'Apple',
             'email' => 'info@apple.com',
@@ -37,7 +37,7 @@ beforeEach(function () {
             'country' => 'US',
             'postal_code' => '98052',
         ],
-    ]);
+    ]));
 });
 
 it('lists the account organizations ordered by name', function () {
@@ -72,6 +72,52 @@ it('filters organizations by search term', function () {
             ->has('organizations.data', 1)
             ->where('organizations.data.0.name', 'Apple')
         );
+});
+
+it('creates an organization belonging to the current account', function () {
+    $this->actingAs($this->user)->post('/organizations', [
+        'name' => 'Acme Labs',
+        'email' => 'labs@example.com',
+    ])
+        ->assertRedirect('/organizations')
+        ->assertInertiaFlash('success', translate_with_gender('created', 'Organization'));
+
+    $this->assertDatabaseHas('organizations', [
+        'account_id' => $this->user->account_id,
+        'name' => 'Acme Labs',
+        'email' => 'labs@example.com',
+    ]);
+});
+
+it('rejects array values for organization text fields', function (string $field) {
+    $this->actingAs($this->user)->postJson('/organizations', [
+        'name' => 'Acme Labs',
+        $field => ['invalid'],
+    ])
+        ->assertUnprocessable()
+        ->assertInvalid([$field]);
+
+    $this->assertDatabaseCount('organizations', 2);
+})->with(['name', 'email', 'phone', 'address', 'city', 'region', 'country', 'postal_code']);
+
+it('updates, deletes and restores an organization from the account', function () {
+    $organization = $this->user->account->organizations()->firstOrFail();
+
+    $this->actingAs($this->user)->put("/organizations/{$organization->id}", ['name' => 'Acme Labs'])
+        ->assertRedirect()
+        ->assertInertiaFlash('success', translate_with_gender('updated', 'Organization'));
+
+    expect($organization->fresh()->name)->toBe('Acme Labs');
+
+    $this->delete("/organizations/{$organization->id}")
+        ->assertRedirect()
+        ->assertInertiaFlash('success', translate_with_gender('deleted', 'Organization'));
+    $this->assertSoftDeleted($organization);
+
+    $this->put("/organizations/{$organization->id}/restore")
+        ->assertRedirect()
+        ->assertInertiaFlash('success', translate_with_gender('restored', 'Organization'));
+    $this->assertNotSoftDeleted($organization);
 });
 
 describe('soft-deleted organizations', function () {

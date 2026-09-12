@@ -4,15 +4,15 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use Database\Factories\OrganizationFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
-use Illuminate\Database\Eloquent\Attributes\Scope;
-use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Config;
 use Laravel\Scout\Searchable;
 
 #[Fillable([
@@ -28,15 +28,15 @@ use Laravel\Scout\Searchable;
 ])]
 final class Organization extends Model
 {
+    /** @use HasFactory<OrganizationFactory> */
     use Concerns\Filterable, HasFactory, Searchable, SoftDeletes;
 
     /**
      * Retrieve the model for a bound value.
      *
-     * @param  mixed  $value
      * @param  string|null  $field
      */
-    public function resolveRouteBinding($value, $field = null): ?Model
+    public function resolveRouteBinding(mixed $value, mixed $field = null): static
     {
         return $this->where($field ?? 'id', $value)
             ->where('account_id', Auth::user()?->account_id)
@@ -44,11 +44,13 @@ final class Organization extends Model
             ->firstOrFail();
     }
 
+    /** @return BelongsTo<Account, $this> */
     public function account(): BelongsTo
     {
         return $this->belongsTo(Account::class);
     }
 
+    /** @return HasMany<Contact, $this> */
     public function contacts(): HasMany
     {
         return $this->hasMany(Contact::class);
@@ -61,26 +63,37 @@ final class Organization extends Model
     {
         return [
             'id' => (string) $this->id,
+            'sort_id' => $this->id,
             'account_id' => $this->account_id,
             'name' => $this->name,
-            'created_at' => $this->created_at?->timestamp ?? 0,
+            'created_at' => $this->created_at->timestamp ?? 0,
         ];
-    }
-
-    #[Scope]
-    public function filter(Builder $query, array $filters, int $accountId): void
-    {
-        $query
-            ->when($filters['search'] ?? null, fn ($query, $search) => $this->applySearchFilter($query, $search, $accountId, $filters['trashed'] ?? null))
-            ->when($filters['trashed'] ?? null, fn ($query, $trashed) => $this->applyTrashedFilter($query, $trashed));
     }
 
     protected static function booted(): void
     {
         self::updated(function (Organization $organization): void {
             if ($organization->isDirty('name')) {
-                $organization->contacts->searchable();
+                $organization->reindexContacts();
             }
         });
+
+        self::deleted(fn (Organization $organization) => $organization->reindexContacts());
+        self::restored(fn (Organization $organization) => $organization->reindexContacts());
+    }
+
+    /** @return list<string> */
+    protected function nameOrderColumns(): array
+    {
+        return ['name'];
+    }
+
+    private function reindexContacts(): void
+    {
+        $this->contacts()->withTrashed()->with('organization')
+            ->chunkById(
+                Config::integer('scout.chunk.searchable'),
+                fn ($contacts) => $contacts->firstOrFail()->queueMakeSearchable($contacts)
+            );
     }
 }

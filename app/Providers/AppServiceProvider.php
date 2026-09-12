@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use Illuminate\Http\Resources\Json\JsonResource;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
+use Typesense\Client;
 
 final class AppServiceProvider extends ServiceProvider
 {
@@ -25,6 +27,8 @@ final class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         JsonResource::withoutWrapping();
+
+        $this->app->bind(Client::class, fn () => new Client(Config::array('scout.typesense.client-settings')));
     }
 
     /**
