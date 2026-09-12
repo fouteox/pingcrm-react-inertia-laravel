@@ -45,6 +45,47 @@ final class SearchGenerations
         return $this->manifest()->useWritePdo()->value('active_generation');
     }
 
+    /** @return list<string|null> */
+    public function schemaTargets(): array
+    {
+        $manifest = $this->manifest()->useWritePdo()->firstOrFail();
+
+        return $manifest->building_generation === null
+            ? [$manifest->active_generation]
+            : [$manifest->active_generation, $manifest->building_generation];
+    }
+
+    /** @return 'active'|'retired'|'preparing'|'abandoned' */
+    public function invalidateMissingCollection(?string $generation): string
+    {
+        return DB::transaction(function () use ($generation): string {
+            $manifest = $this->manifest()->lockForUpdate()->firstOrFail();
+
+            if ($manifest->active_generation === $generation) {
+                Account::query()->update([
+                    'indexed_revision' => null,
+                    'search_revision' => DB::raw('search_revision + 1'),
+                ]);
+
+                return 'active';
+            }
+
+            if ($generation === null || $manifest->building_generation !== $generation) {
+                return 'retired';
+            }
+
+            if ($manifest->phase === 'preparing') {
+                return 'preparing';
+            }
+
+            DB::table('search_index_generations')->where('generation', $generation)->update(['retired_at' => now()]);
+            $this->manifest()->update(['building_generation' => null, 'phase' => 'idle']);
+            DB::table('search_generation_changes')->where('generation', $generation)->delete();
+
+            return 'abandoned';
+        });
+    }
+
     /** @return array{active: ?string, building: ?string} */
     public function captureTargets(): array
     {
@@ -68,11 +109,13 @@ final class SearchGenerations
      */
     public function recordChanges(array $targets, array $models, int $accountId, int $revision): void
     {
-        if (! $this->isCurrent($targets)) {
+        $current = $this->captureTargets();
+
+        if ($current['active'] !== $targets['active']) {
             throw new SearchIndexUnavailable;
         }
 
-        if ($targets['building'] === null || $models === []) {
+        if ($targets['building'] === null || $targets['building'] !== $current['building'] || $models === []) {
             return;
         }
 

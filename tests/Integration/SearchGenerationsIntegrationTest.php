@@ -128,6 +128,27 @@ it('keeps live mutations available while candidate transport fails and resumes i
         ->and(DB::table('search_generation_changes')->where('generation', $generation)->count())->toBe(0);
 });
 
+it('synchronizes a partially built generation before activating newly indexed fields', function () {
+    [$account, $contacts] = readyGenerationAccount();
+    $organizationName = $contacts->first()->organization->name;
+    $fieldConfig = 'scout.typesense.model-settings.'.Contact::class.'.collection-schema.fields';
+    $fields = config($fieldConfig);
+    config()->set($fieldConfig, array_values(array_filter($fields, fn (array $field): bool => $field['name'] !== 'organization_name')));
+    config()->set('search.projection_batch_size', 1);
+    $generations = app(SearchGenerations::class);
+    $generation = $generations->start();
+    expect($generations->project($generation))->toBeFalse();
+    $candidate = app(Client::class)->getCollections()->{SearchGenerations::collection(new Contact, $generation)};
+    expect(array_column($candidate->retrieve()['fields'], 'name'))->not->toContain('organization_name');
+
+    config()->set($fieldConfig, $fields);
+    $this->artisan('search:sync-schema')->assertSuccessful();
+
+    expect(array_column($candidate->retrieve()['fields'], 'name'))->toContain('organization_name');
+    finishSearchGeneration($generation);
+    expect(Contact::paginateFiltered(['search' => $organizationName], $account->id)->total())->toBe(3);
+});
+
 it('protects a candidate tombstone from a delayed create that its backfill never saw', function () {
     [$account, $contacts] = readyGenerationAccount();
     config()->set('search.projection_batch_size', 1);
