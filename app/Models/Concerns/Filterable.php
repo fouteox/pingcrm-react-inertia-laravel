@@ -83,10 +83,11 @@ trait Filterable
     private function paginateTypesense(Builder $databaseQuery, string $search, array $filters, int $accountId): LengthAwarePaginator
     {
         $index = app(SearchIndex::class);
-        $revision = $index->assertReady($accountId);
+        $state = $index->readyState($accountId);
         $query = static::search($search, fn (Documents $documents, string $term, array $parameters): array => $documents->search($parameters))
             ->where('account_id', $accountId)
             ->where('search_deleted', false)
+            ->where('search_revision', '>=', $state['rebuildRevision'])
             ->options(['filter_curated_hits' => true])
             ->withRawResults(function (array $results): void {
                 if ($results['search_cutoff'] ?? false) {
@@ -108,7 +109,7 @@ trait Filterable
             throw new SearchIndexUnavailable;
         }
 
-        $index->assertUnchanged($accountId, $revision);
+        $index->assertUnchanged($accountId, $state['revision']);
 
         return $paginator;
     }

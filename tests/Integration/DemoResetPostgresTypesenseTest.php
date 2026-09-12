@@ -407,7 +407,7 @@ it('fails synchronous bootstrap without losing the durable retry when Typesense 
 
     $this->artisan('search:rebuild', ['account' => $account->id, '--sync' => true])->assertFailed();
 
-    expect(app(SearchIndex::class)->readState($account->id))->toBe(['revision' => 1, 'indexedRevision' => 0])
+    expect(app(SearchIndex::class)->readState($account->id))->toBe(['revision' => 1, 'indexedRevision' => 0, 'rebuildRevision' => 1])
         ->and(DB::table('jobs')->where('queue', 'search-index')->count())->toBe(1);
     Exceptions::assertReported(RequestUnauthorized::class);
 });

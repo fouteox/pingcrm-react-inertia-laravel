@@ -17,6 +17,7 @@ return new class extends Migration
         Schema::table('accounts', function (Blueprint $table) {
             $table->unsignedBigInteger('search_revision')->default(0);
             $table->unsignedBigInteger('indexed_revision')->nullable()->default(0);
+            $table->unsignedBigInteger('search_rebuild_revision')->default(0);
         });
 
         DB::table('accounts')->update(['indexed_revision' => null]);
@@ -28,7 +29,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('accounts', function (Blueprint $table) {
-            $table->dropColumn(['search_revision', 'indexed_revision']);
+            $table->dropColumn(['search_revision', 'indexed_revision', 'search_rebuild_revision']);
         });
     }
 };

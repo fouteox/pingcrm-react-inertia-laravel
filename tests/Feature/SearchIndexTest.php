@@ -63,6 +63,28 @@ it('rolls back the requested revision and job with an outer transaction', functi
         ->and(DB::table('jobs')->count())->toBe(0);
 });
 
+it('advances the search revision floor only with an atomic complete rebuild', function () {
+    $user = User::withoutSyncingToSearch(fn () => User::factory()->create());
+    $search = app(SearchIndex::class);
+    $search->rebuild($user->account_id);
+
+    expect($user->account->fresh()->search_rebuild_revision)->toBe(1);
+
+    $search->mutate($user->account_id, fn () => tap($user)->update(['last_name' => 'After']));
+
+    expect($user->account->fresh()->search_revision)->toBe(2)
+        ->and($user->account->fresh()->search_rebuild_revision)->toBe(1);
+
+    expect(fn () => DB::transaction(function () use ($search, $user): void {
+        $search->rebuild($user->account_id);
+        throw new RuntimeException('Abort complete rebuild');
+    }))->toThrow(RuntimeException::class, 'Abort complete rebuild');
+
+    expect($user->account->fresh()->search_revision)->toBe(2)
+        ->and($user->account->fresh()->search_rebuild_revision)->toBe(1)
+        ->and(DB::table('jobs')->count())->toBe(2);
+});
+
 it('rejects a mutation that moves a model to another account', function () {
     $user = User::withoutSyncingToSearch(fn () => User::factory()->create());
     $accountId = $user->account_id;
@@ -96,7 +118,7 @@ it('refuses pending or changed account revisions instead of returning stale read
     expect(fn () => $search->assertReady($account->id))->toThrow(SearchIndexUnavailable::class);
     DB::table('accounts')->where('id', $account->id)->update(['indexed_revision' => 1]);
 
-    expect($search->readState($account->id))->toBe(['revision' => 1, 'indexedRevision' => 1]);
+    expect($search->readState($account->id))->toBe(['revision' => 1, 'indexedRevision' => 1, 'rebuildRevision' => 0]);
     expect(fn () => $search->assertUnchanged($account->id, 0))->toThrow(SearchIndexUnavailable::class);
     $search->assertUnchanged($account->id, 1);
 });
@@ -109,7 +131,7 @@ it('fences existing accounts during migration and starts new empty accounts read
     $new = Account::factory()->create();
     $search = app(SearchIndex::class);
 
-    expect($search->readState($existing->id))->toBe(['revision' => 0, 'indexedRevision' => null]);
+    expect($search->readState($existing->id))->toBe(['revision' => 0, 'indexedRevision' => null, 'rebuildRevision' => 0]);
     expect(fn () => $search->assertReady($existing->id))->toThrow(SearchIndexUnavailable::class);
     expect($search->assertReady($new->id))->toBe(0);
 });
@@ -126,6 +148,7 @@ it('records a full projection when hard deletion detaches organization contacts'
     $job = unserialize($payload['data']['command']);
 
     expect($contact->fresh()->organization_id)->toBeNull()
+        ->and($contact->account->fresh()->search_rebuild_revision)->toBe(1)
         ->and($job->modelClass)->toBeNull()
         ->and($job->modelId)->toBeNull()
         ->and($job->revision)->toBe(1);
@@ -141,7 +164,7 @@ it('keeps a projection pending while another worker holds the account lock', fun
     try {
         expect(fn () => $search->project(new SearchIndexProjection($user->account_id, 1, User::class, $user->id)))
             ->toThrow(SearchIndexUnavailable::class);
-        expect($search->readState($user->account_id))->toBe(['revision' => 1, 'indexedRevision' => 0]);
+        expect($search->readState($user->account_id))->toBe(['revision' => 1, 'indexedRevision' => 0, 'rebuildRevision' => 0]);
     } finally {
         $lock->release();
     }

@@ -45,8 +45,12 @@ final class SearchIndex
 
             if ($this->usesTypesense()) {
                 $revision = (int) $account->getAttribute('search_revision') + 1;
-                $account->forceFill(['search_revision' => $revision])->save();
-                $this->enqueue($model instanceof Organization && ! $model->exists
+                $fullRebuild = $model instanceof Organization && ! $model->exists;
+                $account->forceFill([
+                    'search_revision' => $revision,
+                    ...($fullRebuild ? ['search_rebuild_revision' => $revision] : []),
+                ])->save();
+                $this->enqueue($fullRebuild
                     ? new SearchIndexProjection($accountId, $revision)
                     : new SearchIndexProjection($accountId, $revision, $model::class, $model->getKey()));
             }
@@ -64,12 +68,12 @@ final class SearchIndex
         DB::transaction(function () use ($accountId): void {
             $account = Account::query()->lockForUpdate()->findOrFail($accountId);
             $revision = (int) $account->getAttribute('search_revision') + 1;
-            $account->forceFill(['search_revision' => $revision])->save();
+            $account->forceFill(['search_revision' => $revision, 'search_rebuild_revision' => $revision])->save();
             $this->enqueue(new SearchIndexProjection($accountId, $revision));
         });
     }
 
-    /** @return array{revision: int, indexedRevision: ?int} */
+    /** @return array{revision: int, indexedRevision: ?int, rebuildRevision: int} */
     public function readState(int $accountId): array
     {
         $connection = DB::connection();
@@ -87,13 +91,19 @@ final class SearchIndex
 
     public function assertReady(int $accountId): int
     {
+        return $this->readyState($accountId)['revision'];
+    }
+
+    /** @return array{revision: int, indexedRevision: ?int, rebuildRevision: int} */
+    public function readyState(int $accountId): array
+    {
         $state = $this->readState($accountId);
 
         if ($state['revision'] !== $state['indexedRevision']) {
             throw new SearchIndexUnavailable;
         }
 
-        return $state['revision'];
+        return $state;
     }
 
     public function assertUnchanged(int $accountId, int $revision): void
@@ -227,7 +237,7 @@ final class SearchIndex
         }
     }
 
-    /** @return array{revision: int, indexedRevision: ?int} */
+    /** @return array{revision: int, indexedRevision: ?int, rebuildRevision: int} */
     private function stateOn(Connection $connection, int $accountId): array
     {
         $state = $connection->table('accounts')->useWritePdo()->where('id', $accountId)->firstOrFail();
@@ -235,6 +245,7 @@ final class SearchIndex
         return [
             'revision' => (int) $state->search_revision,
             'indexedRevision' => $state->indexed_revision === null ? null : (int) $state->indexed_revision,
+            'rebuildRevision' => (int) $state->search_rebuild_revision,
         ];
     }
 

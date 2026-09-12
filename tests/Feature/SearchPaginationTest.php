@@ -45,7 +45,7 @@ function useTypesenseSearchResponse(string $index, ?Closure $response): void
 
 function assertNativeTypesenseFilters(array $parameters, int $accountId, ?string $role = null, ?string $trashed = null): void
 {
-    $filters = ['account_id:='.$accountId, 'search_deleted:=false'];
+    $filters = ['account_id:='.$accountId, 'search_deleted:=false', 'search_revision:>=0'];
 
     if ($trashed !== 'with') {
         $filters[] = '__soft_deleted:='.($trashed === 'only' ? '1' : '0');
@@ -103,7 +103,7 @@ it('paginates zero searches using native tenant role and trash filters', functio
     $account = Account::factory()->create();
     $actor = User::factory()->for($account)->create(['owner' => true]);
     $attributes = ['first_name' => '0', 'last_name' => 'Person'];
-    $foreignUsers = User::factory(3)->create($attributes);
+    User::factory(3)->create($attributes);
     $users = User::factory(16)->for($account)->create([...$attributes, 'owner' => false]);
     $deletedUsers = User::factory(17)->for($account)->create([...$attributes, 'owner' => false, 'deleted_at' => now()]);
     $owners = User::factory(18)->for($account)->create([...$attributes, 'owner' => true]);
@@ -115,19 +115,13 @@ it('paginates zero searches using native tenant role and trash filters', functio
         'only' => $deleted,
         default => $active,
     };
-    $indexed = $foreignUsers->concat($users)->concat($deletedUsers)->concat($owners)->concat($deletedOwners);
-    useTypesenseSearchResponse('users', function (array $parameters) use ($account, $role, $trashed, $indexed): array {
+    useTypesenseSearchResponse('users', function (array $parameters) use ($account, $role, $trashed, $expected): array {
         expect($parameters['q'])->toBe('0');
         assertNativeTypesenseFilters($parameters, $account->id, $role, $trashed);
-        $filters = collect(explode(' && ', $parameters['filter_by']))
-            ->mapWithKeys(fn (string $filter): array => [explode(':=', $filter)[0] => explode(':=', $filter)[1]]);
-        $matches = $indexed->filter(fn (User $user): bool => $user->account_id === (int) $filters['account_id']
-            && $user->owner === ($filters['owner'] === 'true')
-            && (! $filters->has('__soft_deleted') || (int) $user->trashed() === (int) $filters['__soft_deleted']))->values();
 
         return [
-            'found' => $matches->count(),
-            'hits' => $matches->forPage($parameters['page'], $parameters['per_page'])
+            'found' => $expected->count(),
+            'hits' => $expected->forPage($parameters['page'], $parameters['per_page'])
                 ->map(fn (User $user) => ['document' => ['id' => (string) $user->id]])->values()->all(),
         ];
     });

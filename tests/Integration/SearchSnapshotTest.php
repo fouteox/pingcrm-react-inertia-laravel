@@ -170,7 +170,7 @@ it('reads the committed revision while another connection holds an uncommitted m
         $writer->commit();
         $this->get('/users?search=Ada&role=user')->assertServiceUnavailable();
 
-        expect($search->readState($account->id))->toBe(['revision' => $revision + 1, 'indexedRevision' => $revision]);
+        expect($search->readState($account->id))->toBe(['revision' => $revision + 1, 'indexedRevision' => $revision, 'rebuildRevision' => 0]);
     } finally {
         if ($writer->transactionLevel() > 0) {
             $writer->rollBack();
