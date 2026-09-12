@@ -8,7 +8,9 @@ use App\Models\Account;
 use App\Models\Contact;
 use App\Models\Organization;
 use App\Models\User;
+use App\Services\SearchIndex;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Hash;
 use UnexpectedValueException;
 
@@ -25,7 +27,23 @@ final class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        $account = Account::where('demo_key', self::DEMO_ACCOUNT_KEY)->first();
+        DB::transaction(function (): void {
+            if (config('scout.driver') === 'typesense') {
+                $account = Contact::withoutSyncingToSearch(
+                    fn () => Organization::withoutSyncingToSearch(
+                        fn () => User::withoutSyncingToSearch($this->seedDemo(...))
+                    )
+                );
+                app(SearchIndex::class)->rebuild($account->id);
+            } else {
+                $this->seedDemo();
+            }
+        });
+    }
+
+    private function seedDemo(): Account
+    {
+        $account = Account::where('demo_key', self::DEMO_ACCOUNT_KEY)->lockForUpdate()->first();
         $demoUser = User::withTrashed()
             ->where('email', self::DEMO_USER_EMAIL)
             ->first();
@@ -75,5 +93,7 @@ final class DatabaseSeeder extends Seeder
             ->each(function ($contact) use ($organizations) {
                 $contact->update(['organization_id' => $organizations->random()->id]);
             });
+
+        return $account;
     }
 }

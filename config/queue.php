@@ -46,6 +46,15 @@ return [
             'after_commit' => false,
         ],
 
+        'search-index' => [
+            'driver' => 'database',
+            'connection' => null,
+            'table' => 'jobs',
+            'queue' => 'search-index',
+            'retry_after' => 180,
+            'after_commit' => false,
+        ],
+
         'beanstalkd' => [
             'driver' => 'beanstalkd',
             'host' => env('BEANSTALKD_QUEUE_HOST', 'localhost'),

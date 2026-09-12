@@ -361,5 +361,9 @@
     "Appearance": "Apparence",
     "Light": "Clair",
     "Dark": "Sombre",
-    "System": "Système"
+    "System": "Système",
+    "Search is temporarily unavailable.": "La recherche est temporairement indisponible.",
+    "Search results cannot be shown right now. Try again in a moment, or view the list without searching.": "Les résultats de recherche ne peuvent pas être affichés pour le moment. Réessayez dans quelques instants ou consultez la liste sans recherche.",
+    "Try again": "Réessayer",
+    "View the list without searching": "Consulter la liste sans recherche"
 }

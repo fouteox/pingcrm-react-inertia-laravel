@@ -57,7 +57,8 @@ return [
     |
     */
 
-    'after_commit' => true,
+    // SearchIndex records its jobs inside the mutation transaction and publishes after commit.
+    'after_commit' => false,
 
     /*
     |--------------------------------------------------------------------------
@@ -195,6 +196,8 @@ return [
                         ['name' => 'organization_name', 'type' => 'string'],
                         ['name' => 'created_at', 'type' => 'int64'],
                         ['name' => '__soft_deleted', 'type' => 'int32', 'optional' => true],
+                        ['name' => 'search_revision', 'type' => 'int64', 'optional' => true],
+                        ['name' => 'search_deleted', 'type' => 'bool', 'optional' => true],
                     ],
                     'default_sorting_field' => 'created_at',
                 ],
@@ -210,6 +213,8 @@ return [
                         ['name' => 'name', 'type' => 'string', 'sort' => true],
                         ['name' => 'created_at', 'type' => 'int64'],
                         ['name' => '__soft_deleted', 'type' => 'int32', 'optional' => true],
+                        ['name' => 'search_revision', 'type' => 'int64', 'optional' => true],
+                        ['name' => 'search_deleted', 'type' => 'bool', 'optional' => true],
                     ],
                     'default_sorting_field' => 'created_at',
                 ],
@@ -228,6 +233,8 @@ return [
                         ['name' => 'owner', 'type' => 'bool'],
                         ['name' => 'created_at', 'type' => 'int64'],
                         ['name' => '__soft_deleted', 'type' => 'int32', 'optional' => true],
+                        ['name' => 'search_revision', 'type' => 'int64', 'optional' => true],
+                        ['name' => 'search_deleted', 'type' => 'bool', 'optional' => true],
                     ],
                     'default_sorting_field' => 'created_at',
                 ],

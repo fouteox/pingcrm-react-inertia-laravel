@@ -2,11 +2,13 @@
 
 declare(strict_types=1);
 
+use App\Exceptions\SearchIndexUnavailable;
 use App\Models\Account;
 use App\Models\Contact;
 use App\Models\Organization;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
+use Illuminate\Support\Facades\DB;
 use Inertia\Testing\AssertableInertia as Assert;
 use Laravel\Scout\EngineManager;
 use Laravel\Scout\Engines\CollectionEngine;
@@ -15,46 +17,49 @@ use Typesense\ApiCall;
 use Typesense\Client;
 use Typesense\Collections;
 use Typesense\Exceptions\TypesenseClientError;
-use Typesense\MultiSearch;
 
 beforeEach(function () {
     $this->withoutExceptionHandling();
     config()->set('scout.prefix', '');
 });
 
-function useTypesenseSearchResponse(string $index, Closure $response): void
+function useTypesenseSearchResponse(string $index, ?Closure $response): void
 {
     $api = Mockery::mock(ApiCall::class);
-    $api->shouldReceive('post')->once()->with('/multi_search', Mockery::type('array'), true, [])
-        ->andReturnUsing(function (string $path, array $body) use ($index, $response): array {
-            expect($body['searches'])->toHaveCount(1)
-                ->and($body['searches'][0]['collection'])->toBe($index);
-
-            return ['results' => [$response($body['searches'][0])]];
-        });
-
     $client = Mockery::mock(Client::class);
-    $client->shouldReceive('getCollections')->once()->andReturn(new Collections($api));
-    $client->shouldReceive('getMultiSearch')->once()->andReturn(new MultiSearch($api));
+
+    if ($response === null) {
+        $client->shouldNotReceive('getCollections');
+    } else {
+        $api->shouldReceive('get')->once()->with("/collections/$index/documents/search", Mockery::type('array'))
+            ->andReturnUsing(fn (string $path, array $parameters): array => $response($parameters));
+        $client->shouldReceive('getCollections')->once()->andReturn(new Collections($api));
+    }
+
+    $client->shouldNotReceive('getMultiSearch');
 
     app()->instance(Client::class, $client);
     app(EngineManager::class)->extend('typesense', fn () => new TypesenseEngine($client, 1000));
     config()->set('scout.driver', 'typesense');
 }
 
-function assertTypesenseEligibleIds(array $parameters, array $expectedIds): array
+function assertNativeTypesenseFilters(array $parameters, int $accountId, ?string $role = null, ?string $trashed = null): void
 {
+    $filters = ['account_id:='.$accountId, 'search_deleted:=false'];
+
+    if ($trashed !== 'with') {
+        $filters[] = '__soft_deleted:='.($trashed === 'only' ? '1' : '0');
+    }
+
+    if ($role !== null) {
+        $filters[] = 'owner:='.($role === 'owner' ? 'true' : 'false');
+    }
+
     expect($parameters['filter_curated_hits'])->toBeTrue()
-        ->and($parameters['filter_by'])->toMatch('/^id:=\[[0-9, ]+\]$/');
-
-    $ids = array_map(trim(...), explode(',', mb_substr($parameters['filter_by'], 5, -1)));
-
-    expect($ids)->toEqualCanonicalizing(array_map(strval(...), $expectedIds));
-
-    return $ids;
+        ->and(explode(' && ', $parameters['filter_by']))->toEqualCanonicalizing($filters);
 }
 
-it('paginates typo matches beyond 1200 eligible records through a native POST search', function (string $model, string $resource, string $sort) {
+it('paginates typo matches beyond 1200 records through native Typesense pagination', function (string $model, string $resource, string $sort) {
     $account = Account::factory()->create();
     $actor = User::factory()->for($account)->create(['first_name' => 'Viewer', 'last_name' => 'Observer']);
     $attributes = $model === Organization::class
@@ -63,25 +68,18 @@ it('paginates typo matches beyond 1200 eligible records through a native POST se
     $model::factory()->create($attributes);
     $model::factory()->for($account)->create([...$attributes, 'deleted_at' => now()]);
     $matches = $model::factory(1217)->for($account)->create($attributes);
-    $eligibleIds = $matches->modelKeys();
-
-    if ($model === User::class) {
-        $eligibleIds[] = $actor->id;
-    }
-
     $lastPage = $matches->slice(1215)->values();
 
-    useTypesenseSearchResponse($resource, function (array $parameters) use ($eligibleIds, $matches, $sort): array {
+    useTypesenseSearchResponse($resource, function (array $parameters) use ($account, $matches, $sort): array {
         expect($parameters['q'])->toBe('commmon')
             ->and($parameters['page'])->toBe(82)
             ->and($parameters['per_page'])->toBe(15)
             ->and($parameters['sort_by'])->toBe($sort);
-        $ids = assertTypesenseEligibleIds($parameters, $eligibleIds);
-        $indexedMatches = $matches->whereIn('id', $ids);
+        assertNativeTypesenseFilters($parameters, $account->id);
 
         return [
-            'found' => $indexedMatches->count(),
-            'hits' => $indexedMatches->forPage($parameters['page'], $parameters['per_page'])
+            'found' => $matches->count(),
+            'hits' => $matches->forPage($parameters['page'], $parameters['per_page'])
                 ->map(fn ($record) => ['document' => ['id' => (string) $record->id]])->values()->all(),
         ];
     });
@@ -101,16 +99,15 @@ it('paginates typo matches beyond 1200 eligible records through a native POST se
     'users' => [User::class, 'users', 'last_name:asc,first_name:asc'],
 ]);
 
-it('paginates zero searches using current SQL roles and trash states', function (string $role, ?string $trashed) {
+it('paginates zero searches using native tenant role and trash filters', function (string $role, ?string $trashed) {
     $account = Account::factory()->create();
     $actor = User::factory()->for($account)->create(['owner' => true]);
     $attributes = ['first_name' => '0', 'last_name' => 'Person'];
     $foreignUsers = User::factory(3)->create($attributes);
-    $users = User::factory(16)->for($account)->create([...$attributes, 'owner' => true]);
-    $deletedUsers = User::factory(17)->for($account)->create([...$attributes, 'owner' => true, 'deleted_at' => now()]);
+    $users = User::factory(16)->for($account)->create([...$attributes, 'owner' => false]);
+    $deletedUsers = User::factory(17)->for($account)->create([...$attributes, 'owner' => false, 'deleted_at' => now()]);
     $owners = User::factory(18)->for($account)->create([...$attributes, 'owner' => true]);
     $deletedOwners = User::factory(19)->for($account)->create([...$attributes, 'owner' => true, 'deleted_at' => now()]);
-    User::withTrashed()->whereKey($users->concat($deletedUsers)->modelKeys())->update(['owner' => false]);
     $active = $role === 'owner' ? $owners : $users;
     $deleted = $role === 'owner' ? $deletedOwners : $deletedUsers;
     $expected = match ($trashed) {
@@ -118,17 +115,15 @@ it('paginates zero searches using current SQL roles and trash states', function 
         'only' => $deleted,
         default => $active,
     };
-    $eligibleIds = $expected->modelKeys();
-
-    if ($role === 'owner' && $trashed !== 'only') {
-        $eligibleIds[] = $actor->id;
-    }
-
     $indexed = $foreignUsers->concat($users)->concat($deletedUsers)->concat($owners)->concat($deletedOwners);
-    useTypesenseSearchResponse('users', function (array $parameters) use ($eligibleIds, $indexed): array {
+    useTypesenseSearchResponse('users', function (array $parameters) use ($account, $role, $trashed, $indexed): array {
         expect($parameters['q'])->toBe('0');
-        $ids = assertTypesenseEligibleIds($parameters, $eligibleIds);
-        $matches = $indexed->whereIn('id', $ids)->values();
+        assertNativeTypesenseFilters($parameters, $account->id, $role, $trashed);
+        $filters = collect(explode(' && ', $parameters['filter_by']))
+            ->mapWithKeys(fn (string $filter): array => [explode(':=', $filter)[0] => explode(':=', $filter)[1]]);
+        $matches = $indexed->filter(fn (User $user): bool => $user->account_id === (int) $filters['account_id']
+            && $user->owner === ($filters['owner'] === 'true')
+            && (! $filters->has('__soft_deleted') || (int) $user->trashed() === (int) $filters['__soft_deleted']))->values();
 
         return [
             'found' => $matches->count(),
@@ -155,19 +150,18 @@ it('paginates zero searches using current SQL roles and trash states', function 
     'deleted owners' => ['owner', 'only'],
 ]);
 
-it('returns an empty page without calling Typesense when SQL has no eligible records', function (string $model, string $resource) {
+it('returns a native empty result when no records match the indexed filters', function (string $model, string $resource) {
     $account = Account::factory()->create();
     $actor = User::factory()->for($account)->create(['owner' => false]);
     $attributes = $model === User::class ? ['owner' => true] : [];
     $model::factory()->create($attributes);
     $model::factory()->for($account)->create([...$attributes, 'deleted_at' => now()]);
 
-    $client = Mockery::mock(Client::class);
-    $client->shouldNotReceive('getCollections');
-    $client->shouldNotReceive('getMultiSearch');
-    app()->instance(Client::class, $client);
-    app(EngineManager::class)->extend('typesense', fn () => new TypesenseEngine($client, 1000));
-    config()->set('scout.driver', 'typesense');
+    useTypesenseSearchResponse($resource, function (array $parameters) use ($account, $model): array {
+        assertNativeTypesenseFilters($parameters, $account->id, $model === User::class ? 'owner' : null);
+
+        return ['found' => 0, 'hits' => []];
+    });
 
     $this->actingAs($actor)
         ->get("/$resource?".http_build_query(['search' => 'anything', 'role' => $model === User::class ? 'owner' : null]))
@@ -193,49 +187,161 @@ it('keeps name ordering stable across search pages when names are identical', fu
             ->where('contacts.data.0.id', $contacts->last()->id));
 });
 
-it('excludes stale ineligible hits before computing the total and slicing a page', function () {
+it('rejects a full native page containing a hit that no longer matches SQL filters', function (string $model, string $resource, string $change, ?string $role, ?string $trashed) {
     $account = Account::factory()->create();
-    $actor = User::factory()->for($account)->create();
-    $organization = Organization::factory()->for($account)->create();
-    $foreignContact = Contact::factory()->create();
-    $deletedContact = Contact::factory()->for($account)->create(['deleted_at' => now()]);
-    $removedContact = Contact::factory()->for($account)->create();
-    $removedContact->forceDelete();
-    $contacts = Contact::factory(16)->for($account)->for($organization)->create(['first_name' => 'Common', 'last_name' => 'Person']);
-    $indexed = collect([$foreignContact, $deletedContact, $removedContact])->concat($contacts);
+    $actor = User::factory()->for($account)->create(['owner' => true]);
+    $attributes = $model === User::class ? ['owner' => false] : [];
 
-    useTypesenseSearchResponse('contacts', function (array $parameters) use ($contacts, $indexed): array {
-        $ids = assertTypesenseEligibleIds($parameters, $contacts->modelKeys());
-        $matches = $indexed->whereIn('id', $ids)->values();
+    if ($trashed === 'only') {
+        $attributes['deleted_at'] = now();
+    }
 
-        return [
-            'found' => $matches->count(),
-            'hits' => $matches->forPage($parameters['page'], $parameters['per_page'])
-                ->map(fn (Contact $contact) => ['document' => ['id' => (string) $contact->id]])->values()->all(),
-        ];
+    $records = $model::factory(15)->for($account)->create($attributes);
+    $stale = $records->last();
+    $row = DB::table($stale->getTable())->where('id', $stale->id);
+
+    match ($change) {
+        'tenant' => $row->update(['account_id' => Account::factory()->create()->id]),
+        'role' => $row->update(['owner' => true]),
+        'deleted' => $row->update(['deleted_at' => now()]),
+        'restored' => $row->update(['deleted_at' => null]),
+        'removed' => $row->delete(),
+    };
+
+    useTypesenseSearchResponse($resource, function (array $parameters) use ($account, $role, $trashed, $records): array {
+        assertNativeTypesenseFilters($parameters, $account->id, $role, $trashed);
+
+        return ['found' => 15, 'hits' => $records->map(fn ($record): array => ['document' => ['id' => (string) $record->id]])->all()];
     });
 
-    $this->actingAs($actor)
-        ->get('/contacts?search=common&page=2')
-        ->assertInertia(fn (Assert $assert) => $assert
-            ->where('contacts.meta.total', 16)
-            ->where('contacts.meta.last_page', 2)
-            ->has('contacts.data', 1)
-            ->where('contacts.data.0.id', $contacts->last()->id)
-            ->where('contacts.data.0.organization.name', $organization->name));
-});
+    $this->expectException(SearchIndexUnavailable::class);
 
-it('propagates individual Typesense search errors instead of returning an empty page', function () {
+    $this->actingAs($actor)->get("/$resource?".http_build_query(['search' => 'common', 'role' => $role, 'trashed' => $trashed]));
+})->with([
+    'contact moved to another tenant' => [Contact::class, 'contacts', 'tenant', null, null],
+    'organization moved to another tenant' => [Organization::class, 'organizations', 'tenant', null, null],
+    'user moved to another tenant' => [User::class, 'users', 'tenant', 'user', null],
+    'contact deleted' => [Contact::class, 'contacts', 'deleted', null, null],
+    'organization deleted' => [Organization::class, 'organizations', 'deleted', null, null],
+    'user deleted' => [User::class, 'users', 'deleted', 'user', null],
+    'contact restored while viewing trash' => [Contact::class, 'contacts', 'restored', null, 'only'],
+    'user role changed' => [User::class, 'users', 'role', 'user', null],
+    'contact permanently deleted' => [Contact::class, 'contacts', 'removed', null, null],
+]);
+
+it('reports a failed native Typesense request instead of returning an empty page', function () {
     $account = Account::factory()->create();
     $actor = User::factory()->for($account)->create();
     Contact::factory()->for($account)->create();
-    useTypesenseSearchResponse('contacts', fn (): array => ['code' => 503, 'error' => 'Search temporarily unavailable']);
+    $failure = new TypesenseClientError('Search temporarily unavailable', 503);
+    useTypesenseSearchResponse('contacts', fn (): array => throw $failure);
+    $this->actingAs($actor);
 
-    $this->expectException(TypesenseClientError::class);
-    $this->expectExceptionMessage('Search temporarily unavailable');
-    $this->expectExceptionCode(503);
+    expect(fn () => $this->get('/contacts?search=common'))
+        ->toThrow(fn (SearchIndexUnavailable $exception) => expect($exception->getPrevious())->toBe($failure));
+});
+
+it('does not search an index with an unacknowledged revision', function (?int $indexedRevision) {
+    $actor = User::factory()->create();
+    Contact::factory()->for($actor->account)->create();
+    $actor->account->forceFill(['search_revision' => 1, 'indexed_revision' => $indexedRevision])->save();
+    useTypesenseSearchResponse('contacts', null);
+
+    $this->expectException(SearchIndexUnavailable::class);
 
     $this->actingAs($actor)->get('/contacts?search=common');
+})->with(['not initialized' => [null], 'projection pending' => [0]]);
+
+it('rejects a page when the account revision changes during the search request', function (int $indexedRevision) {
+    $actor = User::factory()->create();
+    $contact = Contact::factory()->for($actor->account)->create();
+
+    useTypesenseSearchResponse('contacts', function () use ($actor, $contact, $indexedRevision): array {
+        DB::table('accounts')->where('id', $actor->account_id)->update(['search_revision' => 1, 'indexed_revision' => $indexedRevision]);
+
+        return ['found' => 1, 'hits' => [['document' => ['id' => (string) $contact->id]]]];
+    });
+
+    $this->expectException(SearchIndexUnavailable::class);
+
+    $this->actingAs($actor)->get('/contacts?search=common');
+})->with(['projection pending' => [0], 'new revision already indexed' => [1]]);
+
+it('rejects a native page with fewer hits than its reported total requires', function (int $page, int $returnedHits) {
+    $actor = User::factory()->create();
+    $contacts = Contact::factory(16)->for($actor->account)->create();
+
+    useTypesenseSearchResponse('contacts', fn (): array => [
+        'found' => 16,
+        'hits' => $contacts->take($returnedHits)->map(fn (Contact $contact): array => ['document' => ['id' => (string) $contact->id]])->all(),
+    ]);
+
+    $this->expectException(SearchIndexUnavailable::class);
+
+    $this->actingAs($actor)->get('/contacts?search=common&page='.$page);
+})->with(['incomplete first page' => [1, 14], 'missing last hit' => [2, 0]]);
+
+it('rejects a cutoff native search even when its current page is full', function () {
+    $actor = User::factory()->create();
+    $contacts = Contact::factory(15)->for($actor->account)->create();
+    useTypesenseSearchResponse('contacts', fn (): array => [
+        'found' => 15,
+        'search_cutoff' => true,
+        'hits' => $contacts->map(fn (Contact $contact): array => ['document' => ['id' => (string) $contact->id]])->all(),
+    ]);
+
+    $this->expectException(SearchIndexUnavailable::class);
+
+    $this->actingAs($actor)->get('/contacts?search=common');
+});
+
+it('keeps the native total for an empty page beyond the last page', function () {
+    $actor = User::factory()->create();
+    Contact::factory(16)->for($actor->account)->create();
+    useTypesenseSearchResponse('contacts', fn (): array => ['found' => 16, 'hits' => []]);
+
+    $this->actingAs($actor)->get('/contacts?search=common&page=3')
+        ->assertInertia(fn (Assert $assert) => $assert
+            ->where('contacts.meta.total', 16)
+            ->where('contacts.meta.last_page', 2)
+            ->where('contacts.meta.current_page', 3)
+            ->has('contacts.data', 0));
+});
+
+it('only queries SQL contact identifiers returned on the current native page', function () {
+    $actor = User::factory()->create();
+    $organization = Organization::factory()->for($actor->account)->create();
+    $contacts = Contact::factory(1217)->for($actor->account)->for($organization)->create();
+    $pageIds = $contacts->slice(1215)->values()->modelKeys();
+
+    useTypesenseSearchResponse('contacts', function (array $parameters) use ($actor, $pageIds): array {
+        assertNativeTypesenseFilters($parameters, $actor->account_id);
+        expect($parameters['page'])->toBe(82)->and($parameters['per_page'])->toBe(15);
+
+        return ['found' => 1217, 'hits' => array_map(fn (int $id): array => ['document' => ['id' => (string) $id]], $pageIds)];
+    });
+
+    DB::enableQueryLog();
+
+    try {
+        $this->actingAs($actor)->get('/contacts?search=common&page=82')
+            ->assertInertia(fn (Assert $assert) => $assert
+                ->where('contacts.meta.total', 1217)
+                ->has('contacts.data', 2)
+                ->where('contacts.data.0.organization.name', $organization->name));
+
+        $queries = collect(DB::getQueryLog())->filter(fn (array $query): bool => str_contains($query['query'], 'from "contacts"'));
+    } finally {
+        DB::disableQueryLog();
+        DB::flushQueryLog();
+    }
+
+    expect($queries)->not->toBeEmpty();
+
+    foreach ($queries as $query) {
+        expect(preg_match('/"(?:contacts"\.")?id" in \(([0-9, ]+)\)/', $query['query'], $matches))->toBe(1);
+        expect(array_map(intval(...), explode(',', $matches[1])))->toEqualCanonicalizing($pageIds);
+    }
 });
 
 it('reindexes active and trashed contacts when their organization changes', function (string $change, string $expectedName) {

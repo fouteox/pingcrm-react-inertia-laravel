@@ -4,12 +4,8 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
-use App\Jobs\ReconcileDemoSearchIndex;
 use App\Models\Account;
-use App\Models\Contact;
-use App\Models\Organization;
 use App\Models\User;
-use Closure;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
@@ -41,21 +37,17 @@ final class ResetDemoCommand extends Command
         try {
             $this->info('Resetting demo data in a transaction...');
 
-            $accountId = $this->withoutSearchSyncing(
-                fn (): int => $this->resetDemoData($seeder)
-            );
+            $this->resetDemoData($seeder);
         } finally {
             $lock->release();
         }
-
-        ReconcileDemoSearchIndex::dispatch($accountId)->afterCommit();
 
         $this->info('Demo data reset complete; search reconciliation queued.');
 
         return self::SUCCESS;
     }
 
-    private function resetDemoData(DatabaseSeeder $seeder): int
+    private function resetDemoData(DatabaseSeeder $seeder): void
     {
         $attempts = Config::integer('demo.reset.transaction_attempts');
 
@@ -63,7 +55,7 @@ final class ResetDemoCommand extends Command
             throw new UnexpectedValueException('Demo reset transaction attempts must be at least 1.');
         }
 
-        return DB::transaction(function () use ($seeder): int {
+        DB::transaction(function () use ($seeder): void {
             $this->lockDemoTablesForWrites();
 
             $demoAccount = Account::where('demo_key', DatabaseSeeder::DEMO_ACCOUNT_KEY)->first();
@@ -85,9 +77,6 @@ final class ResetDemoCommand extends Command
 
             $seeder->run();
 
-            return Account::where('demo_key', DatabaseSeeder::DEMO_ACCOUNT_KEY)
-                ->sole()
-                ->getKey();
         }, attempts: $attempts);
     }
 
@@ -125,21 +114,6 @@ final class ResetDemoCommand extends Command
 
         DB::statement(
             'LOCK TABLE accounts, users, organizations, contacts IN SHARE ROW EXCLUSIVE MODE'
-        );
-    }
-
-    /**
-     * @template TValue
-     *
-     * @param  Closure(): TValue  $callback
-     * @return TValue
-     */
-    private function withoutSearchSyncing(Closure $callback): mixed
-    {
-        return Contact::withoutSyncingToSearch(
-            fn () => Organization::withoutSyncingToSearch(
-                fn () => User::withoutSyncingToSearch($callback)
-            )
         );
     }
 }

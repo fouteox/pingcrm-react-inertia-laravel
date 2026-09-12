@@ -3,7 +3,7 @@
 declare(strict_types=1);
 
 use App\Console\Commands\ResetDemoCommand;
-use App\Jobs\ReconcileDemoSearchIndex;
+use App\Jobs\SearchIndexProjection;
 use App\Models\Account;
 use App\Models\Contact;
 use App\Models\Organization;
@@ -11,8 +11,7 @@ use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Console\Scheduling\Schedule;
 use Illuminate\Database\Schema\Blueprint;
-use Illuminate\Queue\Attributes\Timeout;
-use Illuminate\Queue\Attributes\Tries;
+use Illuminate\Queue\Events\JobQueued;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
@@ -22,7 +21,15 @@ use Illuminate\Support\Facades\Queue;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Scout\EngineManager;
-use Laravel\Scout\Engines\Engine;
+use Laravel\Scout\Engines\TypesenseEngine;
+
+function useQueuedTypesenseReset(): void
+{
+    config()->set(['scout.driver' => 'typesense', 'search.synchronous' => false]);
+    $engine = Mockery::mock(TypesenseEngine::class);
+    $engine->shouldNotReceive('update', 'delete');
+    app(EngineManager::class)->extend('typesense', fn () => $engine);
+}
 
 it('resets only the demo tenant without rebuilding the schema or identities', function () {
     config()->set([
@@ -110,7 +117,8 @@ it('resets only the demo tenant without rebuilding the schema or identities', fu
         ->and(Contact::whereBelongsTo($demoAccount)->min('id'))->toBeGreaterThan($highestContactId)
         ->and(User::find($obsoleteUser->id))->toBeNull()
         ->and(Organization::find($obsoleteOrganization->id))->toBeNull()
-        ->and(Contact::find($obsoleteContact->id))->toBeNull();
+        ->and(Contact::find($obsoleteContact->id))->toBeNull()
+        ->and(DB::table('jobs')->count())->toBe(0);
 });
 
 it('invalidates a removed user session without ever reusing its identity', function () {
@@ -168,7 +176,7 @@ it('rolls the complete reset back before dispatching search work when seeding fa
         'organization_id' => $organization->id,
     ]);
 
-    Queue::fake();
+    useQueuedTypesenseReset();
 
     $creatingOrganization = 'eloquent.creating: '.Organization::class;
     Event::listen($creatingOrganization, fn () => throw new RuntimeException('Injected seeding failure'));
@@ -189,11 +197,13 @@ it('rolls the complete reset back before dispatching search work when seeding fa
         ->and(User::findOrFail($demoUser->id)->first_name)->toBe('Before')
         ->and(Organization::findOrFail($organization->id)->account_id)->toBe($demoAccount->id)
         ->and(Contact::findOrFail($contact->id)->organization_id)->toBe($organization->id)
-        ->and($releasedLock->get())->toBeTrue();
+        ->and($releasedLock->get())->toBeTrue()
+        ->and($demoAccount->fresh()->search_revision)->toBe(0)
+        ->and($demoAccount->fresh()->indexed_revision)->toBe(0)
+        ->and(DB::table('jobs')->count())->toBe(0);
 
     $releasedLock->release();
 
-    Queue::assertNothingPushed();
 });
 
 it('never adopts an unrelated account that has the canonical demo name', function () {
@@ -264,7 +274,7 @@ it('aborts without mutation when a cross-tenant organization reference exists', 
     Queue::assertNothingPushed();
 });
 
-it('queues an authoritative search reconciliation after the database commit', function () {
+it('records a complete search projection with the reset in the same transaction', function () {
     $account = Account::factory()->create([
         'demo_key' => DatabaseSeeder::DEMO_ACCOUNT_KEY,
     ]);
@@ -279,53 +289,49 @@ it('queues an authoritative search reconciliation after the database commit', fu
         'organization_id' => $obsoleteOrganization->id,
     ]);
 
-    Queue::fake();
+    useQueuedTypesenseReset();
 
     $this->artisan('demo:reset')->assertSuccessful();
 
-    Queue::assertPushed(ReconcileDemoSearchIndex::class, 1);
-    Queue::assertPushed(
-        ReconcileDemoSearchIndex::class,
-        fn (ReconcileDemoSearchIndex $job): bool => $job->accountId === $account->id
-    );
+    $queued = DB::table('jobs')->sole();
+    $payload = json_decode($queued->payload, true, flags: JSON_THROW_ON_ERROR);
+    $job = unserialize($payload['data']['command']);
+
+    expect($job)->toBeInstanceOf(SearchIndexProjection::class)
+        ->and($queued->queue)->toBe('search-index')
+        ->and($job->accountId)->toBe($account->id)
+        ->and($job->revision)->toBe(1)
+        ->and($job->modelClass)->toBeNull()
+        ->and($job->modelId)->toBeNull()
+        ->and($account->fresh()->search_revision)->toBe(1)
+        ->and($account->fresh()->indexed_revision)->toBe(0)
+        ->and($payload['timeout'])->toBeLessThan(config('queue.connections.search-index.retry_after'))
+        ->and($payload['maxTries'])->toBe(0)
+        ->and($payload['maxExceptions'])->toBe(5);
 });
 
-it('reindexes a model changed after the first search snapshot', function () {
-    $account = Account::factory()->create();
-    $contact = Contact::factory()->create([
-        'account_id' => $account->id,
-        'first_name' => 'Before',
-    ]);
-    $contactUpdates = [];
+it('keeps pending reset projections when another reset requests a newer revision', function () {
+    $account = Account::factory()->create(['demo_key' => DatabaseSeeder::DEMO_ACCOUNT_KEY]);
+    useQueuedTypesenseReset();
 
-    config()->set([
-        'scout.driver' => 'concurrent-update-test',
-        'scout.queue' => false,
-    ]);
+    $this->artisan('demo:reset')->assertSuccessful();
+    $firstContactIds = Contact::whereBelongsTo($account)->pluck('id');
+    $this->artisan('demo:reset')->assertSuccessful();
 
-    $engine = Mockery::mock(Engine::class);
-    $engine->shouldReceive('update')->andReturnUsing(
-        function ($models) use ($contact, &$contactUpdates): void {
-            if (! $models->first() instanceof Contact) {
-                return;
-            }
+    $jobs = DB::table('jobs')->orderBy('id')->get()->map(function ($queued): SearchIndexProjection {
+        $payload = json_decode($queued->payload, true, flags: JSON_THROW_ON_ERROR);
 
-            $contactUpdates[] = $models->first()->toSearchableArray();
+        return unserialize($payload['data']['command']);
+    });
 
-            if (count($contactUpdates) === 1) {
-                Contact::whereKey($contact->getKey())->update(['first_name' => 'After']);
-            }
-        }
-    );
-
-    app(EngineManager::class)->extend('concurrent-update-test', fn () => $engine);
-    app(EngineManager::class)->forgetEngines();
-
-    (new ReconcileDemoSearchIndex($account->id))->handle();
-
-    expect($contactUpdates)->toHaveCount(2)
-        ->and($contactUpdates[0]['first_name'])->toBe('Before')
-        ->and($contactUpdates[1]['first_name'])->toBe('After');
+    expect($jobs)->toHaveCount(2)
+        ->and($jobs->pluck('revision')->all())->toBe([1, 2])
+        ->and($jobs->pluck('modelClass')->all())->toBe([null, null])
+        ->and($jobs->pluck('accountId')->all())->toBe([$account->id, $account->id])
+        ->and($account->fresh()->search_revision)->toBe(2)
+        ->and($account->fresh()->indexed_revision)->toBe(0)
+        ->and(Contact::whereKey($firstContactIds)->count())->toBe(0)
+        ->and(Contact::whereBelongsTo($account)->count())->toBe(100);
 });
 
 it('rejects overlapping manual resets without mutating data', function () {
@@ -357,18 +363,26 @@ it('schedules the reset only in production with distributed overlap protection',
         ->and($event->environments)->toBe(['production'])
         ->and($event->onOneServer)->toBeTrue()
         ->and($event->withoutOverlapping)->toBeTrue()
-        ->and($event->expiresAt)->toBe(10)
-        ->and(config('scout.after_commit'))->toBeTrue();
+        ->and($event->expiresAt)->toBe(10);
 });
 
-it('keeps search retries longer than the reset lock and below the Redis retry window', function () {
-    $reflection = new ReflectionClass(ReconcileDemoSearchIndex::class);
-    $tries = $reflection->getAttributes(Tries::class)[0]->newInstance()->tries;
-    $timeout = $reflection->getAttributes(Timeout::class)[0]->newInstance()->timeout;
-    $middleware = (new ReconcileDemoSearchIndex(1))->middleware()[0];
+it('rolls back reset data and the durable projection if queueing fails', function () {
+    $account = Account::factory()->create(['demo_key' => DatabaseSeeder::DEMO_ACCOUNT_KEY]);
+    $contact = Contact::factory()->for($account)->create(['first_name' => 'Before']);
+    useQueuedTypesenseReset();
+    Event::listen(JobQueued::class, fn () => throw new RuntimeException('Queueing interrupted'));
 
-    expect($timeout)->toBeLessThan(config('queue.connections.redis.retry_after'))
-        ->and($middleware->releaseAfter)->toBe(60)
-        ->and($middleware->expiresAfter)->toBe((int) config('demo.reset.lock_seconds'))
-        ->and($tries * $middleware->releaseAfter)->toBeGreaterThan($middleware->expiresAfter);
+    try {
+        expect(fn () => $this->artisan('demo:reset')->run())
+            ->toThrow(RuntimeException::class, 'Queueing interrupted');
+    } finally {
+        Event::forget(JobQueued::class);
+    }
+
+    expect($contact->fresh()->first_name)->toBe('Before')
+        ->and(Contact::whereBelongsTo($account)->count())->toBe(1)
+        ->and(User::whereBelongsTo($account)->count())->toBe(0)
+        ->and(Organization::whereBelongsTo($account)->count())->toBe(0)
+        ->and($account->fresh()->search_revision)->toBe(0)
+        ->and(DB::table('jobs')->count())->toBe(0);
 });

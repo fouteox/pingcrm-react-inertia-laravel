@@ -6,13 +6,15 @@ namespace App\Models\Concerns;
 
 use App\Enums\Role;
 use App\Enums\TrashedFilter;
+use App\Exceptions\SearchIndexUnavailable;
+use App\Services\SearchIndex;
 use Illuminate\Contracts\Pagination\LengthAwarePaginator;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
 use Laravel\Scout\Builder as SearchBuilder;
 use Laravel\Scout\Engines\TypesenseEngine;
 use Laravel\Scout\Searchable;
-use Typesense\Client;
+use Psr\Http\Client\ClientExceptionInterface;
 use Typesense\Documents;
 use Typesense\Exceptions\TypesenseClientError;
 
@@ -22,8 +24,6 @@ use Typesense\Exceptions\TypesenseClientError;
 trait Filterable
 {
     /**
-     * Within an existing transaction, the caller must provide a consistent database snapshot.
-     *
      * @param  array{search?: string, role?: string, trashed?: string}  $filters
      * @return LengthAwarePaginator<int, self>
      */
@@ -39,7 +39,7 @@ trait Filterable
         }
 
         if ($model->searchableUsing() instanceof TypesenseEngine) {
-            return $model->paginateTypesense($databaseQuery, $search);
+            return $model->paginateTypesense($databaseQuery, $search, $filters, $accountId);
         }
 
         $query = static::search($search)->where('account_id', $accountId);
@@ -77,38 +77,40 @@ trait Filterable
 
     /**
      * @param  Builder<self>  $databaseQuery
+     * @param  array{search?: string, role?: string, trashed?: string}  $filters
      * @return LengthAwarePaginator<int, self>
      */
-    private function paginateTypesense(Builder $databaseQuery, string $search): LengthAwarePaginator
+    private function paginateTypesense(Builder $databaseQuery, string $search, array $filters, int $accountId): LengthAwarePaginator
     {
-        return $this->getConnection()->transaction(function () use ($databaseQuery, $search): LengthAwarePaginator {
-            $connection = $this->getConnection();
-
-            if ($connection->getDriverName() === 'pgsql' && $connection->transactionLevel() === 1) {
-                $connection->statement('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY');
-            }
-
-            $ids = $databaseQuery->pluck($this->getKeyName());
-
-            if ($ids->isEmpty()) {
-                return $databaseQuery->paginate();
-            }
-
-            $query = static::search($search, function (Documents $documents, string $term, array $parameters): array {
-                $response = app(Client::class)->getMultiSearch()->perform([
-                    'searches' => [['collection' => $this->indexableAs(), ...$parameters]],
-                ]);
-                $result = $response['results'][0];
-
-                if (isset($result['error'])) {
-                    throw new TypesenseClientError($result['error'], $result['code']);
+        $index = app(SearchIndex::class);
+        $revision = $index->assertReady($accountId);
+        $query = static::search($search, fn (Documents $documents, string $term, array $parameters): array => $documents->search($parameters))
+            ->where('account_id', $accountId)
+            ->where('search_deleted', false)
+            ->options(['filter_curated_hits' => true])
+            ->withRawResults(function (array $results): void {
+                if ($results['search_cutoff'] ?? false) {
+                    throw new SearchIndexUnavailable;
                 }
+            });
+        $this->applyFilters($query, $filters);
 
-                return $result;
-            })->withTrashed()->whereIn('id', $ids)->options(['filter_curated_hits' => true]);
+        try {
+            $paginator = $this->paginateSearch($query);
+        } catch (TypesenseClientError|ClientExceptionInterface $exception) {
+            throw new SearchIndexUnavailable($exception);
+        }
 
-            return $this->paginateSearch($query);
-        });
+        $expectedCount = min($paginator->perPage(), max(0, $paginator->total() - ($paginator->currentPage() - 1) * $paginator->perPage()));
+        $ids = $this->newCollection($paginator->items())->modelKeys();
+
+        if (count($ids) !== $expectedCount || $databaseQuery->whereKey($ids)->count() !== count($ids)) {
+            throw new SearchIndexUnavailable;
+        }
+
+        $index->assertUnchanged($accountId, $revision);
+
+        return $paginator;
     }
 
     /**

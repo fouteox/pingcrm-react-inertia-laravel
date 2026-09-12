@@ -71,13 +71,14 @@
             "composer install",
             "@php artisan key:generate",
             "@php artisan migrate --force",
+            "@php artisan search:sync-schema",
             "@php artisan db:seed --force",
             "vp install",
             "vp build"
         ],
         "dev": [
             "Composer\\Config::disableProcessTimeout",
-            "vp exec bunx concurrently -c \"#c4b5fd,#fdba74,#93c5fd\" \"php artisan queue:work\" \"bun run dev\" \"php artisan schedule:work\" --names=queue,vite,scheduler --kill-others"
+            "vp exec bunx concurrently -c \"#c4b5fd,#fdba74,#93c5fd,#86efac\" \"php artisan queue:work\" \"bun run dev\" \"php artisan schedule:work\" \"php artisan queue:work search-index --queue=search-index --timeout=120\" --names=queue,vite,scheduler,search --kill-others"
         ],
         "lint": [
             "pint"

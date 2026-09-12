@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace App\Providers;
 
 use GuzzleHttp\Client as HttpClient;
+use Illuminate\Contracts\Container\Container;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
+use Laravel\Scout\EngineManager;
+use Laravel\Scout\Engines\TypesenseEngine;
 use Typesense\Client;
 
 final class AppServiceProvider extends ServiceProvider
@@ -43,6 +46,11 @@ final class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->app->make(EngineManager::class)->extend('typesense', fn (Container $app) => new TypesenseEngine(
+            $app->make(Client::class),
+            (int) Config::get('scout.typesense.max_total_results', 1000),
+        ));
+
         Vite::prefetch(concurrency: 3);
     }
 }

@@ -13,6 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Config;
+use Laravel\Scout\ModelObserver;
 use Laravel\Scout\Searchable;
 
 #[Fillable([
@@ -89,6 +90,10 @@ final class Organization extends Model
 
     private function reindexContacts(): void
     {
+        if (ModelObserver::syncingDisabledFor($this)) {
+            return;
+        }
+
         $this->contacts()->withTrashed()->with('organization')
             ->chunkById(
                 Config::integer('scout.chunk.searchable'),

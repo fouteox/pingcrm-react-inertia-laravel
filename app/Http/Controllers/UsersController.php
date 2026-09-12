@@ -9,6 +9,7 @@ use App\Http\Requests\UserRequest;
 use App\Http\Resources\UserCollection;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Services\SearchIndex;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -19,6 +20,8 @@ use Inertia\Response;
 
 final class UsersController extends Controller
 {
+    public function __construct(private readonly SearchIndex $search) {}
+
     #[Authorize('viewAny', User::class)]
     public function index(Request $request, #[CurrentUser] User $authenticatedUser): Response
     {
@@ -42,7 +45,9 @@ final class UsersController extends Controller
     #[Authorize('create', User::class)]
     public function store(UserRequest $request, #[CurrentUser] User $authenticatedUser): RedirectResponse
     {
-        $authenticatedUser->account()->firstOrFail()->users()->create($request->validated());
+        $this->search->mutate($authenticatedUser->account_id,
+            fn () => $authenticatedUser->account()->firstOrFail()->users()->create($request->validated())
+        );
 
         Inertia::flash('success', translate_with_gender('created', 'User'));
 
@@ -64,7 +69,7 @@ final class UsersController extends Controller
             return Redirect::back();
         }
 
-        $user->update($request->validated());
+        $this->search->mutate($user->account_id, fn () => tap($user)->update($request->validated()));
 
         Inertia::flash('success', translate_with_gender('updated', 'User'));
 
@@ -80,7 +85,7 @@ final class UsersController extends Controller
             return Redirect::back();
         }
 
-        $user->delete();
+        $this->search->mutate($user->account_id, fn () => tap($user)->delete());
 
         Inertia::flash('success', translate_with_gender('deleted', 'User'));
 
@@ -90,7 +95,7 @@ final class UsersController extends Controller
     #[Authorize('restore', 'user')]
     public function restore(User $user): RedirectResponse
     {
-        $user->restore();
+        $this->search->mutate($user->account_id, fn () => tap($user)->restore());
 
         Inertia::flash('success', translate_with_gender('restored', 'User'));
 

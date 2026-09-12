@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Exceptions\SearchIndexUnavailable;
 use App\Http\Middleware\HandleAppearanceMiddleware;
 use App\Http\Middleware\SetLocaleMiddleware;
 use App\Providers\AppServiceProvider;
@@ -40,6 +41,21 @@ return Application::configure(basePath: dirname(__DIR__))
     })
     ->withExceptions(function (Exceptions $exceptions) {
         $exceptions->respond(function (Response $response, Throwable $exception, Request $request) {
+            if ($exception instanceof SearchIndexUnavailable) {
+                if ($request->expectsJson() && ! $request->inertia()) {
+                    return $response;
+                }
+
+                $response = Inertia::render('search-unavailable', [
+                    'retryUrl' => $request->fullUrl(),
+                    'listUrl' => $request->fullUrlWithoutQuery('search'),
+                ])->toResponse($request);
+
+                $response->headers->add($exception->getHeaders());
+
+                return $response->setStatusCode($exception->getStatusCode());
+            }
+
             if (! app()->environment(['local', 'testing']) && in_array($response->getStatusCode(), [500, 503, 404, 403])) {
                 return Inertia::render('error', ['status' => $response->getStatusCode()])
                     ->toResponse($request)

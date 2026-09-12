@@ -6,15 +6,18 @@ use App\Models\Account;
 use App\Models\Contact;
 use App\Models\Organization;
 use App\Models\User;
+use App\Services\SearchIndex;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Database\Eloquent\Factories\Sequence;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Exceptions;
 use Inertia\Testing\AssertableInertia as Assert;
 use Laravel\Scout\EngineManager;
 use Symfony\Component\Process\Process;
 use Typesense\Client;
 use Typesense\Exceptions\ObjectNotFound;
+use Typesense\Exceptions\RequestUnauthorized;
 
 beforeEach(function () {
     if (! filter_var(env('RUN_DEMO_RESET_INTEGRATION', false), FILTER_VALIDATE_BOOL)) {
@@ -43,6 +46,8 @@ beforeEach(function () {
             // The collection does not exist before its first import.
         }
     }
+
+    Artisan::call('search:sync-schema');
 });
 
 it('upgrades the old Typesense schema from stored documents while legacy writers remain compatible', function () {
@@ -54,11 +59,12 @@ it('upgrades the old Typesense schema from stored documents while legacy writers
     ]));
     $schema = config('scout.typesense.model-settings.'.Contact::class.'.collection-schema');
     $schema['fields'] = collect($schema['fields'])
-        ->reject(fn (array $field) => $field['name'] === 'sort_id')
+        ->reject(fn (array $field) => in_array($field['name'], ['search_revision', 'search_deleted'], true))
         ->map(fn (array $field) => isset($field['sort']) ? [...$field, 'sort' => false] : $field)
         ->push(['name' => 'custom_field', 'type' => 'string', 'optional' => true, 'facet' => true])
         ->values()->all();
     $typesense = new Client(config('scout.typesense.client-settings'));
+    $typesense->getCollections()->{$contact->indexableAs()}->delete();
     $typesense->getCollections()->create(['name' => $contact->indexableAs(), ...$schema]);
     $collection = $typesense->getCollections()->{$contact->indexableAs()};
     $document = [
@@ -128,6 +134,9 @@ it('keeps typo tolerant search and tenant filtering through HTTP', function (str
         'users' => $user,
     };
 
+    app(SearchIndex::class)->rebuild($account->id);
+    app(SearchIndex::class)->rebuild($otherAccount->id);
+
     $this->actingAs($actor)->get('/'.$resource.'?search='.rawurlencode($query))
         ->assertOk()
         ->assertInertia(fn (Assert $assert) => $assert
@@ -142,7 +151,7 @@ it('keeps typo tolerant search and tenant filtering through HTTP', function (str
     'contact prefix' => ['contacts', 'Love'],
 ]);
 
-it('paginates more than twelve hundred eligible users despite stale Typesense metadata', function () {
+it('withholds stale search and recovers native pagination beyond twelve hundred results', function () {
     $account = Account::factory()->create();
     $otherAccount = Account::factory()->create();
     $actor = User::factory()->for($account)->create([
@@ -154,11 +163,12 @@ it('paginates more than twelve hundred eligible users despite stale Typesense me
     $members = User::withoutSyncingToSearch(fn () => User::factory(1220)->for($account)
         ->sequence(fn (Sequence $sequence) => ['email' => 'member-'.$sequence->index.'@example.test'])
         ->create(['first_name' => '0', 'last_name' => 'Member', 'owner' => false]));
-    $members->searchableSync();
-
-    DB::table('users')->where('id', $members[0]->id)->update(['account_id' => $otherAccount->id]);
-    DB::table('users')->where('id', $members[1]->id)->update(['deleted_at' => now()]);
-    DB::table('users')->where('id', $members[2]->id)->update(['owner' => true]);
+    $search = app(SearchIndex::class);
+    $search->rebuild($account->id);
+    config()->set('search.synchronous', false);
+    $search->mutate($account->id, fn () => tap($members[0])->forceDelete());
+    $search->mutate($account->id, fn () => tap($members[1])->delete());
+    $search->mutate($account->id, fn () => tap($members[2])->update(['owner' => true]));
 
     $typesense = new Client(config('scout.typesense.client-settings'));
     $indexed = $typesense->getCollections()->{$actor->indexableAs()}->getDocuments()->search([
@@ -168,6 +178,9 @@ it('paginates more than twelve hundred eligible users despite stale Typesense me
         'per_page' => 1,
     ]);
     expect($indexed['found'])->toBe(1220);
+
+    $this->actingAs($actor)->get('/users?search=0&role=user&page=82')->assertServiceUnavailable();
+    $this->artisan('queue:work', ['connection' => 'search-index', '--queue' => 'search-index', '--stop-when-empty' => true, '--sleep' => 0])->assertSuccessful();
 
     $eligibleIds = $members->slice(3)->modelKeys();
     $this->actingAs($actor)->get('/users?search=0&role=user&page=82')
@@ -211,9 +224,8 @@ it('resets atomically on PostgreSQL 18 and converges Typesense 30.2', function (
         'organization_id' => $otherOrganization->id,
     ]);
 
-    Contact::with('organization')->get()->searchableSync();
-    Organization::all()->searchableSync();
-    User::all()->searchableSync();
+    app(SearchIndex::class)->rebuild($demoAccount->id);
+    app(SearchIndex::class)->rebuild($otherAccount->id);
 
     $this->artisan('demo:reset')->assertSuccessful();
 
@@ -232,9 +244,9 @@ it('resets atomically on PostgreSQL 18 and converges Typesense 30.2', function (
     assertTypesenseTenantCount($typesense, new Organization, $otherAccount->id, 1);
     assertTypesenseTenantCount($typesense, new Contact, $otherAccount->id, 1);
 
-    assertTypesenseDocumentMissing($typesense, new User, $obsoleteUser->id);
-    assertTypesenseDocumentMissing($typesense, new Organization, $obsoleteOrganization->id);
-    assertTypesenseDocumentMissing($typesense, new Contact, $obsoleteContact->id);
+    assertTypesenseDocumentTombstone($typesense, new User, $obsoleteUser->id);
+    assertTypesenseDocumentTombstone($typesense, new Organization, $obsoleteOrganization->id);
+    assertTypesenseDocumentTombstone($typesense, new Contact, $obsoleteContact->id);
 
     expect(User::findOrFail($otherUser->id)->account_id)->toBe($otherAccount->id)
         ->and(Organization::findOrFail($otherOrganization->id)->account_id)->toBe($otherAccount->id)
@@ -342,20 +354,16 @@ function assertTypesenseTenantCount(Client $typesense, object $model, int $accou
         ->getCollections()
         ->{$model->indexableAs()}
         ->getDocuments()
-        ->export(['filter_by' => 'account_id:='.$accountId]);
+        ->export(['filter_by' => 'account_id:='.$accountId.' && search_deleted:=false']);
     $count = count(array_filter(explode("\n", mb_trim($documents))));
 
     expect($count)->toBe($expected);
 }
 
-function assertTypesenseDocumentMissing(Client $typesense, object $model, int $id): void
+function assertTypesenseDocumentTombstone(Client $typesense, object $model, int $id): void
 {
-    expect(fn () => $typesense
-        ->getCollections()
-        ->{$model->indexableAs()}
-        ->getDocuments()[(string) $id]
-        ->retrieve())
-        ->toThrow(ObjectNotFound::class);
+    expect($typesense->getCollections()->{$model->indexableAs()}->getDocuments()[(string) $id]->retrieve())
+        ->toMatchArray(['search_deleted' => true, '__soft_deleted' => 1]);
 }
 
 function waitForPostgresLock(string $table, string $mode, bool $granted): bool
@@ -378,3 +386,28 @@ function waitForPostgresLock(string $table, string $mode, bool $granted): bool
 
     return false;
 }
+
+it('bootstraps existing data synchronously and reports readiness only after indexing', function () {
+    $account = Account::factory()->create();
+    $user = User::withoutSyncingToSearch(fn () => User::factory()->for($account)->create(['last_name' => 'Lovelace']));
+    DB::table('accounts')->where('id', $account->id)->update(['indexed_revision' => null]);
+
+    $this->actingAs($user)->get('/users?search=Lovelcae')->assertServiceUnavailable();
+    $this->artisan('search:rebuild', ['--sync' => true])->assertSuccessful();
+    $this->actingAs($user)->get('/users?search=Lovelcae')->assertOk()
+        ->assertInertia(fn (Assert $assert) => $assert->where('users.meta.total', 1)->where('users.data.0.id', $user->id));
+    expect(app(SearchIndex::class)->assertReady($account->id))->toBe(1);
+});
+
+it('fails synchronous bootstrap without losing the durable retry when Typesense rejects indexing', function () {
+    $account = Account::factory()->create();
+    User::withoutSyncingToSearch(fn () => User::factory()->for($account)->create());
+    config()->set('scout.typesense.client-settings.api_key', 'invalid-bootstrap-test-key');
+    Exceptions::fake();
+
+    $this->artisan('search:rebuild', ['account' => $account->id, '--sync' => true])->assertFailed();
+
+    expect(app(SearchIndex::class)->readState($account->id))->toBe(['revision' => 1, 'indexedRevision' => 0])
+        ->and(DB::table('jobs')->where('queue', 'search-index')->count())->toBe(1);
+    Exceptions::assertReported(RequestUnauthorized::class);
+});

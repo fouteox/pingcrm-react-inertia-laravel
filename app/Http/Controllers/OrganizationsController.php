@@ -10,6 +10,7 @@ use App\Http\Resources\OrganizationCollection;
 use App\Http\Resources\OrganizationResource;
 use App\Models\Organization;
 use App\Models\User;
+use App\Services\SearchIndex;
 use Illuminate\Container\Attributes\CurrentUser;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -20,6 +21,8 @@ use Inertia\Response;
 
 final class OrganizationsController extends Controller
 {
+    public function __construct(private readonly SearchIndex $search) {}
+
     #[Authorize('viewAny', Organization::class)]
     public function index(Request $request, #[CurrentUser] User $authenticatedUser): Response
     {
@@ -43,7 +46,9 @@ final class OrganizationsController extends Controller
     #[Authorize('create', Organization::class)]
     public function store(OrganizationsRequest $request, #[CurrentUser] User $authenticatedUser): RedirectResponse
     {
-        $authenticatedUser->account()->firstOrFail()->organizations()->create($request->validated());
+        $this->search->mutate($authenticatedUser->account_id,
+            fn () => $authenticatedUser->account()->firstOrFail()->organizations()->create($request->validated())
+        );
 
         Inertia::flash('success', translate_with_gender('created', 'Organization'));
 
@@ -63,7 +68,7 @@ final class OrganizationsController extends Controller
     #[Authorize('update', 'organization')]
     public function update(Organization $organization, OrganizationsRequest $request): RedirectResponse
     {
-        $organization->update($request->validated());
+        $this->search->mutate($organization->account_id, fn () => tap($organization)->update($request->validated()));
 
         Inertia::flash('success', translate_with_gender('updated', 'Organization'));
 
@@ -73,7 +78,7 @@ final class OrganizationsController extends Controller
     #[Authorize('delete', 'organization')]
     public function destroy(Organization $organization): RedirectResponse
     {
-        $organization->delete();
+        $this->search->mutate($organization->account_id, fn () => tap($organization)->delete());
 
         Inertia::flash('success', translate_with_gender('deleted', 'Organization'));
 
@@ -83,7 +88,7 @@ final class OrganizationsController extends Controller
     #[Authorize('restore', 'organization')]
     public function restore(Organization $organization): RedirectResponse
     {
-        $organization->restore();
+        $this->search->mutate($organization->account_id, fn () => tap($organization)->restore());
 
         Inertia::flash('success', translate_with_gender('restored', 'Organization'));
 

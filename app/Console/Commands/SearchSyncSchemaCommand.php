@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Models\Account;
 use App\Models\Contact;
 use App\Models\Organization;
 use App\Models\User;
@@ -11,6 +12,7 @@ use Illuminate\Console\Attributes\Description;
 use Illuminate\Console\Attributes\Signature;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use Typesense\Client;
 use Typesense\Collection;
 use Typesense\Exceptions\ObjectNotFound;
@@ -20,7 +22,7 @@ use Typesense\Exceptions\ObjectNotFound;
  * @phpstan-type SearchSchema array{fields: list<SearchField>, default_sorting_field?: string}
  */
 #[Signature('search:sync-schema')]
-#[Description('Enable Typesense name sorting using the stored documents without deleting collections')]
+#[Description('Prepare Typesense name sorting and search revision fields without deleting collections')]
 final class SearchSyncSchemaCommand extends Command
 {
     public function handle(Client $client): int
@@ -33,8 +35,12 @@ final class SearchSyncSchemaCommand extends Command
             $schema = $configuration['collection-schema'];
 
             try {
-                $this->prepareSorting($client->getCollections()->{$index}, $schema);
+                $this->prepareSchema($client->getCollections()->{$index}, $schema);
             } catch (ObjectNotFound) {
+                Account::query()->update([
+                    'indexed_revision' => null,
+                    'search_revision' => DB::raw('search_revision + 1'),
+                ]);
                 $client->getCollections()->create(['name' => $index, ...$schema]);
             }
 
@@ -47,7 +53,7 @@ final class SearchSyncSchemaCommand extends Command
     /**
      * @param  SearchSchema  $schema
      */
-    private function prepareSorting(Collection $collection, array $schema): void
+    private function prepareSchema(Collection $collection, array $schema): void
     {
         /** @var list<SearchField> $existingFields */
         $existingFields = $collection->retrieve()['fields'];
@@ -55,7 +61,7 @@ final class SearchSyncSchemaCommand extends Command
         $changes = [];
 
         foreach ($schema['fields'] as $field) {
-            if (! ($field['sort'] ?? false)) {
+            if ($field['name'] === 'id') {
                 continue;
             }
 
@@ -63,7 +69,7 @@ final class SearchSyncSchemaCommand extends Command
 
             if ($current === null) {
                 $changes[] = $field;
-            } elseif (! ($current['sort'] ?? false)) {
+            } elseif (($field['sort'] ?? false) && ! ($current['sort'] ?? false)) {
                 $changes[] = ['name' => $field['name'], 'drop' => true];
                 $changes[] = [...$current, 'sort' => true];
             }

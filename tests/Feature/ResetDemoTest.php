@@ -2,22 +2,46 @@
 
 declare(strict_types=1);
 
-use App\Console\Commands\ResetDemoCommand;
-use App\Jobs\ReconcileDemoSearchIndex;
+use App\Exceptions\SearchIndexUnavailable;
+use App\Jobs\SearchIndexProjection;
 use App\Models\Account;
 use App\Models\Contact;
 use App\Models\Organization;
 use App\Models\User;
+use App\Services\SearchIndex;
 use Database\Seeders\DatabaseSeeder;
-use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Queue;
-use Laravel\Scout\EngineManager;
-use Laravel\Scout\Engines\NullEngine;
-use Laravel\Scout\Engines\TypesenseEngine;
 use Typesense\ApiCall;
 use Typesense\Client;
 use Typesense\Collections;
+use Typesense\Exceptions\TypesenseClientError;
+
+function useVersionedResetTransport(int $accountId, Closure $write, array $exports): void
+{
+    $api = Mockery::mock(ApiCall::class);
+    $api->shouldReceive('post')->with(Mockery::type('string'), Mockery::type('array'), true, [])
+        ->andReturnUsing(function (string $path, array $document) use ($accountId, $write): array {
+            expect($path)->toMatch('#^/collections/(contacts|organizations|users)/documents/$#')
+                ->and($document['account_id'])->toBe($accountId);
+            $write(explode('/', $path)[2], $document);
+
+            return $document;
+        });
+    $api->shouldReceive('get')->times(3)
+        ->with(Mockery::type('string'), ['filter_by' => 'account_id:='.$accountId.' && search_deleted:!=true', 'include_fields' => 'id'], false)
+        ->andReturnUsing(function (string $path) use ($exports): string {
+            expect($path)->toMatch('#^/collections/(contacts|organizations|users)/documents/export$#');
+            $ids = $exports[explode('/', $path)[2]] ?? [];
+
+            return implode("\n", array_map(fn (int $id): string => json_encode(['id' => (string) $id], JSON_THROW_ON_ERROR), $ids));
+        });
+    $client = Mockery::mock(Client::class);
+    $client->shouldReceive('getCollections')->andReturn(new Collections($api));
+    app()->instance(Client::class, $client);
+    config()->set(['scout.driver' => 'typesense', 'scout.prefix' => '', 'search.synchronous' => false]);
+}
 
 it('rejects invalid transaction attempts before changing demo data', function (int $attempts) {
     $account = Account::factory()->create([
@@ -34,130 +58,107 @@ it('rejects invalid transaction attempts before changing demo data', function (i
     Queue::assertNothingPushed();
 })->with([0, -1]);
 
-it('releases the reconciliation lock after a search failure and retries the current database state synchronously', function () {
-    $account = Account::factory()->create();
+it('releases a failed full projection and retries the current snapshot without losing newer pending work', function () {
+    $account = Account::factory()->create(['search_revision' => 1]);
     $contact = Contact::factory()->for($account)->create(['first_name' => 'Before']);
-    $engine = new class extends NullEngine
-    {
-        public bool $unavailable = true;
+    $unavailable = true;
+    $indexed = [];
 
-        public array $indexed = [];
-
-        public function update($models): void
-        {
-            if ($this->unavailable) {
-                throw new RuntimeException('Search index unavailable.');
-            }
-
-            foreach ($models as $model) {
-                $this->indexed[$model::class][$model->getKey()] = $model->toSearchableArray();
-            }
+    useVersionedResetTransport($account->id, function (string $index, array $document) use (&$unavailable, &$indexed): void {
+        if ($unavailable) {
+            throw new TypesenseClientError('Search index unavailable.');
         }
-    };
-    app(EngineManager::class)->extend('retry-test', fn () => $engine);
-    config()->set(['scout.driver' => 'retry-test', 'scout.queue' => true]);
-    Queue::fake();
-    $job = new ReconcileDemoSearchIndex($account->id);
-    $middleware = $job->middleware()[0];
 
-    expect(fn () => $middleware->handle($job, fn (ReconcileDemoSearchIndex $job) => $job->handle()))
-        ->toThrow(RuntimeException::class, 'Search index unavailable.');
+        $indexed[$index][$document['id']] = $document;
+    }, ['contacts' => [$contact->id]]);
 
+    $search = app(SearchIndex::class);
+    $fullProjection = new SearchIndexProjection($account->id, 1);
+
+    expect(fn () => $search->project($fullProjection))->toThrow(TypesenseClientError::class, 'Search index unavailable.');
+    expect($account->fresh()->indexed_revision)->toBe(0);
     $this->assertModelExists($contact);
-    $releasedLock = Cache::lock(ResetDemoCommand::LOCK_NAME, 60);
+
+    $releasedLock = Cache::lock('search-index:'.$account->id, 60);
     expect($releasedLock->get())->toBeTrue();
     $releasedLock->release();
 
-    Contact::whereKey($contact->id)->update(['first_name' => 'After']);
-    $engine->unavailable = false;
-    $middleware->handle($job, fn (ReconcileDemoSearchIndex $job) => $job->handle());
+    $search->mutate($account->id, function () use ($contact): Contact {
+        $contact->update(['first_name' => 'After']);
+        $contact->delete();
 
-    expect($engine->indexed[Contact::class][$contact->id]['first_name'])->toBe('After');
-    Queue::assertNothingPushed();
-});
-
-it('fails reconciliation for retry when the database never stabilizes', function () {
-    $account = Account::factory()->create();
-    $contact = Contact::factory()->for($account)->create(['first_name' => 'Version 0']);
-    $updates = 0;
-    $engine = Mockery::mock(NullEngine::class)->makePartial();
-    $engine->shouldReceive('update')->andReturnUsing(function (Collection $models) use ($contact, &$updates): void {
-        $updates++;
-        Contact::whereKey($contact->id)->update(['first_name' => 'Version '.$updates]);
+        return $contact;
     });
-    app(EngineManager::class)->extend('unstable-test', fn () => $engine);
-    config()->set('scout.driver', 'unstable-test');
+    $unavailable = false;
+    $search->project($fullProjection);
 
-    expect(fn () => (new ReconcileDemoSearchIndex($account->id))->handle())
-        ->toThrow(RuntimeException::class, 'Search data for account '.$account->id.' kept changing during reconciliation.')
-        ->and($updates)->toBe(3);
+    expect($indexed['contacts'][$contact->id])->toMatchArray([
+        'first_name' => 'After',
+        '__soft_deleted' => 1,
+        'search_deleted' => false,
+        'search_revision' => 1,
+    ]);
+    expect(fn () => $search->assertReady($account->id))->toThrow(SearchIndexUnavailable::class);
+
+    $payload = json_decode(DB::table('jobs')->sole()->payload, true, flags: JSON_THROW_ON_ERROR);
+    $search->project(unserialize($payload['data']['command']));
+
+    expect($search->assertReady($account->id))->toBe(2)
+        ->and($indexed['contacts'][$contact->id]['search_revision'])->toBe(2);
 });
 
-it('keeps soft-deleted search documents during demo reconciliation while removing obsolete IDs', function (string $modelClass, string $index) {
-    $account = Account::factory()->create();
+it('keeps soft-deleted documents and writes tombstones for obsolete IDs during a full projection', function (string $modelClass, string $index) {
+    $account = Account::factory()->create(['search_revision' => 1]);
     $records = $modelClass::factory(2)->for($account)->create();
     $records->last()->delete();
     $indexed = [];
-    $deletions = [];
-    $api = Mockery::mock(ApiCall::class);
-    $api->shouldReceive('get')->once()->with('/collections/'.$index, [])->andReturn(['name' => $index]);
-    $api->shouldReceive('post')->once()
-        ->with('/collections/'.$index.'/documents/import', Mockery::type('string'), false, ['action' => 'upsert'])
-        ->andReturnUsing(function (string $path, string $body) use (&$indexed): string {
-            $indexed = array_map(fn (string $line) => json_decode($line, true, flags: JSON_THROW_ON_ERROR), explode("\n", $body));
 
-            return implode("\n", array_fill(0, count($indexed), '{"success":true}'));
-        });
+    useVersionedResetTransport($account->id, function (string $collection, array $document) use (&$indexed): void {
+        $indexed[$collection][] = $document;
+    }, [$index => [...$records->modelKeys(), 999999]]);
 
-    foreach (['contacts', 'organizations', 'users'] as $collection) {
-        $documents = $collection === $index
-            ? $records->map(fn ($record) => json_encode(['id' => (string) $record->id]))->push('{"id":"999999"}')->implode("\n")
-            : '';
-        $api->shouldReceive('get')->once()
-            ->with('/collections/'.$collection.'/documents/export', ['filter_by' => 'account_id:='.$account->id], false)
-            ->andReturn($documents);
-    }
+    $search = app(SearchIndex::class);
+    $search->project(new SearchIndexProjection($account->id, 1));
 
-    $api->shouldReceive('delete')->once()
-        ->with('/collections/'.$index.'/documents/', true, Mockery::type('array'))
-        ->andReturnUsing(function (string $path, bool $returnJson, array $parameters) use (&$deletions): array {
-            $deletions[] = $parameters;
-
-            return ['num_deleted' => 1];
-        });
-    $client = Mockery::mock(Client::class);
-    $client->shouldReceive('getCollections')->andReturn(new Collections($api));
-    app()->instance(Client::class, $client);
-    app(EngineManager::class)->extend('typesense', fn () => new TypesenseEngine($client, 1000));
-    config()->set(['scout.driver' => 'typesense', 'scout.prefix' => '', 'scout.soft_delete' => true]);
-
-    (new ReconcileDemoSearchIndex($account->id))->handle();
-
-    expect(array_column($indexed, 'id'))->toBe($records->map(fn ($record) => (string) $record->id)->all())
-        ->and(array_column($indexed, '__soft_deleted'))->toBe([0, 1])
-        ->and($deletions)->toBe([['filter_by' => 'account_id:='.$account->id.' && id:[999999]']]);
+    expect($indexed)->toHaveCount(1)
+        ->and(array_column($indexed[$index], 'id'))->toBe([...$records->map(fn ($record): string => (string) $record->id)->all(), '999999'])
+        ->and(array_column($indexed[$index], '__soft_deleted'))->toBe([0, 1, 1])
+        ->and(array_column($indexed[$index], 'search_deleted'))->toBe([false, false, true])
+        ->and(array_column($indexed[$index], 'search_revision'))->toBe([1, 1, 1])
+        ->and($search->assertReady($account->id))->toBe(1);
 })->with([
     'contacts' => [Contact::class, 'contacts'],
     'organizations' => [Organization::class, 'organizations'],
     'users' => [User::class, 'users'],
 ]);
 
-it('reindexes a contact soft-deleted after the first reconciliation snapshot', function () {
-    $account = Account::factory()->create();
-    $contact = Contact::factory()->for($account)->create();
-    $deletedStates = [];
-    $engine = Mockery::mock(NullEngine::class)->makePartial();
-    $engine->shouldReceive('update')->andReturnUsing(function (Collection $models) use ($contact, &$deletedStates): void {
-        $deletedStates[] = $models->first()->trashed();
+it('does not acknowledge a mutation that arrives while the full snapshot is being written', function () {
+    $account = Account::factory()->create(['search_revision' => 1]);
+    $contact = Contact::factory()->for($account)->create(['first_name' => 'Before']);
+    $written = [];
 
-        if (count($deletedStates) === 1) {
-            Contact::whereKey($contact->id)->update(['deleted_at' => now()]);
+    useVersionedResetTransport($account->id, function (string $index, array $document) use ($account, $contact, &$written): void {
+        $written[] = $document;
+
+        if (count($written) === 1) {
+            app(SearchIndex::class)->mutate($account->id, fn () => tap($contact)->update(['first_name' => 'After']));
         }
-    });
-    app(EngineManager::class)->extend('soft-delete-test', fn () => $engine);
-    config()->set(['scout.driver' => 'soft-delete-test', 'scout.soft_delete' => true]);
+    }, ['contacts' => [$contact->id]]);
 
-    (new ReconcileDemoSearchIndex($account->id))->handle();
+    $search = app(SearchIndex::class);
+    $search->project(new SearchIndexProjection($account->id, 1));
 
-    expect($deletedStates)->toBe([false, true]);
+    expect($written)->toHaveCount(1)
+        ->and($written[0]['first_name'])->toBe('Before')
+        ->and($account->fresh()->indexed_revision)->toBe(1)
+        ->and($account->fresh()->search_revision)->toBe(2);
+    expect(fn () => $search->assertReady($account->id))->toThrow(SearchIndexUnavailable::class);
+
+    $payload = json_decode(DB::table('jobs')->sole()->payload, true, flags: JSON_THROW_ON_ERROR);
+    $search->project(unserialize($payload['data']['command']));
+
+    expect($written)->toHaveCount(2)
+        ->and($written[1]['first_name'])->toBe('After')
+        ->and($written[1]['search_revision'])->toBe(2)
+        ->and($search->assertReady($account->id))->toBe(2);
 });

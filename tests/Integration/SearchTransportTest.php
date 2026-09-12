@@ -32,7 +32,7 @@ it('bounds Typesense requests while the search server is still preparing its res
         fwrite(STDOUT, "request-received\n");
         usleep(1_000_000);
         fwrite(STDOUT, "response-started\n");
-        $body = json_encode(['results' => [['found' => 0, 'hits' => []]]]);
+        $body = json_encode(['found' => 0, 'hits' => []]);
         fwrite($connection, "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nContent-Length: ".strlen($body)."\r\nConnection: close\r\n\r\n".$body);
         fclose($connection);
         fclose($server);
@@ -69,8 +69,8 @@ it('bounds Typesense requests while the search server is still preparing its res
         $startedAt = hrtime(true);
 
         try {
-            app(Client::class)->getMultiSearch()->perform([
-                'searches' => [['collection' => 'contacts', 'q' => 'delayed', 'query_by' => 'first_name']],
+            app(Client::class)->getCollections()->contacts->getDocuments()->search([
+                'q' => 'delayed', 'query_by' => 'first_name',
             ]);
         } catch (ClientExceptionInterface $caught) {
             $exception = $caught;
@@ -80,7 +80,7 @@ it('bounds Typesense requests while the search server is still preparing its res
         $output = $server->getOutput();
 
         expect($exception)->toBeInstanceOf(NetworkExceptionInterface::class)
-            ->and($output)->toContain('POST /multi_search', 'request-received')
+            ->and($output)->toContain('GET /collections/contacts/documents/search', 'request-received')
             ->not->toContain('response-started')
             ->and($elapsed)->toBeLessThan(0.8);
     } finally {

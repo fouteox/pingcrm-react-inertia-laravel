@@ -73,6 +73,11 @@ final class User extends Authenticatable
         ];
     }
 
+    public function searchIndexShouldBeUpdated(): bool
+    {
+        return $this->isDirty(array_keys($this->toSearchableArray()));
+    }
+
     /** @return Attribute<string, never> */
     protected function name(): Attribute
     {
