@@ -226,6 +226,9 @@ jobs:
                   docker logs pingcrm-typesense-integration
                   exit 1
 
+            - name: Prepare Laravel integration environment
+              run: cp .env.example .env
+
             - name: Run PostgreSQL and Typesense integration tests
               run: php artisan test --compact --testsuite=Integration
 
