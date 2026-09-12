@@ -57,10 +57,10 @@ function indexedSearchProjection(Model $model): array
         ->getDocuments()[(string) $model->getKey()]->retrieve();
 }
 
-it('exports only current and legacy account documents when rebuilding the index', function () {
+it('drains bounded pages of stale account documents without selecting current or newer revisions', function () {
     $account = Account::factory()->create();
-    [$active, $legacy, $trashed, $deleted] = Contact::withoutSyncingToSearch(
-        fn () => Contact::factory()->count(4)->for($account)->create()
+    [$active, $legacy, $trashed, $deleted, $current, $newer] = Contact::withoutSyncingToSearch(
+        fn () => Contact::factory()->count(6)->for($account)->create()
     )->all();
     $other = Contact::withoutSyncingToSearch(fn () => Contact::factory()->create());
     Contact::withoutSyncingToSearch(function () use ($trashed, $deleted): void {
@@ -71,13 +71,30 @@ it('exports only current and legacy account documents when rebuilding the index'
     $documents->write($active, $account->id, 1);
     $documents->write($trashed, $account->id, 1);
     $documents->write($deleted, $account->id, 1, deleted: true);
+    $documents->write($current, $account->id, 2);
+    $documents->write($newer, $account->id, 3);
     $documents->write($other, $other->account_id, 1);
     app(Client::class)->getCollections()->{$legacy->indexableAs()}
         ->getDocuments()->create($legacy->toSearchableArray());
 
-    expect($documents->ids(new Contact, $account->id))->toEqualCanonicalizing([
+    expect($documents->staleIds(new Contact, $account->id, 2, 250))->toEqualCanonicalizing([
         $active->id, $legacy->id, $trashed->id,
     ]);
+    $drainedIds = [];
+
+    for ($page = 0; $page < 3; $page++) {
+        $ids = $documents->staleIds(new Contact, $account->id, 2, 1);
+        expect($ids)->toHaveCount(1);
+        $id = $ids[0];
+        $drainedIds[] = $id;
+        $documents->write((new Contact)->forceFill(['id' => $id]), $account->id, 2, deleted: true);
+    }
+
+    expect($drainedIds)->toEqualCanonicalizing([$active->id, $legacy->id, $trashed->id])
+        ->and($documents->staleIds(new Contact, $account->id, 2, 1))->toBeEmpty()
+        ->and(indexedSearchProjection($current)['search_deleted'])->toBeFalse()
+        ->and(indexedSearchProjection($newer)['search_revision'])->toBe(3)
+        ->and(indexedSearchProjection($other)['search_deleted'])->toBeFalse();
     expect(indexedSearchProjection($deleted)['search_deleted'])->toBeTrue();
 });
 

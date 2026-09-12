@@ -98,10 +98,95 @@ it('retains a versioned tombstone that stale creations cannot replace', function
         ->and($body['email'])->toBe('');
 });
 
-it('does not treat a missing collection as an empty rebuild export', function () {
+it('retrieves a bounded first page of obsolete IDs with native Typesense filters', function (int $limit) {
+    $history = [];
+    $ids = range(1, $limit);
+    $model = new User;
+    $documents = versionedDocumentsTransport([
+        new Response(200, body: json_encode([
+            'found' => 500,
+            'hits' => array_map(fn (int $id): array => ['document' => ['id' => (string) $id]], $ids),
+            'search_cutoff' => false,
+        ], JSON_THROW_ON_ERROR)),
+    ], $history);
+
+    expect($documents->staleIds($model, 7, 3, $limit))->toBe($ids);
+    expect($history)->toHaveCount(1);
+    $request = $history[0]['request'];
+    parse_str($request->getUri()->getQuery(), $query);
+
+    expect($request->getMethod())->toBe('GET')
+        ->and($request->getUri()->getPath())->toBe('/collections/'.$model->indexableAs().'/documents/search')
+        ->and($query)->toMatchArray([
+            'q' => '*',
+            'filter_by' => 'account_id:=7 && search_deleted:!=true && (search_revision:<3 || search_revision:!=[0..'.PHP_INT_MAX.'])',
+            'include_fields' => 'id',
+            'per_page' => (string) $limit,
+            'page' => '1',
+            'filter_curated_hits' => 'true',
+            'enable_overrides' => 'false',
+            'use_cache' => 'false',
+        ])->toHaveCount(8);
+})->with([1, 250]);
+
+it('rejects an unbounded obsolete document page before contacting Typesense', function (int $limit) {
+    $history = [];
+    $documents = versionedDocumentsTransport([], $history);
+
+    expect(fn () => $documents->staleIds(new User, 7, 3, $limit))->toThrow(InvalidArgumentException::class);
+    expect($history)->toBeEmpty();
+})->with([-1, 0, 251]);
+
+it('does not accept a cut off stale document search as a complete rebuild page', function () {
+    $history = [];
+    $documents = versionedDocumentsTransport([
+        new Response(200, body: '{"found":0,"hits":[],"search_cutoff":true}'),
+    ], $history);
+
+    expect(fn () => $documents->staleIds(new User, 7, 3, 100))->toThrow(TypesenseClientError::class);
+    expect($history)->toHaveCount(1);
+});
+
+it('rejects obsolete documents whose model IDs cannot be validated', function (array $document) {
+    $history = [];
+    $documents = versionedDocumentsTransport([
+        new Response(200, body: json_encode(['found' => 1, 'hits' => [['document' => $document]]], JSON_THROW_ON_ERROR)),
+    ], $history);
+
+    expect(fn () => $documents->staleIds(new User, 7, 3, 100))->toThrow(TypesenseClientError::class);
+    expect($history)->toHaveCount(1);
+})->with([
+    'missing ID' => [[]],
+    'nonnumeric ID' => [['id' => 'invalid']],
+    'zero ID' => [['id' => '0']],
+    'negative ID' => [['id' => '-12']],
+    'fractional ID' => [['id' => '12.5']],
+    'signed ID' => [['id' => '+12']],
+    'padded ID' => [['id' => ' 12 ']],
+    'overflowing ID' => [['id' => PHP_INT_MAX.'0']],
+]);
+
+it('rejects incomplete or malformed obsolete document search responses', function (array $response) {
+    $history = [];
+    $documents = versionedDocumentsTransport([
+        new Response(200, body: json_encode($response, JSON_THROW_ON_ERROR)),
+    ], $history);
+
+    expect(fn () => $documents->staleIds(new User, 7, 3, 100))->toThrow(TypesenseClientError::class);
+    expect($history)->toHaveCount(1);
+})->with([
+    'missing total' => [['hits' => []]],
+    'noninteger total' => [['found' => '1', 'hits' => [['document' => ['id' => '12']]]]],
+    'negative total' => [['found' => -1, 'hits' => []]],
+    'missing hits' => [['found' => 1]],
+    'nonlist hits' => [['found' => 1, 'hits' => ['document' => ['id' => '12']]]],
+    'missing matching hits' => [['found' => 1, 'hits' => []]],
+]);
+
+it('does not treat a missing collection as an empty obsolete document page', function () {
     $history = [];
     $documents = versionedDocumentsTransport([new Response(404, body: '{"message":"missing collection"}')], $history);
 
-    expect(fn () => $documents->ids(new User, 7))->toThrow(ObjectNotFound::class);
+    expect(fn () => $documents->staleIds(new User, 7, 3, 100))->toThrow(ObjectNotFound::class);
     expect($history)->toHaveCount(1);
 });

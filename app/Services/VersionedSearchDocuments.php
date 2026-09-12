@@ -51,21 +51,50 @@ final class VersionedSearchDocuments
     }
 
     /** @return list<int> */
-    public function ids(Contact|Organization|User $model, int $accountId): array
+    public function staleIds(Contact|Organization|User $model, int $accountId, int $revision, int $limit): array
     {
-        $export = $this->client->getCollections()->{$model->indexableAs()}->getDocuments()
-            ->export(['filter_by' => 'account_id:='.$accountId.' && search_deleted:!=true', 'include_fields' => 'id']);
+        if ($accountId < 1 || $revision < 0 || $limit < 1 || $limit > 250) {
+            throw new InvalidArgumentException('Obsolete document searches require a positive account, a nonnegative revision, and a limit between 1 and 250.');
+        }
+
+        $results = $this->client->getCollections()->{$model->indexableAs()}->getDocuments()->search([
+            'q' => '*',
+            'filter_by' => sprintf(
+                'account_id:=%d && search_deleted:!=true && (search_revision:<%d || search_revision:!=[0..%d])',
+                $accountId, $revision, PHP_INT_MAX,
+            ),
+            'include_fields' => 'id',
+            'per_page' => $limit,
+            'page' => 1,
+            'filter_curated_hits' => true,
+            'enable_overrides' => false,
+            'use_cache' => false,
+        ]);
+        $found = $results['found'] ?? null;
+        $hits = $results['hits'] ?? null;
+
+        if (($results['search_cutoff'] ?? false) !== false
+            || ! is_int($found) || $found < 0
+            || ! is_array($hits) || ! array_is_list($hits)
+            || count($hits) > min($limit, $found)
+            || ($found > 0 && $hits === [])) {
+            throw new TypesenseClientError('Typesense did not return a complete obsolete document page.');
+        }
 
         $ids = [];
 
-        foreach (preg_split('/\R/', mb_trim($export), flags: PREG_SPLIT_NO_EMPTY) ?: [] as $line) {
-            $document = json_decode($line, true, flags: JSON_THROW_ON_ERROR);
+        foreach ($hits as $hit) {
+            $document = is_array($hit) ? ($hit['document'] ?? null) : null;
+            $id = is_array($document) ? ($document['id'] ?? null) : null;
+            $validatedId = is_string($id) && ctype_digit($id)
+                ? filter_var($id, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]])
+                : false;
 
-            if (! ctype_digit((string) ($document['id'] ?? ''))) {
+            if ($validatedId === false) {
                 throw new TypesenseClientError('An indexed document has an invalid model ID.');
             }
 
-            $ids[] = (int) $document['id'];
+            $ids[] = $validatedId;
         }
 
         return $ids;

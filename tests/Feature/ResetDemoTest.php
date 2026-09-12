@@ -18,24 +18,42 @@ use Typesense\Client;
 use Typesense\Collections;
 use Typesense\Exceptions\TypesenseClientError;
 
-function useVersionedResetTransport(int $accountId, Closure $write, array $exports): void
+function useVersionedResetTransport(int $accountId, Closure $write, array $remainingIds): void
 {
     $api = Mockery::mock(ApiCall::class);
     $api->shouldReceive('post')->with(Mockery::type('string'), Mockery::type('array'), true, [])
-        ->andReturnUsing(function (string $path, array $document) use ($accountId, $write): array {
+        ->andReturnUsing(function (string $path, array $document) use ($accountId, $write, &$remainingIds): array {
             expect($path)->toMatch('#^/collections/(contacts|organizations|users)/documents/$#')
                 ->and($document['account_id'])->toBe($accountId);
-            $write(explode('/', $path)[2], $document);
+            $index = explode('/', $path)[2];
+            $write($index, $document);
+            $remainingIds[$index] = array_values(array_diff($remainingIds[$index] ?? [], [(int) $document['id']]));
 
             return $document;
         });
-    $api->shouldReceive('get')->times(3)
-        ->with(Mockery::type('string'), ['filter_by' => 'account_id:='.$accountId.' && search_deleted:!=true', 'include_fields' => 'id'], false)
-        ->andReturnUsing(function (string $path) use ($exports): string {
-            expect($path)->toMatch('#^/collections/(contacts|organizations|users)/documents/export$#');
-            $ids = $exports[explode('/', $path)[2]] ?? [];
+    $api->shouldReceive('get')->with(Mockery::type('string'), Mockery::type('array'))
+        ->andReturnUsing(function (string $path, array $parameters) use ($accountId, &$remainingIds): array {
+            expect($path)->toMatch('#^/collections/(contacts|organizations|users)/documents/search$#');
+            expect($parameters)->toMatchArray([
+                'q' => '*',
+                'filter_by' => 'account_id:='.$accountId.' && search_deleted:!=true && (search_revision:<1 || search_revision:!=[0..'.PHP_INT_MAX.'])',
+                'include_fields' => 'id',
+                'page' => 1,
+                'filter_curated_hits' => true,
+                'enable_overrides' => false,
+                'use_cache' => false,
+            ])->toHaveCount(8);
+            expect($parameters['per_page'])->toBeInt()->toBeGreaterThan(0)->toBeLessThanOrEqual(250);
+            $ids = $remainingIds[explode('/', $path)[2]] ?? [];
 
-            return implode("\n", array_map(fn (int $id): string => json_encode(['id' => (string) $id], JSON_THROW_ON_ERROR), $ids));
+            return [
+                'found' => count($ids),
+                'hits' => array_map(
+                    fn (int $id): array => ['document' => ['id' => (string) $id]],
+                    array_slice($ids, 0, $parameters['per_page'])
+                ),
+                'search_cutoff' => false,
+            ];
         });
     $client = Mockery::mock(Client::class);
     $client->shouldReceive('getCollections')->andReturn(new Collections($api));

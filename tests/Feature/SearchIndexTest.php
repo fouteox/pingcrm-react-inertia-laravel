@@ -182,8 +182,9 @@ it('does not exhaust job attempts while an account projection is waiting for its
         app('queue.worker')->process('search-index', $job, new WorkerOptions);
 
         expect($job->hasFailed())->toBeFalse()
-            ->and($job->isReleased())->toBeTrue()
-            ->and(DB::table('jobs')->sole()->attempts)->toBe(26);
+            ->and($job->isDeleted())->toBeTrue()
+            ->and(DB::table('jobs')->sole()->attempts)->toBe(0)
+            ->and(DB::table('jobs')->sole()->available_at)->toBeGreaterThanOrEqual(now()->addSeconds(config('search.retry_delay'))->timestamp);
     } finally {
         $lock->release();
     }
@@ -214,3 +215,19 @@ it('bounds actual projection failures separately from normal queue releases', fu
 
     expect(fn () => $search->assertReady($user->account_id))->toThrow(SearchIndexUnavailable::class);
 });
+
+it('rejects invalid projection budgets without leaving an account locked', function (string $setting, int $value) {
+    config()->set('search.'.$setting, $value);
+    $account = Account::factory()->create();
+
+    expect(fn () => app(SearchIndex::class)->project(new SearchIndexProjection($account->id, 0)))
+        ->toThrow(InvalidArgumentException::class);
+    $lock = Cache::lock('search-index:'.$account->id, 30);
+    expect($lock->get())->toBeTrue();
+    $lock->release();
+})->with([
+    ['projection_batch_size', 0],
+    ['projection_batch_size', 251],
+    ['projection_seconds', 0],
+    ['projection_seconds', 31],
+]);

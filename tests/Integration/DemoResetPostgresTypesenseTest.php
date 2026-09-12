@@ -164,7 +164,7 @@ it('withholds stale search and recovers native pagination beyond twelve hundred 
         ->sequence(fn (Sequence $sequence) => ['email' => 'member-'.$sequence->index.'@example.test'])
         ->create(['first_name' => '0', 'last_name' => 'Member', 'owner' => false]));
     $search = app(SearchIndex::class);
-    $search->rebuild($account->id);
+    $this->artisan('search:rebuild', ['account' => $account->id, '--sync' => true])->assertSuccessful();
     config()->set('search.synchronous', false);
     $search->mutate($account->id, fn () => tap($members[0])->forceDelete());
     $search->mutate($account->id, fn () => tap($members[1])->delete());
@@ -236,6 +236,9 @@ it('resets atomically on PostgreSQL 18 and converges Typesense 30.2', function (
         ->and(User::whereBelongsTo($demoAccount)->count())->toBe(6)
         ->and(Organization::whereBelongsTo($demoAccount)->count())->toBe(100)
         ->and(Contact::whereBelongsTo($demoAccount)->count())->toBe(100);
+
+    expect(fn () => app(SearchIndex::class)->assertReady($demoAccount->id))->toThrow(App\Exceptions\SearchIndexUnavailable::class);
+    $this->artisan('queue:work', ['connection' => 'search-index', '--queue' => 'search-index', '--stop-when-empty' => true, '--sleep' => 0])->assertSuccessful();
 
     assertTypesenseTenantCount($typesense, new User, $demoAccount->id, 6);
     assertTypesenseTenantCount($typesense, new Organization, $demoAccount->id, 100);

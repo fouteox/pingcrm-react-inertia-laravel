@@ -32,3 +32,9 @@ it('rejects an unknown or malformed account without rebuilding everyone', functi
     $this->artisan('search:rebuild', ['account' => $account])->assertFailed();
     expect(DB::table('jobs')->count())->toBe(0);
 })->with(['9999999', 'invalid', '0']);
+
+it('requires synchronous execution when resuming a rebuild', function () {
+    config()->set('scout.driver', 'typesense');
+    $this->artisan('search:rebuild', ['--resume' => true])->assertFailed();
+    expect(DB::table('jobs')->count())->toBe(0);
+});

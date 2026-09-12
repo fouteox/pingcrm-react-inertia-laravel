@@ -34,9 +34,19 @@ final class SearchIndexProjection implements ShouldQueue
     public function handle(SearchIndex $search): void
     {
         try {
-            $search->project($this);
+            if (! $search->project($this)) {
+                $this->continueProjection();
+            }
         } catch (SearchIndexUnavailable) {
-            $this->release((int) config('search.retry_delay'));
+            $this->continueProjection((int) config('search.retry_delay'));
         }
+    }
+
+    private function continueProjection(int $delay = 0): void
+    {
+        $this->prependToChain(
+            (new self($this->accountId, $this->revision, $this->modelClass, $this->modelId))
+                ->onConnection('search-index')->onQueue('search-index')->beforeCommit()->delay($delay)
+        );
     }
 }
