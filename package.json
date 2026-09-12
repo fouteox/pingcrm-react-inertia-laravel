@@ -8,16 +8,19 @@
         "format": "NODE_OPTIONS='--experimental-strip-types' vp fmt",
         "format:check": "NODE_OPTIONS='--experimental-strip-types' vp fmt --check",
         "lint": "NODE_OPTIONS='--experimental-strip-types' vp lint --fix",
-        "lint:check": "NODE_OPTIONS='--experimental-strip-types' vp lint",
-        "types": "tsc --noEmit"
+        "lint:check": "NODE_OPTIONS='--experimental-strip-types' vp lint --deny-warnings",
+        "types": "tsc --noEmit",
+        "test": "vp test run",
+        "deadcode": "knip"
     },
     "devDependencies": {
         "@laravel/echo-react": "2.4.0",
         "@laravel/vite-plugin-wayfinder": "0.1.10",
         "concurrently": "10.0.5",
+        "knip": "6.35.1",
         "playwright": "1.63.0",
-        "vite": "npm:@voidzero-dev/vite-plus-core@0.3.0",
-        "vite-plus": "0.3.0"
+        "vite": "npm:@voidzero-dev/vite-plus-core@0.3.1",
+        "vite-plus": "0.3.1"
     },
     "dependencies": {
         "@base-ui/react": "1.8.0",
@@ -35,12 +38,10 @@
         "laravel-echo": "2.4.0",
         "laravel-vite-plugin": "3.2.0",
         "lucide-react": "1.43.0",
-        "next-themes": "0.4.6",
         "pusher-js": "8.6.0",
         "react": "19.2.8",
         "react-dom": "19.2.8",
         "react-i18next": "17.0.13",
-        "react-use": "17.6.1",
         "sonner": "2.0.8",
         "tailwind-merge": "3.6.0",
         "tailwindcss": "4.3.3",
@@ -49,7 +50,7 @@
         "uuid": "14.0.2"
     },
     "overrides": {
-        "vite": "npm:@voidzero-dev/vite-plus-core@0.3.0"
+        "vite": "npm:@voidzero-dev/vite-plus-core@0.3.1"
     },
     "trustedDependencies": [
         "@tailwindcss/oxide"

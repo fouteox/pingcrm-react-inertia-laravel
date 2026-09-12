@@ -73,8 +73,20 @@ jobs:
               run: .github/scripts/compare-base-vulnerabilities.sh
 
     php:
-        name: PHP (Pint + Pest)
+        name: PHP (Pint + Larastan + Pest)
         runs-on: ubuntu-24.04
+        services:
+            postgres:
+                image: postgres:18@sha256:4ef4dbc939d61acea57712655ddb4b4ab27419c913f94cca0cd57cb3ea3c2280
+                env:
+                    POSTGRES_PASSWORD: testing
+                    POSTGRES_DB: pingcrm_test
+                options: >-
+                    --health-cmd="pg_isready -U postgres -d pingcrm_test"
+                    --health-interval=5s
+                    --health-timeout=5s
+                    --health-retries=10
+
         container:
             image: serversideup/php:8.5.10-frankenphp@sha256:558d9d93d8f63a08ea6c99a48475faff557d8bd315bb81a876181e9ec1e50865
             options: --user root
@@ -91,7 +103,7 @@ jobs:
                   apt-get update
                   apt-get install -y --no-install-recommends git
                   rm -rf /var/lib/apt/lists/*
-                  install-php-extensions bcmath intl sockets
+                  install-php-extensions bcmath intl sockets pdo_pgsql pdo_sqlite
 
             - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
               with:
@@ -121,7 +133,23 @@ jobs:
             - name: Run Pint
               run: vendor/bin/pint --test --format agent
 
-            - name: Run Pest tests
+            - name: Audit Composer dependencies
+              run: composer audit --locked
+
+            - name: Static analysis
+              run: composer analyse
+
+            - name: Run Pest tests (SQLite)
+              run: php artisan test --compact --testsuite=Unit,Feature,Arch
+
+            - name: Run Pest tests (PostgreSQL)
+              env:
+                  DB_CONNECTION: pgsql
+                  DB_HOST: postgres
+                  DB_PORT: '5432'
+                  DB_DATABASE: pingcrm_test
+                  DB_USERNAME: postgres
+                  DB_PASSWORD: testing
               run: php artisan test --compact --testsuite=Unit,Feature,Arch
 
     demo-reset-integration:
@@ -206,7 +234,7 @@ jobs:
               run: docker stop pingcrm-typesense-integration || true
 
     browser:
-        name: Browser (Pest 4)
+        name: Browser (Pest 5)
         runs-on: ubuntu-24.04
 
         steps:
@@ -230,10 +258,14 @@ jobs:
                   node-version-file: .node-version
                   cache: true
 
-            - name: Prepare Laravel environment (Wayfinder needs a booted app)
+            - name: Prepare Laravel environment for Wayfinder
               run: |
                   cp .env.example .env
+                  sed -i 's/^DB_CONNECTION=.*/DB_CONNECTION=sqlite/' .env
+                  sed -i 's|^DB_DATABASE=.*|DB_DATABASE=database/database.sqlite|' .env
                   php artisan key:generate --force --ansi
+                  touch database/database.sqlite
+                  php artisan migrate --force --ansi
 
             - name: Build Vite assets
               run: vp run build
@@ -245,7 +277,7 @@ jobs:
               run: php artisan test --compact --testsuite=Browser
 
     frontend:
-        name: Frontend (Types + Lint + Format)
+        name: Frontend (Types + Lint + Format + Tests + Knip)
         runs-on: ubuntu-24.04
 
         steps:
@@ -294,6 +326,15 @@ jobs:
             - name: Format check
               run: vp run format:check
 
+            - name: Frontend unit tests
+              run: vp run test
+
+            - name: Audit JavaScript dependencies
+              run: vp exec bun audit
+
+            - name: Find unused code
+              run: vp run deadcode
+
     build:
         name: Build (Vite production bundle)
         runs-on: ubuntu-24.04
@@ -319,13 +360,17 @@ jobs:
                   node-version-file: .node-version
                   cache: true
 
-            - name: Prepare Laravel environment (Wayfinder needs a booted app)
+            - name: Prepare Laravel environment for Wayfinder
               run: |
                   cp .env.example .env
+                  sed -i 's/^DB_CONNECTION=.*/DB_CONNECTION=sqlite/' .env
+                  sed -i 's|^DB_DATABASE=.*|DB_DATABASE=database/database.sqlite|' .env
                   php artisan key:generate --force --ansi
+                  touch database/database.sqlite
+                  php artisan migrate --force --ansi
 
-            - name: Build production bundle
-              run: vp run build
+            - name: Build production and SSR bundles
+              run: vp run build:ssr
 
     production-image:
         name: Validate production image

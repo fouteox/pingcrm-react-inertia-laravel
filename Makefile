@@ -4,7 +4,7 @@
 # Full check pipeline
 # ============================================================================
 
-# Lance TOUT : pint, oxlint, oxfmt, types, tests (Unit + Feature + Arch + Browser)
+# Formatte puis vérifie le code et les tests PHP/frontend.
 go:
 	@echo "==> Pint (PHP formatter)"
 	vendor/bin/pint --format agent
@@ -14,6 +14,16 @@ go:
 	vp exec bun run format
 	@echo "==> TypeScript"
 	vp exec bun run types
+	@echo "==> Larastan"
+	composer analyse
+	@echo "==> Knip"
+	vp run deadcode
+	@echo "==> Frontend unit tests"
+	vp run test
+	@echo "==> JavaScript security audit"
+	vp exec bun audit
+	@echo "==> Composer security audit"
+	composer audit --locked
 	@echo "==> Pest (Unit + Feature + Arch + Browser)"
 	php artisan test --compact
 	@echo "✓ All checks passed"

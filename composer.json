@@ -22,6 +22,7 @@
         "typesense/typesense-php": "^6.0"
     },
     "require-dev": {
+        "larastan/larastan": "^3.12",
         "laravel/boost": "^2.7.1",
         "laravel/breeze": "^2.4.2",
         "laravel/pao": "^1.1.5",
@@ -80,7 +81,8 @@
         ],
         "lint": [
             "pint"
-        ]
+        ],
+        "analyse": "phpstan analyse --memory-limit=1G"
     },
     "extra": {
         "laravel": {
