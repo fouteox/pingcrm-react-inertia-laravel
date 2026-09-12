@@ -13,6 +13,7 @@ use Closure;
 use Database\Seeders\DatabaseSeeder;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\DB;
 use Symfony\Component\Console\Attribute\AsCommand;
 use UnexpectedValueException;
@@ -56,6 +57,12 @@ final class ResetDemoCommand extends Command
 
     private function resetDemoData(DatabaseSeeder $seeder): int
     {
+        $attempts = Config::integer('demo.reset.transaction_attempts');
+
+        if ($attempts < 1) {
+            throw new UnexpectedValueException('Demo reset transaction attempts must be at least 1.');
+        }
+
         return DB::transaction(function () use ($seeder): int {
             $this->lockDemoTablesForWrites();
 
@@ -72,7 +79,7 @@ final class ResetDemoCommand extends Command
                 DB::table('organizations')->where('account_id', $demoAccount->id)->delete();
                 DB::table('users')
                     ->where('account_id', $demoAccount->id)
-                    ->when($demoUser, fn ($query) => $query->where('id', '!=', $demoUser->getKey()))
+                    ->when($demoUser, fn ($query, User $user) => $query->where('id', '!=', $user->getKey()))
                     ->delete();
             }
 
@@ -81,7 +88,7 @@ final class ResetDemoCommand extends Command
             return Account::where('demo_key', DatabaseSeeder::DEMO_ACCOUNT_KEY)
                 ->sole()
                 ->getKey();
-        }, attempts: (int) config('demo.reset.transaction_attempts'));
+        }, attempts: $attempts);
     }
 
     private function ensureTenantReferencesAreConsistent(?int $demoAccountId): void

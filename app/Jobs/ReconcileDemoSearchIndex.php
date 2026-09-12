@@ -16,8 +16,10 @@ use Illuminate\Queue\Attributes\Backoff;
 use Illuminate\Queue\Attributes\Timeout;
 use Illuminate\Queue\Attributes\Tries;
 use Illuminate\Queue\Middleware\WithoutOverlapping;
+use Illuminate\Support\Facades\Config;
 use Laravel\Scout\Engines\TypesenseEngine;
 use RuntimeException;
+use Typesense\Client;
 
 #[Tries(12)]
 #[Backoff(5, 15, 30, 60, 120, 300)]
@@ -62,13 +64,13 @@ final class ReconcileDemoSearchIndex implements ShouldQueue
             return;
         }
 
-        $documents = $engine
+        $documents = app(Client::class)
             ->getCollections()
             ->{$model->indexableAs()}
-            ->getDocuments()
-            ->export(['filter_by' => 'account_id:='.$this->accountId]);
+            ->getDocuments();
+        $export = $documents->export(['filter_by' => 'account_id:='.$this->accountId]);
 
-        $indexedIds = collect(preg_split('/\R/', mb_trim($documents)) ?: [])
+        $indexedIds = collect(preg_split('/\R/', mb_trim($export)) ?: [])
             ->filter()
             ->map(function (string $document): string {
                 /** @var array{id: int|string} $decoded */
@@ -79,7 +81,7 @@ final class ReconcileDemoSearchIndex implements ShouldQueue
 
         // Read IDs after the export so a concurrently indexed creation is never
         // mistaken for a stale document.
-        $currentIds = $modelClass::query()
+        $currentIds = $modelClass::withTrashed(Config::boolean('scout.soft_delete'))
             ->where('account_id', $this->accountId)
             ->pluck($model->getKeyName())
             ->map(fn (int|string $id): string => (string) $id);
@@ -87,18 +89,14 @@ final class ReconcileDemoSearchIndex implements ShouldQueue
         $indexedIds
             ->diff($currentIds)
             ->chunk(100)
-            ->each(function ($staleIds) use ($engine, $model): void {
+            ->each(function ($staleIds) use ($documents): void {
                 $filter = sprintf(
                     'account_id:=%d && id:[%s]',
                     $this->accountId,
                     $staleIds->implode(',')
                 );
 
-                $engine
-                    ->getCollections()
-                    ->{$model->indexableAs()}
-                    ->getDocuments()
-                    ->delete(['filter_by' => $filter]);
+                $documents->delete(['filter_by' => $filter]);
             });
     }
 
@@ -112,7 +110,7 @@ final class ReconcileDemoSearchIndex implements ShouldQueue
             $models = $this->loadModels($modelClass, $model);
             $fingerprints = $this->searchFingerprints($models);
 
-            $models->searchableSync();
+            $model->syncMakeSearchable($models);
 
             $currentModels = $this->loadModels($modelClass, $model);
 
@@ -134,7 +132,8 @@ final class ReconcileDemoSearchIndex implements ShouldQueue
      */
     private function loadModels(string $modelClass, Model $model): Collection
     {
-        $query = $modelClass::query()->where('account_id', $this->accountId);
+        $query = $modelClass::withTrashed(Config::boolean('scout.soft_delete'))
+            ->where('account_id', $this->accountId);
 
         if ($modelClass === Contact::class) {
             $query->with('organization');
@@ -156,7 +155,10 @@ final class ReconcileDemoSearchIndex implements ShouldQueue
             ->mapWithKeys(fn (Model $model): array => [
                 $model->getKey() => hash(
                     'sha256',
-                    json_encode($model->toSearchableArray(), JSON_THROW_ON_ERROR)
+                    json_encode([
+                        $model->toSearchableArray(),
+                        $model->getAttribute('deleted_at') !== null,
+                    ], JSON_THROW_ON_ERROR)
                 ),
             ])
             ->all();
