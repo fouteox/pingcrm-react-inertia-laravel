@@ -20,7 +20,7 @@ use Typesense\Exceptions\ObjectNotFound;
  * @phpstan-type SearchSchema array{fields: list<SearchField>, default_sorting_field?: string}
  */
 #[Signature('search:sync-schema')]
-#[Description('Prepare Typesense name sorting and synchronously reindex existing records without deleting collections')]
+#[Description('Enable Typesense name sorting using the stored documents without deleting collections')]
 final class SearchSyncSchemaCommand extends Command
 {
     public function handle(Client $client): int
@@ -41,19 +41,6 @@ final class SearchSyncSchemaCommand extends Command
             $this->info("Prepared [$index].");
         }
 
-        $previousDriver = config('scout.driver');
-        $previousQueue = config('scout.queue');
-        Config::set(['scout.driver' => 'typesense', 'scout.queue' => false]);
-
-        try {
-            foreach (array_keys($settings) as $modelClass) {
-                $modelClass::makeAllSearchable();
-                $this->info('Reindexed ['.(new $modelClass)->indexableAs().'].');
-            }
-        } finally {
-            Config::set(['scout.driver' => $previousDriver, 'scout.queue' => $previousQueue]);
-        }
-
         return self::SUCCESS;
     }
 
@@ -68,7 +55,7 @@ final class SearchSyncSchemaCommand extends Command
         $changes = [];
 
         foreach ($schema['fields'] as $field) {
-            if ($field['name'] !== 'sort_id' && ! ($field['sort'] ?? false)) {
+            if (! ($field['sort'] ?? false)) {
                 continue;
             }
 
@@ -76,9 +63,9 @@ final class SearchSyncSchemaCommand extends Command
 
             if ($current === null) {
                 $changes[] = $field;
-            } elseif (($field['sort'] ?? false) && ! ($current['sort'] ?? false)) {
+            } elseif (! ($current['sort'] ?? false)) {
                 $changes[] = ['name' => $field['name'], 'drop' => true];
-                $changes[] = [...$current, ...$field];
+                $changes[] = [...$current, 'sort' => true];
             }
         }
 

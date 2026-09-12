@@ -63,7 +63,6 @@ final class Organization extends Model
     {
         return [
             'id' => (string) $this->id,
-            'sort_id' => $this->id,
             'account_id' => $this->account_id,
             'name' => $this->name,
             'created_at' => $this->created_at->timestamp ?? 0,

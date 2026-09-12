@@ -187,7 +187,6 @@ return [
                 'collection-schema' => [
                     'fields' => [
                         ['name' => 'id', 'type' => 'string'],
-                        ['name' => 'sort_id', 'type' => 'int64', 'optional' => true],
                         ['name' => 'account_id', 'type' => 'int32'],
                         ['name' => 'first_name', 'type' => 'string', 'sort' => true],
                         ['name' => 'last_name', 'type' => 'string', 'sort' => true],
@@ -206,7 +205,6 @@ return [
                 'collection-schema' => [
                     'fields' => [
                         ['name' => 'id', 'type' => 'string'],
-                        ['name' => 'sort_id', 'type' => 'int64', 'optional' => true],
                         ['name' => 'account_id', 'type' => 'int32'],
                         ['name' => 'name', 'type' => 'string', 'sort' => true],
                         ['name' => 'created_at', 'type' => 'int64'],
@@ -222,7 +220,6 @@ return [
                 'collection-schema' => [
                     'fields' => [
                         ['name' => 'id', 'type' => 'string'],
-                        ['name' => 'sort_id', 'type' => 'int64', 'optional' => true],
                         ['name' => 'account_id', 'type' => 'int32'],
                         ['name' => 'first_name', 'type' => 'string', 'sort' => true],
                         ['name' => 'last_name', 'type' => 'string', 'sort' => true],

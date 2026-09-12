@@ -65,7 +65,6 @@ final class Contact extends Model
     {
         return [
             'id' => (string) $this->id,
-            'sort_id' => $this->id,
             'account_id' => $this->account_id,
             'first_name' => $this->first_name,
             'last_name' => $this->last_name,
