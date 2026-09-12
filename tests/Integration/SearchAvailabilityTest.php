@@ -125,7 +125,7 @@ function mutateAvailabilityContactInAnotherProcess(Contact $contact): void
     $process->setTimeout(5)->mustRun();
 }
 
-it('keeps the users page available when contacts change before or during the engine response', function (bool $duringResponse) {
+it('keeps searched and unrelated pages available when contacts change before or during the engine response', function (bool $duringResponse) {
     [, $actor, , $users, $contacts] = resourceAvailabilityFixtures();
     $contact = $contacts->last();
     $changedDuringSearch = false;
@@ -158,28 +158,36 @@ it('keeps the users page available when contacts change before or during the eng
     $this->actingAs($actor);
     $usersUrl = '/users?search=Ada&role=user&trashed=only&page=2';
     $filters = ['search' => 'Ada', 'role' => 'user', 'trashed' => 'only'];
+    $contactsUrl = '/contacts?search=Grase&trashed=with&page=2';
+    $contactFilters = ['search' => 'Grase', 'trashed' => 'with'];
+    assertAvailableSecondPage($this->get($contactsUrl), 'contacts', $contacts->modelKeys(), $contactFilters);
     assertAvailableSecondPage($this->get($usersUrl), 'users', $users->modelKeys(), $filters);
     expect($contact->fresh()->last_name)->toBe('ZZZ Updated')
         ->and($changedDuringSearch)->toBe($duringResponse);
-    $this->get('/contacts?search=Grace&trashed=with&page=2')->assertServiceUnavailable();
 
     $this->artisan('queue:work', ['connection' => 'search-index', '--queue' => 'search-index', '--stop-when-empty' => true, '--sleep' => 0])->assertSuccessful();
 
     assertAvailableSecondPage($this->get($usersUrl), 'users', $users->modelKeys(), $filters);
-    $response = $this->get('/contacts?search=Grace&trashed=with&page=2');
-    assertAvailableSecondPage($response, 'contacts', $contacts->modelKeys(), ['search' => 'Grace', 'trashed' => 'with']);
+    $response = $this->get($contactsUrl);
+    assertAvailableSecondPage($response, 'contacts', $contacts->modelKeys(), $contactFilters);
     $response->assertInertia(fn (Assert $page) => $page->where('contacts.data.2.name', 'Grace ZZZ Updated'));
     expect(DB::table('failed_jobs')->count())->toBe(0);
 })->with(['pending contact mutation' => false, 'concurrent contact mutation' => true]);
 
-it('withholds organization and contact searches during a rename while keeping users available', function () {
+it('serves old organization search matches during a rename and refreshes them after projection', function () {
     [$account, $actor, $organization, $users, $contacts] = resourceAvailabilityFixtures();
     app(SearchIndex::class)->mutate($account->id, fn () => tap($organization)->update(['name' => 'Computing Laboratory']));
     $this->actingAs($actor);
 
     assertAvailableSecondPage($this->get('/users?search=Ada&role=user&trashed=only&page=2'), 'users', $users->modelKeys(), ['search' => 'Ada', 'role' => 'user', 'trashed' => 'only']);
-    $this->get('/organizations?search=Computing')->assertServiceUnavailable();
-    $this->get('/contacts?search=Computing&trashed=with&page=2')->assertServiceUnavailable();
+    $this->get('/organizations?search=Analytical')->assertSuccessful()->assertInertia(fn (Assert $page) => $page
+        ->where('organizations.meta.total', 1)
+        ->where('organizations.data.0.id', $organization->id));
+    assertAvailableSecondPage($this->get('/contacts?search=Analytical&trashed=with&page=2'), 'contacts', $contacts->modelKeys(), ['search' => 'Analytical', 'trashed' => 'with']);
+    $this->get('/organizations?search=Computing')->assertSuccessful()->assertInertia(fn (Assert $page) => $page
+        ->where('organizations.meta.total', 0)->has('organizations.data', 0));
+    $this->get('/contacts?search=Computing&trashed=with')->assertSuccessful()->assertInertia(fn (Assert $page) => $page
+        ->where('contacts.meta.total', 0)->has('contacts.data', 0));
 
     $this->artisan('queue:work', ['connection' => 'search-index', '--queue' => 'search-index', '--stop-when-empty' => true, '--sleep' => 0])->assertSuccessful();
 
@@ -194,7 +202,7 @@ it('withholds organization and contact searches during a rename while keeping us
         ->where('contacts.meta.total', 0)->has('contacts.data', 0));
 });
 
-it('keeps contact pagination available while a user mutation awaits projection', function () {
+it('keeps user and contact pagination available while a user mutation awaits projection', function () {
     [$account, $actor, , $users, $contacts] = resourceAvailabilityFixtures();
     app(SearchIndex::class)->mutate($account->id, fn () => tap($users->last())->update(['last_name' => 'ZZZ Updated']));
     $this->actingAs($actor);
@@ -202,7 +210,7 @@ it('keeps contact pagination available while a user mutation awaits projection',
     $filters = ['search' => 'Grace', 'trashed' => 'with'];
 
     assertAvailableSecondPage($this->get($contactsUrl), 'contacts', $contacts->modelKeys(), $filters);
-    $this->get('/users?search=Ada&role=user&trashed=only&page=2')->assertServiceUnavailable();
+    assertAvailableSecondPage($this->get('/users?search=Ada&role=user&trashed=only&page=2'), 'users', $users->modelKeys(), ['search' => 'Ada', 'role' => 'user', 'trashed' => 'only']);
 
     $this->artisan('queue:work', ['connection' => 'search-index', '--queue' => 'search-index', '--stop-when-empty' => true, '--sleep' => 0])->assertSuccessful();
 
@@ -212,7 +220,7 @@ it('keeps contact pagination available while a user mutation awaits projection',
     $response->assertInertia(fn (Assert $page) => $page->where('users.data.2.name', 'Ada ZZZ Updated'));
 });
 
-it('detaches active and trashed contacts after an organization is permanently deleted without blocking users', function () {
+it('keeps old organization matches searchable without exposing the permanently deleted organization', function () {
     [$account, $actor, $organization, $users, $contacts] = resourceAvailabilityFixtures();
     $search = app(SearchIndex::class);
     config()->set('search.synchronous', true);
@@ -235,7 +243,11 @@ it('detaches active and trashed contacts after an organization is permanently de
     $usersUrl = '/users?search=Ada&role=user&trashed=only&page=2';
     $userFilters = ['search' => 'Ada', 'role' => 'user', 'trashed' => 'only'];
     assertAvailableSecondPage($this->get($usersUrl), 'users', $users->modelKeys(), $userFilters);
-    $this->get('/contacts?search=Grace&trashed=with&page=2')->assertServiceUnavailable();
+    $pendingResponse = $this->get('/contacts?search=Analytical&trashed=with&page=2');
+    assertAvailableSecondPage($pendingResponse, 'contacts', $contacts->modelKeys(), ['search' => 'Analytical', 'trashed' => 'with']);
+    $pendingResponse->assertInertia(fn (Assert $page) => $page->where('contacts.data', fn ($data): bool => collect($data)->every(fn (array $contact): bool => $contact['organization'] === null)));
+    $this->get('/organizations?search=Analytical')->assertSuccessful()->assertInertia(fn (Assert $page) => $page
+        ->where('organizations.meta.total', 1)->has('organizations.data', 0));
 
     $this->artisan('queue:work', ['connection' => 'search-index', '--queue' => 'search-index', '--stop-when-empty' => true, '--sleep' => 0])->assertSuccessful();
 
@@ -254,4 +266,92 @@ it('detaches active and trashed contacts after an organization is permanently de
         ->and($documents[(string) $foreignContact->id]->retrieve())->toBe($foreignDocument);
     $this->get('/organizations?search=Analytical')->assertSuccessful()->assertInertia(fn (Assert $page) => $page
         ->where('organizations.meta.total', 0)->has('organizations.data', 0));
+});
+
+it('keeps existing search pages available while an account repair awaits projection', function () {
+    [$account, $actor, , $users, $contacts] = resourceAvailabilityFixtures();
+    app(SearchIndex::class)->rebuild($account->id);
+    $this->actingAs($actor);
+    $usersUrl = '/users?search=Ada&role=user&trashed=only&page=2';
+    $userFilters = ['search' => 'Ada', 'role' => 'user', 'trashed' => 'only'];
+    $contactsUrl = '/contacts?search=Grase&trashed=with&page=2';
+    $contactFilters = ['search' => 'Grase', 'trashed' => 'with'];
+
+    assertAvailableSecondPage($this->get($usersUrl), 'users', $users->modelKeys(), $userFilters);
+    assertAvailableSecondPage($this->get($contactsUrl), 'contacts', $contacts->modelKeys(), $contactFilters);
+
+    $this->artisan('queue:work', ['connection' => 'search-index', '--queue' => 'search-index', '--stop-when-empty' => true, '--sleep' => 0])->assertSuccessful();
+
+    assertAvailableSecondPage($this->get($usersUrl), 'users', $users->modelKeys(), $userFilters);
+    assertAvailableSecondPage($this->get($contactsUrl), 'contacts', $contacts->modelKeys(), $contactFilters);
+    expect(DB::table('failed_jobs')->count())->toBe(0);
+});
+
+it('omits deleted contacts from an old search page while retaining the engine total until projection', function (bool $permanent) {
+    [$account, $actor, , , $contacts] = resourceAvailabilityFixtures();
+    $visibleIds = $contacts->reject(fn (Contact $contact): bool => $contact->trashed())->values()->modelKeys();
+    $contact = $contacts->last();
+    $search = app(SearchIndex::class);
+    $search->mutate($account->id, fn () => $permanent ? tap($contact)->forceDelete() : tap($contact)->delete());
+    $remainingIds = array_values(array_diff($visibleIds, [$contact->id]));
+    $this->actingAs($actor);
+
+    $this->get('/contacts?search=Grase')->assertSuccessful()->assertInertia(fn (Assert $page) => $page
+        ->where('filters', ['search' => 'Grase'])
+        ->where('contacts.meta.total', count($visibleIds))
+        ->where('contacts.meta.current_page', 1)
+        ->where('contacts.data', fn ($data): bool => collect($data)->pluck('id')->all() === $remainingIds));
+
+    $this->artisan('queue:work', ['connection' => 'search-index', '--queue' => 'search-index', '--stop-when-empty' => true, '--sleep' => 0])->assertSuccessful();
+
+    $this->get('/contacts?search=Grase')->assertSuccessful()->assertInertia(fn (Assert $page) => $page
+        ->where('contacts.meta.total', count($remainingIds))
+        ->where('contacts.data', fn ($data): bool => collect($data)->pluck('id')->all() === $remainingIds));
+    expect(DB::table('failed_jobs')->count())->toBe(0);
+})->with(['soft deletion' => false, 'permanent deletion' => true]);
+
+it('rechecks current SQL roles while retaining the old engine pagination until projection', function () {
+    [$account, $actor, , $users] = resourceAvailabilityFixtures();
+    $user = $users->last();
+    app(SearchIndex::class)->mutate($account->id, fn () => tap($user)->update(['owner' => true]));
+    $remainingIds = array_slice($users->modelKeys(), 15, 2);
+    $this->actingAs($actor);
+    $url = '/users?search=Ada&role=user&trashed=only&page=2';
+
+    $this->get($url)->assertSuccessful()->assertInertia(fn (Assert $page) => $page
+        ->where('filters', ['search' => 'Ada', 'role' => 'user', 'trashed' => 'only'])
+        ->where('users.meta.total', 18)
+        ->where('users.meta.current_page', 2)
+        ->where('users.meta.last_page', 2)
+        ->where('users.data', fn ($data): bool => collect($data)->pluck('id')->all() === $remainingIds));
+
+    $this->artisan('queue:work', ['connection' => 'search-index', '--queue' => 'search-index', '--stop-when-empty' => true, '--sleep' => 0])->assertSuccessful();
+
+    $this->get($url)->assertSuccessful()->assertInertia(fn (Assert $page) => $page
+        ->where('users.meta.total', 17)
+        ->where('users.meta.current_page', 2)
+        ->where('users.meta.last_page', 2)
+        ->where('users.data', fn ($data): bool => collect($data)->pluck('id')->all() === $remainingIds));
+});
+
+it('does not expose another tenant when an indexed account identifier is stale', function () {
+    [$account, $actor, , , $contacts] = resourceAvailabilityFixtures();
+    $foreignContact = Contact::query()->where('account_id', '!=', $account->id)->firstOrFail();
+    $documents = app(Client::class)->getCollections()->{(new Contact)->indexableAs()}->getDocuments();
+    $documents[(string) $foreignContact->id]->update(['account_id' => $account->id]);
+    $visibleIds = $contacts->reject(fn (Contact $contact): bool => $contact->trashed())->values()->modelKeys();
+    $this->actingAs($actor);
+
+    $this->get('/contacts?search=Grase')->assertSuccessful()->assertInertia(fn (Assert $page) => $page
+        ->where('contacts.meta.total', count($visibleIds) + 1)
+        ->where('contacts.data', fn ($data): bool => collect($data)->pluck('id')->all() === $visibleIds));
+
+    app(SearchIndex::class)->rebuild($foreignContact->account_id);
+    $this->artisan('queue:work', ['connection' => 'search-index', '--queue' => 'search-index', '--stop-when-empty' => true, '--sleep' => 0])->assertSuccessful();
+
+    $this->get('/contacts?search=Grase')->assertSuccessful()->assertInertia(fn (Assert $page) => $page
+        ->where('contacts.meta.total', count($visibleIds))
+        ->where('contacts.data', fn ($data): bool => collect($data)->pluck('id')->all() === $visibleIds));
+    expect($documents[(string) $foreignContact->id]->retrieve()['account_id'])->toBe($foreignContact->account_id)
+        ->and(DB::table('failed_jobs')->count())->toBe(0);
 });

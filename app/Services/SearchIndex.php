@@ -50,16 +50,7 @@ final class SearchIndex
 
             if ($this->usesTypesense()) {
                 $revision = (int) $account->getAttribute('search_revision') + 1;
-                $trackedRevision = max(
-                    (int) $account->getAttribute('contacts_search_revision'),
-                    (int) $account->getAttribute('organizations_search_revision'),
-                    (int) $account->getAttribute('users_search_revision'),
-                );
-                $account->forceFill([
-                    'search_revision' => $revision,
-                    ...($trackedRevision !== $revision - 1 ? $this->resourceRevisions($revision - 1) : []),
-                    ...$this->resourceRevisions($revision, $model::class),
-                ])->save();
+                $account->forceFill(['search_revision' => $revision])->save();
                 $this->enqueue(new SearchIndexProjection($accountId, $revision, $model::class, $model->getKey()));
             }
 
@@ -79,7 +70,6 @@ final class SearchIndex
             $account->forceFill([
                 'search_revision' => $revision,
                 'search_rebuild_revision' => $revision,
-                ...$this->resourceRevisions($revision),
             ])->save();
             $projection = new SearchIndexProjection($accountId, $revision);
             $this->enqueue($projection);
@@ -88,11 +78,8 @@ final class SearchIndex
         });
     }
 
-    /**
-     * @param  class-string<Contact|Organization|User>|null  $modelClass
-     * @return array{revision: int, indexedRevision: ?int, rebuildRevision: int}
-     */
-    public function readState(int $accountId, ?string $modelClass = null): array
+    /** @return array{revision: int, indexedRevision: ?int, rebuildRevision: int} */
+    public function readState(int $accountId): array
     {
         $connection = DB::connection();
 
@@ -104,37 +91,29 @@ final class SearchIndex
             }
         }
 
-        return $this->stateOn($connection, $accountId, $modelClass);
+        return $this->stateOn($connection, $accountId);
     }
 
     public function assertReady(int $accountId): int
     {
-        return $this->readyState($accountId)['revision'];
-    }
-
-    /**
-     * @param  class-string<Contact|Organization|User>|null  $modelClass
-     * @return array{revision: int, indexedRevision: ?int, rebuildRevision: int}
-     */
-    public function readyState(int $accountId, ?string $modelClass = null): array
-    {
-        $state = $this->readState($accountId, $modelClass);
+        $state = $this->readState($accountId);
 
         if ($state['indexedRevision'] === null
-            || $state['revision'] > $state['indexedRevision']
-            || ($modelClass === null && $state['revision'] !== $state['indexedRevision'])) {
+            || $state['revision'] !== $state['indexedRevision']) {
             throw new SearchIndexUnavailable;
         }
 
-        return $state;
+        return $state['revision'];
     }
 
-    /** @param class-string<Contact|Organization|User>|null $modelClass */
-    public function assertUnchanged(int $accountId, int $revision, ?string $modelClass = null): void
+    /** Pending repairs keep older indexed matches visible until their rebuild is acknowledged. */
+    public function completedRebuildRevision(int $accountId): int
     {
-        if ($this->readyState($accountId, $modelClass)['revision'] !== $revision) {
-            throw new SearchIndexUnavailable;
-        }
+        $state = $this->stateOn(DB::connection(), $accountId);
+
+        return $state['indexedRevision'] !== null && $state['indexedRevision'] >= $state['rebuildRevision']
+            ? $state['rebuildRevision']
+            : 0;
     }
 
     /** Return whether this projection has completed or been superseded by a rebuild. */
@@ -399,53 +378,16 @@ final class SearchIndex
         }
     }
 
-    /**
-     * @param  class-string<Contact|Organization|User>|null  $modelClass
-     * @return array{revision: int, indexedRevision: ?int, rebuildRevision: int}
-     */
-    private function stateOn(Connection $connection, int $accountId, ?string $modelClass): array
+    /** @return array{revision: int, indexedRevision: ?int, rebuildRevision: int} */
+    private function stateOn(Connection $connection, int $accountId): array
     {
         $state = $connection->table('accounts')->useWritePdo()->where('id', $accountId)->firstOrFail();
-        $revision = (int) $state->search_revision;
-
-        if ($modelClass !== null) {
-            if (! in_array($modelClass, self::MODELS, true)) {
-                throw new InvalidArgumentException('Unsupported search resource.');
-            }
-
-            $column = (new $modelClass)->getTable().'_search_revision';
-            $trackedRevision = max($state->contacts_search_revision, $state->organizations_search_revision, $state->users_search_revision);
-
-            if ($trackedRevision === $revision) {
-                $revision = (int) $state->{$column};
-            }
-        }
 
         return [
-            'revision' => $revision,
+            'revision' => (int) $state->search_revision,
             'indexedRevision' => $state->indexed_revision === null ? null : (int) $state->indexed_revision,
             'rebuildRevision' => (int) $state->search_rebuild_revision,
         ];
-    }
-
-    /**
-     * @param  class-string<Contact|Organization|User>|null  $modelClass
-     * @return array<string, int>
-     */
-    private function resourceRevisions(int $revision, ?string $modelClass = null): array
-    {
-        $models = match ($modelClass) {
-            null => self::MODELS,
-            Organization::class => [Organization::class, Contact::class],
-            default => [$modelClass],
-        };
-        $attributes = [];
-
-        foreach ($models as $model) {
-            $attributes[(new $model)->getTable().'_search_revision'] = $revision;
-        }
-
-        return $attributes;
     }
 
     private function usesTypesense(): bool

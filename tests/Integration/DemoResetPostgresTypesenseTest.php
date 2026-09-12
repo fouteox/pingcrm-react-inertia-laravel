@@ -155,7 +155,7 @@ it('keeps typo tolerant search and tenant filtering through HTTP', function (str
     'contact prefix' => ['contacts', 'Love'],
 ]);
 
-it('withholds stale search and recovers native pagination beyond twelve hundred results', function () {
+it('serves stale search and refreshes native pagination beyond twelve hundred results', function () {
     $account = Account::factory()->create();
     $otherAccount = Account::factory()->create();
     $actor = User::factory()->for($account)->create([
@@ -179,11 +179,23 @@ it('withholds stale search and recovers native pagination beyond twelve hundred 
         'q' => '0',
         'query_by' => 'first_name,last_name,email',
         'filter_by' => 'account_id:='.$account->id.' && owner:=false && __soft_deleted:=0',
-        'per_page' => 1,
+        'sort_by' => 'last_name:asc,first_name:asc',
+        'page' => 82,
+        'per_page' => 15,
     ]);
     expect($indexed['found'])->toBe(1220);
+    $stalePageIds = collect($indexed['hits'])->pluck('document.id')->map(fn (string $id): int => (int) $id)
+        ->diff($members->take(3)->modelKeys())->values()->all();
 
-    $this->actingAs($actor)->get('/users?search=0&role=user&page=82')->assertServiceUnavailable();
+    $this->actingAs($actor)->get('/users?search=0&role=user&page=82')->assertOk()
+        ->assertInertia(fn (Assert $assert) => $assert
+            ->where('users.meta.total', 1220)
+            ->where('users.meta.current_page', 82)
+            ->where('users.data', function ($data) use ($stalePageIds): bool {
+                expect(collect($data)->pluck('id')->all())->toBe($stalePageIds);
+
+                return true;
+            }));
     $this->artisan('queue:work', ['connection' => 'search-index', '--queue' => 'search-index', '--stop-when-empty' => true, '--sleep' => 0])->assertSuccessful();
 
     $eligibleIds = $members->slice(3)->modelKeys();
@@ -399,7 +411,8 @@ it('bootstraps existing data synchronously and reports readiness only after inde
     $user = User::withoutSyncingToSearch(fn () => User::factory()->for($account)->create(['last_name' => 'Lovelace']));
     DB::table('accounts')->where('id', $account->id)->update(['indexed_revision' => null]);
 
-    $this->actingAs($user)->get('/users?search=Lovelcae')->assertServiceUnavailable();
+    $this->actingAs($user)->get('/users?search=Lovelcae')->assertOk()
+        ->assertInertia(fn (Assert $assert) => $assert->where('users.meta.total', 0)->has('users.data', 0));
     $this->artisan('search:rebuild', ['--sync' => true])->assertSuccessful();
     $this->actingAs($user)->get('/users?search=Lovelcae')->assertOk()
         ->assertInertia(fn (Assert $assert) => $assert->where('users.meta.total', 1)->where('users.data.0.id', $user->id));

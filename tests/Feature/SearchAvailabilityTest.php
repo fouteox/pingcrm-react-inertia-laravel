@@ -2,102 +2,63 @@
 
 declare(strict_types=1);
 
-use App\Exceptions\SearchIndexUnavailable;
 use App\Models\Contact;
 use App\Models\Organization;
 use App\Models\User;
 use App\Services\SearchIndex;
+use GuzzleHttp\Client as HttpClient;
+use GuzzleHttp\Handler\MockHandler;
+use GuzzleHttp\HandlerStack;
+use GuzzleHttp\Psr7\Response;
+use Illuminate\Database\Events\QueryExecuted;
 use Illuminate\Support\Facades\DB;
+use Inertia\Testing\AssertableInertia as Assert;
+use Laravel\Scout\EngineManager;
+use Psr\Http\Message\RequestInterface;
+use Typesense\Client;
 
-it('keeps unrelated resource searches ready while a mutation is waiting for indexing', function (string $changed, string $available) {
-    $model = $changed::factory()->create();
-    config()->set(['scout.driver' => 'typesense', 'search.synchronous' => false]);
-    $search = app(SearchIndex::class);
-    $state = $search->readyState($model->account_id, $available);
+it('serves search without running or enqueuing projection work during the read', function (string $modelClass, string $resource) {
+    $actor = User::factory()->create(['owner' => true]);
+    $field = $modelClass === Organization::class ? 'name' : 'last_name';
+    $model = $modelClass::factory()->for($actor->account)->create([$field => 'Before']);
+    config()->set(['scout.driver' => 'typesense', 'scout.prefix' => '', 'search.synchronous' => false]);
+    app(EngineManager::class)->forgetEngines();
+    app(SearchIndex::class)->mutate($actor->account_id, fn () => tap($model)->update([$field => 'After']));
+    expect(DB::table('jobs')->count())->toBe(1);
 
-    $search->mutate($model->account_id, fn () => tap($model)->update([
-        $changed === Organization::class ? 'name' : 'last_name' => 'Changed',
+    $handler = new MockHandler([
+        function (RequestInterface $request) use ($model, $resource): Response {
+            expect($request->getMethod())->toBe('GET')
+                ->and($request->getUri()->getPath())->toBe("/collections/{$resource}/documents/search");
+
+            return new Response(200, body: json_encode([
+                'found' => 1,
+                'hits' => [['document' => ['id' => (string) $model->id]]],
+            ], JSON_THROW_ON_ERROR));
+        },
+    ]);
+    app()->instance(Client::class, new Client([
+        'api_key' => 'test-key',
+        'nodes' => [['host' => 'localhost', 'port' => '8108', 'protocol' => 'http']],
+        'num_retries' => 0,
+        'client' => new HttpClient(['handler' => HandlerStack::create($handler)]),
     ]));
+    $writes = [];
+    DB::listen(function (QueryExecuted $query) use (&$writes): void {
+        if (preg_match('/^\s*(?:insert|update|delete)\b/i', $query->sql) === 1) {
+            $writes[] = $query->sql;
+        }
+    });
 
-    expect($search->readyState($model->account_id, $available)['revision'])->toBe($state['revision']);
-    $search->assertUnchanged($model->account_id, $state['revision'], $available);
-    expect(fn () => $search->readyState($model->account_id, $changed))->toThrow(SearchIndexUnavailable::class);
+    $this->actingAs($actor)->get("/{$resource}?search=Before")
+        ->assertOk()
+        ->assertInertia(fn (Assert $assert) => $assert->has("{$resource}.data", 1));
+
+    expect($writes)->toBe([])
+        ->and(DB::table('jobs')->count())->toBe(1)
+        ->and($handler->count())->toBe(0);
 })->with([
-    'contact does not block users' => [Contact::class, User::class],
-    'contact does not block organizations' => [Contact::class, Organization::class],
-    'user does not block contacts' => [User::class, Contact::class],
-    'user does not block organizations' => [User::class, Organization::class],
-    'organization does not block users' => [Organization::class, User::class],
+    'contacts' => [Contact::class, 'contacts'],
+    'organizations' => [Organization::class, 'organizations'],
+    'users' => [User::class, 'users'],
 ]);
-
-it('keeps contacts unavailable until their organization change has been indexed', function () {
-    $organization = Organization::factory()->create();
-    Contact::factory()->for($organization->account)->for($organization)->create();
-    config()->set(['scout.driver' => 'typesense', 'search.synchronous' => false]);
-    $search = app(SearchIndex::class);
-    $search->mutate($organization->account_id, fn () => tap($organization)->update(['name' => 'Changed']));
-
-    expect(fn () => $search->readyState($organization->account_id, Contact::class))->toThrow(SearchIndexUnavailable::class);
-    expect(fn () => $search->readyState($organization->account_id, Organization::class))->toThrow(SearchIndexUnavailable::class);
-});
-
-it('detects a relevant concurrent change even after its indexing has completed', function () {
-    $contact = Contact::factory()->create();
-    config()->set(['scout.driver' => 'typesense', 'search.synchronous' => false]);
-    $search = app(SearchIndex::class);
-    $state = $search->readyState($contact->account_id, Contact::class);
-    $search->mutate($contact->account_id, fn () => tap($contact)->update(['last_name' => 'Changed']));
-    DB::table('accounts')->where('id', $contact->account_id)->update(['indexed_revision' => 1]);
-
-    expect(fn () => $search->assertUnchanged($contact->account_id, $state['revision'], Contact::class))
-        ->toThrow(SearchIndexUnavailable::class);
-});
-
-it('retains the conservative guard for revisions written by an older application version', function () {
-    $contact = Contact::factory()->create();
-    DB::table('accounts')->where('id', $contact->account_id)->update(['search_revision' => 1]);
-
-    expect(fn () => app(SearchIndex::class)->readyState($contact->account_id, User::class))
-        ->toThrow(SearchIndexUnavailable::class);
-});
-
-it('keeps an older untracked mutation fenced after a newer resource-specific mutation', function () {
-    $contact = Contact::factory()->create();
-    DB::table('accounts')->where('id', $contact->account_id)->update(['search_revision' => 1]);
-    config()->set(['scout.driver' => 'typesense', 'search.synchronous' => false]);
-    $search = app(SearchIndex::class);
-    $search->mutate($contact->account_id, fn () => tap($contact)->update(['last_name' => 'Changed']));
-
-    expect(fn () => $search->readyState($contact->account_id, User::class))->toThrow(SearchIndexUnavailable::class);
-});
-
-it('preserves pending changes when resource revision tracking is introduced', function () {
-    $contact = Contact::factory()->create();
-    DB::table('accounts')->where('id', $contact->account_id)->update(['search_revision' => 4, 'indexed_revision' => 3]);
-    $migration = require database_path('migrations/2026_09_12_152626_add_resource_search_revisions_to_accounts_table.php');
-    $migration->down();
-    $migration->up();
-    $search = app(SearchIndex::class);
-
-    foreach ([Contact::class, Organization::class, User::class] as $model) {
-        expect(fn () => $search->readyState($contact->account_id, $model))->toThrow(SearchIndexUnavailable::class);
-    }
-
-    DB::table('accounts')->where('id', $contact->account_id)->update(['indexed_revision' => 4]);
-
-    foreach ([Contact::class, Organization::class, User::class] as $model) {
-        expect($search->readyState($contact->account_id, $model)['revision'])->toBe(4);
-    }
-});
-
-it('keeps user search ready after permanently deleting an organization and detaching its contacts', function () {
-    $organization = Organization::factory()->create();
-    $contact = Contact::factory()->for($organization->account)->for($organization)->create();
-    config()->set(['scout.driver' => 'typesense', 'search.synchronous' => false]);
-    $search = app(SearchIndex::class);
-    $search->mutate($organization->account_id, fn () => tap($organization)->forceDelete());
-
-    expect($contact->fresh()->organization_id)->toBeNull();
-    expect($search->readyState($organization->account_id, User::class)['revision'])->toBe(0);
-    expect(fn () => $search->readyState($organization->account_id, Contact::class))->toThrow(SearchIndexUnavailable::class);
-});

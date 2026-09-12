@@ -109,7 +109,7 @@ it('keeps database-backed Scout mutations transactional without projection jobs'
         ->and(DB::table('jobs')->count())->toBe(0);
 });
 
-it('refuses pending or changed account revisions instead of returning stale readiness', function () {
+it('reports pending account projections until their current revision is acknowledged', function () {
     $account = Account::factory()->create();
     $search = app(SearchIndex::class);
 
@@ -119,8 +119,7 @@ it('refuses pending or changed account revisions instead of returning stale read
     DB::table('accounts')->where('id', $account->id)->update(['indexed_revision' => 1]);
 
     expect($search->readState($account->id))->toBe(['revision' => 1, 'indexedRevision' => 1, 'rebuildRevision' => 0]);
-    expect(fn () => $search->assertUnchanged($account->id, 0))->toThrow(SearchIndexUnavailable::class);
-    $search->assertUnchanged($account->id, 1);
+    expect($search->assertReady($account->id))->toBe(1);
 });
 
 it('fences existing accounts during migration and starts new empty accounts ready', function () {

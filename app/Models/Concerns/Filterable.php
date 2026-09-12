@@ -9,9 +9,10 @@ use App\Enums\TrashedFilter;
 use App\Exceptions\SearchIndexUnavailable;
 use App\Services\SearchGenerations;
 use App\Services\SearchIndex;
-use Illuminate\Contracts\Pagination\LengthAwarePaginator;
+use Illuminate\Contracts\Pagination\LengthAwarePaginator as PaginatorContract;
 use Illuminate\Database\Eloquent\Attributes\Scope;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Laravel\Scout\Builder as SearchBuilder;
 use Laravel\Scout\Engines\TypesenseEngine;
 use Laravel\Scout\Searchable;
@@ -27,9 +28,9 @@ trait Filterable
 {
     /**
      * @param  array{search?: string, role?: string, trashed?: string}  $filters
-     * @return LengthAwarePaginator<int, self>
+     * @return PaginatorContract<int, self>
      */
-    public static function paginateFiltered(array $filters, int $accountId): LengthAwarePaginator
+    public static function paginateFiltered(array $filters, int $accountId): PaginatorContract
     {
         $model = new self;
         $search = $filters['search'] ?? null;
@@ -47,7 +48,10 @@ trait Filterable
         $query = static::search($search)->where('account_id', $accountId);
         $model->applyFilters($query, $filters);
 
-        return $model->paginateSearch($query, orderByKey: true);
+        $paginator = $model->orderSearch($query, orderByKey: true)->paginate()->appends(['query' => null]);
+        $model->newCollection($paginator->items())->loadMissing($model->searchRelations());
+
+        return $paginator;
     }
 
     /** @param Builder<self> $query */
@@ -84,24 +88,17 @@ trait Filterable
      */
     private function paginateTypesense(Builder $databaseQuery, string $search, array $filters, int $accountId, bool $retryOnGenerationChange = true): LengthAwarePaginator
     {
-        $index = app(SearchIndex::class);
-        $state = $index->readyState($accountId, static::class);
         $generation = app(SearchGenerations::class)->activeGeneration();
         $query = static::search($search, fn (Documents $documents, string $term, array $parameters): array => $documents->search($parameters))
             ->within(SearchGenerations::collection($this, $generation))
             ->where('account_id', $accountId)
             ->where('search_deleted', false)
-            ->where('search_revision', '>=', $state['rebuildRevision'])
-            ->options(['filter_curated_hits' => true])
-            ->withRawResults(function (array $results): void {
-                if ($results['search_cutoff'] ?? false) {
-                    throw new SearchIndexUnavailable;
-                }
-            });
+            ->where('search_revision', '>=', app(SearchIndex::class)->completedRebuildRevision($accountId))
+            ->options(['filter_curated_hits' => true]);
         $this->applyFilters($query, $filters);
 
         try {
-            $paginator = $this->paginateSearch($query);
+            $paginator = $this->orderSearch($query)->paginateRaw();
         } catch (ObjectNotFound $exception) {
             if ($retryOnGenerationChange && $generation !== app(SearchGenerations::class)->activeGeneration()) {
                 return $this->paginateTypesense($databaseQuery, $search, $filters, $accountId, retryOnGenerationChange: false);
@@ -112,23 +109,21 @@ trait Filterable
             throw new SearchIndexUnavailable($exception);
         }
 
-        $expectedCount = min($paginator->perPage(), max(0, $paginator->total() - ($paginator->currentPage() - 1) * $paginator->perPage()));
-        $ids = $this->newCollection($paginator->items())->modelKeys();
+        $ids = $this->searchableUsing()->mapIds($paginator->items())->all();
+        $positions = array_flip($ids);
+        $models = $databaseQuery->whereKey($ids)->with($this->searchRelations())->get()
+            ->sortBy(fn (self $model): int => $positions[$model->getScoutKey()])->values();
 
-        if (count($ids) !== $expectedCount || $databaseQuery->whereKey($ids)->count() !== count($ids)) {
-            throw new SearchIndexUnavailable;
-        }
-
-        $index->assertUnchanged($accountId, $state['revision'], static::class);
-
-        return $paginator;
+        return new LengthAwarePaginator($models, $paginator->total(), $paginator->perPage(), $paginator->currentPage(), [
+            'path' => $paginator->path(),
+        ]);
     }
 
     /**
      * @param  SearchBuilder<self>  $query
-     * @return LengthAwarePaginator<int, self>
+     * @return SearchBuilder<self>
      */
-    private function paginateSearch(SearchBuilder $query, bool $orderByKey = false): LengthAwarePaginator
+    private function orderSearch(SearchBuilder $query, bool $orderByKey = false): SearchBuilder
     {
         foreach ($this->nameOrderColumns() as $column) {
             $query->orderBy($column);
@@ -138,10 +133,7 @@ trait Filterable
             $query->orderBy($this->getKeyName());
         }
 
-        $paginator = $query->paginate()->appends(['query' => null]);
-        $this->newCollection($paginator->items())->loadMissing($this->searchRelations());
-
-        return $paginator;
+        return $query;
     }
 
     /**
