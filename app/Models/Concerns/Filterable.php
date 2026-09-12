@@ -12,7 +12,9 @@ use Illuminate\Database\Eloquent\Builder;
 use Laravel\Scout\Builder as SearchBuilder;
 use Laravel\Scout\Engines\TypesenseEngine;
 use Laravel\Scout\Searchable;
-use LogicException;
+use Typesense\Client;
+use Typesense\Documents;
+use Typesense\Exceptions\TypesenseClientError;
 
 /**
  * @mixin Searchable
@@ -20,6 +22,8 @@ use LogicException;
 trait Filterable
 {
     /**
+     * Within an existing transaction, the caller must provide a consistent database snapshot.
+     *
      * @param  array{search?: string, role?: string, trashed?: string}  $filters
      * @return LengthAwarePaginator<int, self>
      */
@@ -27,44 +31,21 @@ trait Filterable
     {
         $model = new self;
         $search = $filters['search'] ?? null;
+        $databaseQuery = $model->newQuery()->where('account_id', $accountId);
+        $model->applyFilters($databaseQuery, $filters);
 
         if ($search === null) {
-            $query = $model->newQuery()->where('account_id', $accountId)
-                ->with($model->searchRelations())->orderByName();
-            $model->applyFilters($query, $filters);
+            return $databaseQuery->with($model->searchRelations())->orderByName()->paginate();
+        }
 
-            return $query->paginate();
+        if ($model->searchableUsing() instanceof TypesenseEngine) {
+            return $model->paginateTypesense($databaseQuery, $search);
         }
 
         $query = static::search($search)->where('account_id', $accountId);
         $model->applyFilters($query, $filters);
 
-        foreach ($model->nameOrderColumns() as $column) {
-            $query->orderBy($column);
-        }
-
-        $query->orderBy($model->searchableUsing() instanceof TypesenseEngine ? 'sort_id' : $model->getKeyName());
-
-        $paginator = $query->paginate()->appends(['query' => null]);
-
-        if (! $paginator instanceof \Illuminate\Pagination\LengthAwarePaginator) {
-            throw new LogicException('Search pagination must support replacing its collection.');
-        }
-
-        $items = $model->newCollection($paginator->items())->where('account_id', $accountId);
-        $items = match (TrashedFilter::tryFrom($filters['trashed'] ?? '')) {
-            TrashedFilter::With => $items,
-            TrashedFilter::Only => $items->whereNotNull('deleted_at'),
-            default => $items->whereNull('deleted_at'),
-        };
-
-        if (($role = Role::tryFrom($filters['role'] ?? '')) !== null) {
-            $items = $items->where('owner', $role === Role::Owner);
-        }
-
-        $paginator->setCollection($items->values()->loadMissing($model->searchRelations()));
-
-        return $paginator;
+        return $model->paginateSearch($query, orderByKey: true);
     }
 
     /** @param Builder<self> $query */
@@ -92,6 +73,62 @@ trait Filterable
     protected function searchRelations(): array
     {
         return [];
+    }
+
+    /**
+     * @param  Builder<self>  $databaseQuery
+     * @return LengthAwarePaginator<int, self>
+     */
+    private function paginateTypesense(Builder $databaseQuery, string $search): LengthAwarePaginator
+    {
+        return $this->getConnection()->transaction(function () use ($databaseQuery, $search): LengthAwarePaginator {
+            $connection = $this->getConnection();
+
+            if ($connection->getDriverName() === 'pgsql' && $connection->transactionLevel() === 1) {
+                $connection->statement('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ ONLY');
+            }
+
+            $ids = $databaseQuery->pluck($this->getKeyName());
+
+            if ($ids->isEmpty()) {
+                return $databaseQuery->paginate();
+            }
+
+            $query = static::search($search, function (Documents $documents, string $term, array $parameters): array {
+                $response = app(Client::class)->getMultiSearch()->perform([
+                    'searches' => [['collection' => $this->indexableAs(), ...$parameters]],
+                ]);
+                $result = $response['results'][0];
+
+                if (isset($result['error'])) {
+                    throw new TypesenseClientError($result['error'], $result['code']);
+                }
+
+                return $result;
+            })->withTrashed()->whereIn('id', $ids)->options(['filter_curated_hits' => true]);
+
+            return $this->paginateSearch($query);
+        });
+    }
+
+    /**
+     * @param  SearchBuilder<self>  $query
+     * @return LengthAwarePaginator<int, self>
+     */
+    private function paginateSearch(SearchBuilder $query, bool $orderByKey = false): LengthAwarePaginator
+    {
+        foreach ($this->nameOrderColumns() as $column) {
+            $query->orderBy($column);
+        }
+
+        if ($orderByKey) {
+            $query->orderBy($this->getKeyName());
+        }
+
+        $paginator = $query->paginate()->appends(['query' => null]);
+        $this->newCollection($paginator->items())->loadMissing($this->searchRelations());
+
+        return $paginator;
     }
 
     /**
