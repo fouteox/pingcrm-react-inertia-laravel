@@ -177,6 +177,7 @@ return [
                 'protocol' => env('TYPESENSE_PROTOCOL', 'http'),
             ],
             'connection_timeout_seconds' => env('TYPESENSE_CONNECTION_TIMEOUT_SECONDS', 2),
+            'request_timeout_seconds' => env('TYPESENSE_REQUEST_TIMEOUT_SECONDS', 5),
             'healthcheck_interval_seconds' => env('TYPESENSE_HEALTHCHECK_INTERVAL_SECONDS', 30),
             'num_retries' => env('TYPESENSE_NUM_RETRIES', 3),
             'retry_interval_seconds' => env('TYPESENSE_RETRY_INTERVAL_SECONDS', 1),

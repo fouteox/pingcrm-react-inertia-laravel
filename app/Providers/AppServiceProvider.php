@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use GuzzleHttp\Client as HttpClient;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Vite;
@@ -28,7 +29,13 @@ final class AppServiceProvider extends ServiceProvider
     {
         JsonResource::withoutWrapping();
 
-        $this->app->bind(Client::class, fn () => new Client(Config::array('scout.typesense.client-settings')));
+        $this->app->bind(Client::class, fn () => new Client([
+            ...Config::array('scout.typesense.client-settings'),
+            'client' => new HttpClient([
+                'connect_timeout' => Config::get('scout.typesense.client-settings.connection_timeout_seconds'),
+                'timeout' => Config::get('scout.typesense.client-settings.request_timeout_seconds'),
+            ]),
+        ]));
     }
 
     /**
