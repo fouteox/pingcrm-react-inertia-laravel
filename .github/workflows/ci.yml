@@ -476,7 +476,7 @@ jobs:
             # évoluer l'action et son moteur atomiquement. Bloquant via
             # annotations + exit codes ; le mode SARIF (advanced-security) ne
             # fait jamais échouer le job.
-            - uses: zizmorcore/zizmor-action@3dc1ecc9bcb9e94e9b2c709687979e1298497054 # v0.6.2
+            - uses: zizmorcore/zizmor-action@53290badfa369cb0bf7ad16342cb62c2fa47ac7b # v0.8.0
               with:
                 persona: regular
                 advanced-security: false
