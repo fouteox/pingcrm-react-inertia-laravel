@@ -1,12 +1,12 @@
 # PingCRM - Modern Laravel Example Application
 
-PingCRM is a demo application built with Laravel 13, Inertia.js v3, React 19, and Tailwind CSS v4. It demonstrates how to build modern, full-stack applications with these technologies while showcasing many advanced Laravel features.
+PingCRM is a demo application built with Laravel 13, Inertia.js v3, Svelte 5, and Tailwind CSS v4. It demonstrates how to build modern, full-stack applications with these technologies while showcasing many advanced Laravel features.
 
 ## Features
 - **[Laravel 13](https://laravel.com/)**: The latest version of Laravel
 - **[Inertia.js v3](https://inertiajs.com/)**: With SSR
-- **[React 19](https://react.dev/)**: The latest version of React
-- **[Tailwind CSS v4](https://tailwindcss.com/)**: With shadcn
+- **[Svelte 5](https://svelte.dev/)**: With runes (`$state`, `$derived`, `$props`)
+- **[Tailwind CSS v4](https://tailwindcss.com/)**: With [shadcn-svelte](https://shadcn-svelte.com/) components built on [Bits UI](https://bits-ui.com/)
 - **[TypeScript](https://www.typescriptlang.org/)**
 - **[Internationalization](https://www.i18next.com/)**: i18next for seamless multi-language support (EN/FR)
 - Laravel Features:
@@ -29,4 +29,4 @@ The project includes a GitHub Actions workflow that builds and publishes a conta
 
 ## Credits
 The [original Vue.js](https://github.com/inertiajs/pingcrm) version was created by [Jonathan Reinink](https://github.com/reinink).
-A [React version](https://github.com/liorocks/pingcrm-react) was later created by [Lior Rocks](https://github.com/liorocks), which served as inspiration for this implementation.
+A [React version](https://github.com/liorocks/pingcrm-react) was later created by [Lior Rocks](https://github.com/liorocks), which served as inspiration for this implementation. This branch is a Svelte port of the React implementation, kept page-for-page identical so the two can be compared.

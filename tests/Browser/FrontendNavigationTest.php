@@ -8,7 +8,8 @@ it('marks the current resource navigation active including nested pages and filt
     $this->actingAs(User::factory()->create(['owner' => true]));
 
     visit($path)
-        ->assertAttribute('[data-slot="sidebar-content"] [data-slot="sidebar-menu-button"][href="'.$navigationPath.'"]', 'aria-current', 'page')
+        // Inertia's Svelte <Link> rewrites `href` to an absolute URL, so compare the pathname.
+        ->assertScript('new URL(document.querySelector(\'[data-slot="sidebar-content"] [data-slot="sidebar-menu-button"][aria-current="page"]\').href).pathname', $navigationPath)
         ->assertNoJavaScriptErrors();
 })->with([
     'dashboard' => ['/', '/'],

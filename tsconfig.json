@@ -3,11 +3,11 @@
         "allowJs": true,
         "module": "ESNext",
         "moduleResolution": "bundler",
-        "jsx": "react-jsx",
         "strict": true,
         "noUnusedLocals": true,
         "noUnusedParameters": true,
         "isolatedModules": true,
+        "verbatimModuleSyntax": true,
         "target": "ESNext",
         "forceConsistentCasingInFileNames": true,
         "skipLibCheck": true,
@@ -16,6 +16,6 @@
             "@/*": ["./resources/js/*"]
         },
     },
-    "include": ["resources/js/**/*.ts", "resources/js/**/*.d.ts", "resources/js/**/*.tsx"],
+    "include": ["resources/js/**/*.ts", "resources/js/**/*.d.ts", "resources/js/**/*.svelte"],
     "exclude": ["resources/js/wayfinder/echo-broadcast-events.d.ts"]
 }
