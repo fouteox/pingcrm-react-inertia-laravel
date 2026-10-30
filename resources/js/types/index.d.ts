@@ -1,5 +1,6 @@
-import type { InertiaLinkProps } from '@inertiajs/react';
-import type { LucideIcon } from 'lucide-react';
+import type { Link } from '@inertiajs/svelte';
+import type { LucideIcon } from '@lucide/svelte';
+import type { ComponentProps } from 'svelte';
 import type { Inertia } from '@/wayfinder/types';
 import type { UserResource } from './resources';
 
@@ -12,7 +13,7 @@ export interface BreadcrumbItem {
 export interface NavItem {
     title: string;
     count?: number;
-    href: NonNullable<InertiaLinkProps['href']>;
+    href: NonNullable<ComponentProps<typeof Link>['href']>;
     icon?: LucideIcon | null;
 }
 

@@ -1,0 +1,19 @@
+<script lang="ts">
+    import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+    import { getInitials } from '@/hooks/use-initials';
+
+    let { user, showEmail = false }: { user: { name: string; email: string; avatar?: string }; showEmail?: boolean } = $props();
+</script>
+
+<Avatar class="size-8 overflow-hidden rounded-full">
+    <AvatarImage src={user.avatar} alt={user.name} />
+    <AvatarFallback class="rounded-lg bg-neutral-200 text-black dark:bg-neutral-700 dark:text-white">
+        {getInitials(user.name)}
+    </AvatarFallback>
+</Avatar>
+<div class="grid flex-1 text-left text-sm leading-tight">
+    <span class="truncate font-medium">{user.name}</span>
+    {#if showEmail}
+        <span class="truncate text-xs text-muted-foreground">{user.email}</span>
+    {/if}
+</div>

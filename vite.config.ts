@@ -1,7 +1,7 @@
 import inertia from '@inertiajs/vite';
 import { wayfinder } from '@laravel/vite-plugin-wayfinder';
+import { svelte } from '@sveltejs/vite-plugin-svelte';
 import tailwindcss from '@tailwindcss/vite';
-import react from '@vitejs/plugin-react';
 import laravel from 'laravel-vite-plugin';
 import { defineConfig } from 'vite-plus';
 
@@ -32,21 +32,15 @@ export default defineConfig({
     },
     lint: {
         ignorePatterns: ['**/*', '!resources/**', 'resources/js/wayfinder/**'],
-        plugins: ['unicorn', 'typescript', 'oxc', 'react', 'jsx-a11y'],
-        rules: {
-            'react/rules-of-hooks': 'error',
-            'react/exhaustive-deps': 'error',
-            // Composite controls and SVGs need explicit roles without changing their element.
-            'jsx-a11y/prefer-tag-over-role': 'off',
-        },
+        plugins: ['unicorn', 'typescript', 'oxc'],
     },
     plugins: [
         laravel({
-            input: ['resources/css/app.css', 'resources/js/app.tsx'],
+            input: ['resources/css/app.css', 'resources/js/app.ts'],
             refresh: true,
         }),
         inertia(),
-        react(),
+        svelte(),
         tailwindcss(),
         wayfinder(),
     ],

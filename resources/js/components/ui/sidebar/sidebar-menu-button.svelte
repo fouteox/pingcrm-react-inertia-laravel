@@ -1,0 +1,99 @@
+<script lang="ts" module>
+    import { tv, type VariantProps } from 'tailwind-variants';
+
+    export const sidebarMenuButtonVariants = tv({
+        base: 'peer/menu-button group/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm ring-sidebar-ring outline-hidden transition-[width,height,padding] group-has-data-[sidebar=menu-action]/menu-item:pr-8 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-[state=open]:hover:bg-sidebar-accent data-[state=open]:hover:text-sidebar-accent-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:font-medium data-[active=true]:text-sidebar-accent-foreground [&_svg]:size-4 [&_svg]:shrink-0 [&>span:last-child]:truncate',
+        variants: {
+            variant: {
+                default: 'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+                outline:
+                    'bg-background shadow-[0_0_0_1px_hsl(var(--sidebar-border))] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-[0_0_0_1px_hsl(var(--sidebar-accent))]',
+            },
+            size: {
+                default: 'h-8 text-sm',
+                sm: 'h-7 text-xs',
+                lg: 'h-12 text-sm group-data-[collapsible=icon]:p-0!',
+            },
+        },
+        defaultVariants: {
+            variant: 'default',
+            size: 'default',
+        },
+    });
+
+    export type SidebarMenuButtonVariant = VariantProps<typeof sidebarMenuButtonVariants>['variant'];
+    export type SidebarMenuButtonSize = VariantProps<typeof sidebarMenuButtonVariants>['size'];
+</script>
+
+<script lang="ts">
+    import { mergeProps } from 'bits-ui';
+    import type { Snippet } from 'svelte';
+    import type { HTMLAttributes } from 'svelte/elements';
+    import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+    import { cn, type WithElementRef } from '@/lib/utils';
+    import { useSidebar } from './context.svelte';
+
+    let {
+        ref = $bindable(null),
+        class: className,
+        children,
+        child,
+        variant = 'default',
+        size = 'default',
+        isActive = false,
+        tooltipContent,
+        ...restProps
+    }: WithElementRef<HTMLAttributes<HTMLButtonElement>, HTMLButtonElement> & {
+        isActive?: boolean;
+        variant?: SidebarMenuButtonVariant;
+        size?: SidebarMenuButtonSize;
+        tooltipContent?: Snippet | string;
+        child?: Snippet<[{ props: Record<string, unknown> }]>;
+    } = $props();
+
+    const sidebar = useSidebar();
+
+    const buttonProps = $derived({
+        class: cn(sidebarMenuButtonVariants({ variant, size }), className),
+        'data-slot': 'sidebar-menu-button',
+        'data-sidebar': 'menu-button',
+        'data-size': size,
+        'data-active': isActive,
+        ...restProps,
+    });
+</script>
+
+<!--
+    A local snippet lets us render the same button with or without the
+    tooltip wrapper. When the parent passes `child`, it renders its own element
+    (an Inertia <Link>, a dropdown trigger...) with the merged props.
+-->
+{#snippet Button({ props }: { props?: Record<string, unknown> })}
+    {@const mergedProps = mergeProps(buttonProps, props)}
+    {#if child}
+        {@render child({ props: mergedProps })}
+    {:else}
+        <button bind:this={ref} {...mergedProps}>
+            {@render children?.()}
+        </button>
+    {/if}
+{/snippet}
+
+{#if !tooltipContent}
+    {@render Button({})}
+{:else}
+    <Tooltip>
+        <TooltipTrigger>
+            {#snippet child({ props })}
+                {@render Button({ props })}
+            {/snippet}
+        </TooltipTrigger>
+        <TooltipContent side="right" align="center" hidden={sidebar.state !== 'collapsed' || sidebar.isMobile}>
+            {#if typeof tooltipContent === 'string'}
+                {tooltipContent}
+            {:else}
+                {@render tooltipContent()}
+            {/if}
+        </TooltipContent>
+    </Tooltip>
+{/if}

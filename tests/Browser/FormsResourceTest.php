@@ -84,7 +84,7 @@ it('shows each new action flash after returning through browser history', functi
         ->submit()
         ->assertSee('Organization updated.');
 
-    $page->click('[data-slot="sidebar-content"] a[href="/contacts"]')
+    $page->click('[data-slot="sidebar-content"] a[href$="/contacts"]')
         ->assertPathIs('/contacts')
         ->assertDontSee('Organization updated.')
         ->back()
