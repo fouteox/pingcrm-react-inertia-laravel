@@ -16,11 +16,11 @@
     "devDependencies": {
         "@laravel/echo-react": "2.4.0",
         "@laravel/vite-plugin-wayfinder": "0.1.10",
-        "concurrently": "10.0.5",
+        "concurrently": "10.0.6",
         "knip": "6.35.1",
         "playwright": "1.63.0",
-        "vite": "npm:@voidzero-dev/vite-plus-core@0.3.1",
-        "vite-plus": "0.3.1"
+        "vite": "npm:@voidzero-dev/vite-plus-core@1.4.0",
+        "vite-plus": "1.4.0"
     },
     "dependencies": {
         "@base-ui/react": "1.8.0",
@@ -34,7 +34,7 @@
         "clsx": "2.1.1",
         "i18next": "26.4.2",
         "i18next-browser-languagedetector": "8.2.1",
-        "i18next-http-backend": "4.0.2",
+        "i18next-http-backend": "4.0.4",
         "laravel-echo": "2.4.0",
         "laravel-vite-plugin": "3.2.0",
         "lucide-react": "1.43.0",
@@ -50,7 +50,7 @@
         "uuid": "14.0.2"
     },
     "overrides": {
-        "vite": "npm:@voidzero-dev/vite-plus-core@0.3.1"
+        "vite": "npm:@voidzero-dev/vite-plus-core@1.4.0"
     },
     "trustedDependencies": [
         "@tailwindcss/oxide"

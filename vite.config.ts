@@ -13,8 +13,8 @@ export default defineConfig({
         semi: true,
         singleQuote: true,
         ignorePatterns: [
-            '**/*',
-            '!resources/**',
+            '/*',
+            '!/resources/',
             'resources/js/components/ui/**',
             'resources/js/wayfinder/**',
         ],
