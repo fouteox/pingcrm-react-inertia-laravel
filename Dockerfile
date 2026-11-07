@@ -69,7 +69,7 @@ RUN composer dump-autoload --classmap-authoritative --no-dev
 # Declared as a FROM so Dependabot sees and bumps it: images referenced only
 # in a COPY --from are invisible to its docker ecosystem.
 ############################################
-FROM oven/bun:1.4-debian@sha256:4f6e31d1a54d6a3dd312daef655fc998101b5043d52e12592ac293ef04b9bc73 AS bun
+FROM oven/bun:1.4-debian@sha256:93d5032fe06d163427822dc1598f420363759bb18155c9cc90eb1be05a64a19e AS bun
 
 ############################################
 # App Image (also runs SSR via `php artisan inertia:start-ssr --runtime=bun`)
