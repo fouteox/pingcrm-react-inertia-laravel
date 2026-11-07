@@ -15751,16 +15751,16 @@
         },
         {
             "name": "symfony/yaml",
-            "version": "v8.1.6",
+            "version": "v8.1.11",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/yaml.git",
-                "reference": "0b4aa53a67f9fece88c665f1a1dadcfd25d93fe5"
+                "reference": "e8266f55160f674f290a5f567cb55e11e21f921b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/yaml/zipball/0b4aa53a67f9fece88c665f1a1dadcfd25d93fe5",
-                "reference": "0b4aa53a67f9fece88c665f1a1dadcfd25d93fe5",
+                "url": "https://api.github.com/repos/symfony/yaml/zipball/e8266f55160f674f290a5f567cb55e11e21f921b",
+                "reference": "e8266f55160f674f290a5f567cb55e11e21f921b",
                 "shasum": ""
             },
             "require": {
@@ -15803,7 +15803,7 @@
             "description": "Loads and dumps YAML files",
             "homepage": "https://symfony.com",
             "support": {
-                "source": "https://github.com/symfony/yaml/tree/v8.1.6"
+                "source": "https://github.com/symfony/yaml/tree/v8.1.11"
             },
             "funding": [
                 {
@@ -15823,7 +15823,8 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-08-30T01:03:44+00:00"
+            "time": "2026-11-04T08:39:20+00:00",
+            "published-time": "2026-11-04T11:31:03+00:00"
         },
         {
             "name": "ta-tikoma/phpunit-architecture-test",
