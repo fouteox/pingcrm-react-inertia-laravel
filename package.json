@@ -14,40 +14,40 @@
         "deadcode": "knip"
     },
     "devDependencies": {
-        "@laravel/echo-react": "2.4.0",
-        "@laravel/vite-plugin-wayfinder": "0.1.10",
+        "@laravel/echo-react": "2.6.3",
+        "@laravel/vite-plugin-wayfinder": "0.1.11",
         "concurrently": "10.0.6",
-        "knip": "6.35.1",
+        "knip": "6.44.1",
         "playwright": "1.63.0",
         "vite": "npm:@voidzero-dev/vite-plus-core@1.4.0",
         "vite-plus": "1.4.0"
     },
     "dependencies": {
-        "@base-ui/react": "1.8.0",
-        "@inertiajs/react": "3.7.0",
-        "@inertiajs/vite": "3.7.0",
+        "@base-ui/react": "1.9.0",
+        "@inertiajs/react": "3.11.0",
+        "@inertiajs/vite": "3.11.0",
         "@tailwindcss/vite": "4.3.3",
         "@types/react": "19.3.0",
         "@types/react-dom": "19.3.0",
-        "@vitejs/plugin-react": "6.1.1",
+        "@vitejs/plugin-react": "6.2.1",
         "class-variance-authority": "0.7.1",
         "clsx": "2.1.1",
-        "i18next": "26.4.2",
-        "i18next-browser-languagedetector": "8.2.1",
-        "i18next-http-backend": "4.0.4",
-        "laravel-echo": "2.4.0",
+        "i18next": "26.7.1",
+        "i18next-browser-languagedetector": "8.3.0",
+        "i18next-http-backend": "4.0.10",
+        "laravel-echo": "2.6.3",
         "laravel-vite-plugin": "3.2.0",
         "lucide-react": "1.43.0",
         "pusher-js": "8.6.0",
         "react": "19.3.1",
         "react-dom": "19.3.1",
-        "react-i18next": "17.0.13",
+        "react-i18next": "17.1.12",
         "sonner": "2.0.8",
-        "tailwind-merge": "3.6.0",
+        "tailwind-merge": "3.7.0",
         "tailwindcss": "4.3.3",
         "tailwindcss-animate": "1.0.7",
         "typescript": "7.0.2",
-        "uuid": "14.0.2"
+        "uuid": "14.0.3"
     },
     "overrides": {
         "vite": "npm:@voidzero-dev/vite-plus-core@1.4.0"
@@ -55,5 +55,5 @@
     "trustedDependencies": [
         "@tailwindcss/oxide"
     ],
-    "packageManager": "bun@1.4.2"
+    "packageManager": "bun@1.4.4"
 }
