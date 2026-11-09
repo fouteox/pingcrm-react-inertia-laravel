@@ -92,6 +92,14 @@
     },
     "config": {
         "optimize-autoloader": true,
+        "policy": {
+            "abandoned": {
+                "ignore": {
+                    "dragon-code/contracts": "Dépendance transitive de laravel-lang/*, à retirer quand laravel-lang s'en sépare.",
+                    "dragon-code/support": "Dépendance transitive de laravel-lang/*, à retirer quand laravel-lang s'en sépare."
+                }
+            }
+        },
         "platform": {
             "php": "8.5.12"
         },
