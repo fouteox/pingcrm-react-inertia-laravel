@@ -35,8 +35,16 @@ final class SearchRebuildCommand extends Command
                 return self::FAILURE;
             }
 
+            $generation = self::text($this->option('prune'));
+
+            if ($generation === null) {
+                $this->error('Pruning requires the name of a retired generation.');
+
+                return self::FAILURE;
+            }
+
             try {
-                $generations->prune((string) $this->option('prune'));
+                $generations->prune($generation);
             } catch (InvalidArgumentException $exception) {
                 $this->error($exception->getMessage());
 
@@ -88,7 +96,7 @@ final class SearchRebuildCommand extends Command
         $accounts = Account::query();
 
         if ($accountId !== null) {
-            if (! ctype_digit((string) $accountId) || ! $accounts->whereKey($accountId)->exists()) {
+            if (! ctype_digit(self::text($accountId) ?? '') || ! $accounts->whereKey($accountId)->exists()) {
                 $this->error('The requested account does not exist.');
 
                 return self::FAILURE;
@@ -141,5 +149,13 @@ final class SearchRebuildCommand extends Command
         }
 
         return self::SUCCESS;
+    }
+
+    /**
+     * Console input arrives as a string, or as an int when passed programmatically.
+     */
+    private static function text(mixed $value): ?string
+    {
+        return is_string($value) || is_int($value) ? (string) $value : null;
     }
 }
