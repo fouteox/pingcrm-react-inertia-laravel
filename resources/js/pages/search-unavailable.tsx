@@ -30,6 +30,9 @@ export default function SearchUnavailable({ retryAfter, retryUrl, listUrl }: Sea
                 replace,
                 onStart: () => {
                     stop();
+                    // Inertia only cancels the in-flight retry once the next page renders;
+                    // leaving this page must stop it right away.
+                    router.cancelAll({ async: true, prefetch: false, sync: false });
                     setRetrying(true);
                 },
                 onFinish: () => setRetrying(false),
