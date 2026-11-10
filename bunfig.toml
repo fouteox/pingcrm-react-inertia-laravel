@@ -1,3 +1,8 @@
 # Keep new dependencies exact; Renovate updates the manifest and lock together.
 [install]
 exact = true
+# Carence de trois jours, comme Renovate : bun ne résout aucune version,
+# directe ou transitive, publiée depuis moins de 72 heures. Les mises à jour
+# de lockfile et les dépendances transitives des montées Renovate en
+# héritent ; le lock existant n'est pas réévalué.
+minimumReleaseAge = 259200 # secondes

@@ -98,6 +98,9 @@
                     "dragon-code/contracts": "Dépendance transitive de laravel-lang/*, à retirer quand laravel-lang s'en sépare.",
                     "dragon-code/support": "Dépendance transitive de laravel-lang/*, à retirer quand laravel-lang s'en sépare."
                 }
+            },
+            "cooldown": {
+                "period": "3 days"
             }
         },
         "platform": {
