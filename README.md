@@ -10,7 +10,7 @@ PingCRM is a demo application built with Laravel 13, Inertia.js v3, React 19, an
 - **[TypeScript](https://www.typescriptlang.org/)**
 - **[Internationalization](https://www.i18next.com/)**: i18next for seamless multi-language support (EN/FR)
 - Laravel Features:
-  - Queue processing with [Horizon](https://laravel.com/docs/13.x/horizon)
+  - [Queue](https://laravel.com/docs/13.x/queues) processing
   - [Task scheduling](https://laravel.com/docs/13.x/scheduling)
   - Real-time websockets with [Reverb](https://laravel.com/docs/13.x/reverb)
   - [Octane](https://laravel.com/docs/13.x/octane)
