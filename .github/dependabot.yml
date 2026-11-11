@@ -1,8 +1,10 @@
-# Renovate gère les mises à jour de version (fouteox/renovate-runner).
-# Dependabot ne sert qu'aux mises à jour de sécurité : la limite à 0 coupe ses
-# PR de version sans toucher à celles de sécurité, limitées à part à 10.
-# Sans entrée bun, Dependabot traitait bun.lock avec npm_and_yarn, qui ne sait
-# pas le mettre à jour.
+# Déclare à Dependabot que ce dossier est géré par Bun. Sans cette entrée, il
+# traitait bun.lock avec npm_and_yarn, qui ne sait pas le mettre à jour, et
+# ses jobs de sécurité échouaient.
+# Dependabot ne fait aucune mise à jour de sécurité pour Bun : les PR de
+# sécurité JavaScript viennent de Renovate (profil apps de
+# fouteox/renovate-runner), comme ses mises à jour de version. La limite à 0
+# coupe donc aussi les PR de version de Dependabot.
 version: 2
 updates:
   - package-ecosystem: bun
