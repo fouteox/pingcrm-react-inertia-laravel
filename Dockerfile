@@ -73,6 +73,8 @@ FROM oven/bun:1.4-debian@sha256:93d5032fe06d163427822dc1598f420363759bb18155c9cc
 
 ############################################
 # App Image (also runs SSR via `php artisan inertia:start-ssr --runtime=bun`)
+# The SSR bundle (bootstrap/ssr) carries its own dependencies (ssr.noExternal
+# in vite.config.ts): the image ships bun but no node_modules.
 ############################################
 FROM base AS app
 

@@ -12,7 +12,7 @@ import { defineConfig } from 'vite-plus';
 // quand CI=true.
 const isTestRun = process.env.VITEST !== undefined;
 
-export default defineConfig({
+export default defineConfig(({ isSsrBuild }) => ({
     fmt: {
         printWidth: 150,
         tabWidth: 4,
@@ -64,11 +64,14 @@ export default defineConfig({
         // `paths` de tsconfig.json.
         alias: { '@': fileURLToPath(new URL('./resources/js', import.meta.url)) },
     },
+    // Build SSR autonome : l'image de production ne livre pas node_modules, le
+    // bundle embarque donc toutes ses dépendances. `vp dev` garde les siennes
+    // externes, son module runner n'évaluant pas leur CommonJS.
     ssr: {
-        noExternal: ['@inertiajs/server'],
+        noExternal: isSsrBuild ? true : ['@inertiajs/server'],
     },
     test: {
         include: ['resources/js/**/*.test.{ts,tsx}'],
         environment: 'node',
     },
-});
+}));

@@ -24,6 +24,9 @@ Dockerfile
 docs/
 tests/
 vendor/
+# Le bundle SSR embarque ses dépendances (ssr.noExternal) : l'image ne livre pas
+# node_modules.
+node_modules/
 .editorconfig
 .env*
 /.phpunit.cache
