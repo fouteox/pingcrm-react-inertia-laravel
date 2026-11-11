@@ -1,0 +1,16 @@
+# Renovate gère les mises à jour de version (fouteox/renovate-runner).
+# Dependabot ne sert qu'aux mises à jour de sécurité : la limite à 0 coupe ses
+# PR de version sans toucher à celles de sécurité, limitées à part à 10.
+# Sans entrée bun, Dependabot traitait bun.lock avec npm_and_yarn, qui ne sait
+# pas le mettre à jour.
+version: 2
+updates:
+  - package-ecosystem: bun
+    directory: /
+    schedule:
+      interval: weekly
+    open-pull-requests-limit: 0
+    # Carence de trois jours, comme Renovate et bunfig.toml. Elle ne vaut que
+    # pour les mises à jour de version, coupées ici.
+    cooldown:
+      default-days: 3
