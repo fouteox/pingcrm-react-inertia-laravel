@@ -1,9 +1,16 @@
+import { fileURLToPath } from 'node:url';
 import inertia from '@inertiajs/vite';
 import { wayfinder } from '@laravel/vite-plugin-wayfinder';
 import tailwindcss from '@tailwindcss/vite';
 import react from '@vitejs/plugin-react';
 import laravel from 'laravel-vite-plugin';
 import { defineConfig } from 'vite-plus';
+
+// Les tests unitaires importent directement les sources : ils n'ont besoin ni
+// du manifest Laravel, ni des routes Wayfinder générées par artisan, ni des
+// autres plugins de build. laravel-vite-plugin refuse en plus de démarrer
+// quand CI=true.
+const isTestRun = process.env.VITEST !== undefined;
 
 export default defineConfig({
     fmt: {
@@ -40,17 +47,28 @@ export default defineConfig({
             'jsx-a11y/prefer-tag-over-role': 'off',
         },
     },
-    plugins: [
-        laravel({
-            input: ['resources/css/app.css', 'resources/js/app.tsx'],
-            refresh: true,
-        }),
-        inertia(),
-        react(),
-        tailwindcss(),
-        wayfinder(),
-    ],
+    plugins: isTestRun
+        ? []
+        : [
+              laravel({
+                  input: ['resources/css/app.css', 'resources/js/app.tsx'],
+                  refresh: true,
+              }),
+              inertia(),
+              react(),
+              tailwindcss(),
+              wayfinder(),
+          ],
+    resolve: {
+        // Repris de laravel-vite-plugin, absent du run de tests, et miroir du
+        // `paths` de tsconfig.json.
+        alias: { '@': fileURLToPath(new URL('./resources/js', import.meta.url)) },
+    },
     ssr: {
         noExternal: ['@inertiajs/server'],
+    },
+    test: {
+        include: ['resources/js/**/*.test.{ts,tsx}'],
+        environment: 'node',
     },
 });

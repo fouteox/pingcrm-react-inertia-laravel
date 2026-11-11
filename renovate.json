@@ -66,6 +66,13 @@
       "groupName": "PHP runtime digest refresh",
       "groupSlug": "php-runtime-digest",
       "minimumGroupSize": 1
+    },
+    {
+      "description": "vite-plus exige que l'override vitest suive la version de Vitest qu'il embarque (viteplus.dev/guide/upgrade-project) : le pin voyage dans la PR du groupe vite-plus, et la CI refuse un écart.",
+      "matchDepNames": [
+        "vitest"
+      ],
+      "groupName": "vite-plus monorepo"
     }
   ]
 }
