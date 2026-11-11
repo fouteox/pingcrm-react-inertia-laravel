@@ -20,6 +20,8 @@ docker run --rm --entrypoint sh "$image_ref" -euc '
     bun --version
     test -s public/build/manifest.json
     find bootstrap/ssr -maxdepth 1 -type f -name "*.js" -print -quit | grep -q .
+    # Bundle SSR autonome (ssr.noExternal) : aucun node_modules dans cette image.
+    test ! -e node_modules
     php -r '\''
         foreach (["bcmath", "intl", "pdo_pgsql"] as $extension) {
             if (! extension_loaded($extension)) {
@@ -35,6 +37,7 @@ runtime_env=(
     --env APP_DEBUG=false
     --env APP_KEY=base64:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=
     --env APP_URL=http://127.0.0.1:8080
+    --env BROADCAST_CONNECTION=log
     --env CACHE_STORE=array
     --env DB_CONNECTION=pgsql
     --env DB_HOST=127.0.0.1
@@ -45,6 +48,7 @@ runtime_env=(
     --env LOG_CHANNEL=stderr
     --env MAIL_MAILER=log
     --env QUEUE_CONNECTION=sync
+    --env REVERB_APP_KEY=smoke
     --env SESSION_DRIVER=array
 )
 
@@ -54,22 +58,54 @@ docker run --rm --network host \
     "$image_ref" \
     artisan migrate --force --no-interaction
 
-container_id=''
+containers=()
 
 cleanup() {
-    if [[ -n "$container_id" ]]; then
-        docker rm --force "$container_id" >/dev/null 2>&1 || true
+    if ((${#containers[@]})); then
+        docker rm --force "${containers[@]}" >/dev/null 2>&1 || true
     fi
 }
 
 trap cleanup EXIT
 
-container_id=$(docker run --detach --network host \
-    "${runtime_env[@]}" \
-    --env AUTORUN_ENABLED=false \
-    --env HEALTHCHECK_PATH=/up \
-    --env SSL_MODE=off \
-    "$image_ref")
+# Lance l'image en arrière-plan, avec sa commande par défaut ou celle passée
+# en argument, et garde l'identifiant du conteneur dans container_id.
+start_container() {
+    container_id=$(docker run --detach --network host \
+        "${runtime_env[@]}" \
+        --env AUTORUN_ENABLED=false \
+        --env HEALTHCHECK_PATH=/up \
+        --env SSL_MODE=off \
+        "$image_ref" "$@")
+    containers+=("$container_id")
+}
+
+# Serveur SSR lancé comme le pod ssr de gitops. Il tourne sans node_modules :
+# s'il ne démarre pas ou ne rend pas la page, le bundle n'est pas autonome.
+start_container php artisan inertia:start-ssr --runtime=bun --no-stop-before-start
+ssr_container_id=$container_id
+ssr_healthy=false
+
+for _ in {1..30}; do
+    if [[ $(docker inspect --format '{{.State.Running}}' "$ssr_container_id") != true ]]; then
+        break
+    fi
+
+    if curl --fail --silent http://127.0.0.1:13714/health >/dev/null; then
+        ssr_healthy=true
+        break
+    fi
+
+    sleep 1
+done
+
+if [[ "$ssr_healthy" != true ]]; then
+    docker logs "$ssr_container_id" >&2
+    echo 'Le serveur SSR n'"'"'a pas répondu sur /health en 30 secondes.' >&2
+    exit 1
+fi
+
+start_container
 
 health=starting
 
@@ -102,3 +138,15 @@ if [[ "$health" != healthy ]]; then
 fi
 
 curl --fail --silent --show-error http://127.0.0.1:8080/up >/dev/null
+
+# Inertia retombe en silence sur le rendu client quand le SSR échoue : la page
+# doit donc porter la marque du rendu serveur, suivie du texte attendu.
+page=$(curl --fail --silent --show-error http://127.0.0.1:8080/login)
+markup=${page#*data-server-rendered=\"true\"}
+
+if [[ "$markup" == "$page" || "$markup" != *'Remember me'* ]]; then
+    docker logs "$ssr_container_id" >&2
+    docker logs "$container_id" >&2
+    echo 'La page /login ne sort pas du rendu SSR ou ne contient pas « Remember me ».' >&2
+    exit 1
+fi
