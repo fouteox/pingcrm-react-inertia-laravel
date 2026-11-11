@@ -10,12 +10,21 @@ use Illuminate\Support\Str;
 use Illuminate\Translation\FileLoader;
 use SplFileInfo;
 
-final readonly class I18NextTranslationsLoader
+final class I18NextTranslationsLoader
 {
+    /**
+     * Les fichiers de langue ne changent pas pendant la vie du processus : le
+     * service est un singleton, donc un worker Octane ne les convertit qu'une
+     * fois par locale au lieu de les relire à chaque chargement complet.
+     *
+     * @var array<string, array<string, string>>
+     */
+    private array $translationsByLocale = [];
+
     public function __construct(
-        private Filesystem $fs,
-        private FileLoader $loader,
-        private string $langPath,
+        private readonly Filesystem $fs,
+        private readonly FileLoader $loader,
+        private readonly string $langPath,
     ) {}
 
     /** @return array<string, string> */
@@ -28,6 +37,12 @@ final readonly class I18NextTranslationsLoader
             return [];
         }
 
+        return $this->translationsByLocale[$useLocale] ??= $this->convert($useLocale);
+    }
+
+    /** @return array<string, string> */
+    private function convert(string $useLocale): array
+    {
         $translations = $this->loader->load($useLocale, '*', '*');
         $groups = array_map(
             fn (SplFileInfo $file) => $file->getBasename('.php'),

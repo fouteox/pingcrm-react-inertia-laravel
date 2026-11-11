@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use App\Services\I18NextTranslationsLoader;
 use Laravel\Octane\Contracts\OperationTerminated;
 use Laravel\Octane\Events\RequestHandled;
 use Laravel\Octane\Events\RequestReceived;
@@ -152,6 +153,9 @@ return [
 
     'warm' => [
         ...Octane::defaultServicesToWarm(),
+        // Résolu au démarrage du worker pour que son cache de traductions, qui ne
+        // dépend d'aucune requête, survive au bac à sable de chaque requête.
+        I18NextTranslationsLoader::class,
     ],
 
     'flush' => [
