@@ -42,3 +42,16 @@ _ide_helper.php
 .phpunit.database.checksum
 rr
 .rr.yaml
+
+# Outillage de développement, inutile à l'exécution.
+.claude/
+.infrastructure/
+.mcp.json
+storage/wayfinder-cache/
+knip.json
+phpstan.neon
+phpunit.xml
+pint.json
+renovate.json
+boost.json
+Makefile
