@@ -17,6 +17,11 @@ jobs:
   # image is signed with a builder identity separate from this trigger
   # workflow (SLSA Build L3).
   build:
+    # Deux merges rapprochés ne doivent pas publier `latest` et le cache de
+    # build en parallèle ; le second attend, sans interrompre une signature.
+    concurrency:
+      group: build-and-push-production
+      cancel-in-progress: false
     if: >-
       github.event.pull_request.merged == true ||
       github.event_name == 'schedule' ||
