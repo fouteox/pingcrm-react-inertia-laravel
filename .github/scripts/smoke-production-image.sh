@@ -140,13 +140,22 @@ fi
 curl --fail --silent --show-error http://127.0.0.1:8080/up >/dev/null
 
 # Inertia retombe en silence sur le rendu client quand le SSR échoue : la page
-# doit donc porter la marque du rendu serveur, suivie du texte attendu.
-page=$(curl --fail --silent --show-error http://127.0.0.1:8080/login)
+# doit donc porter la marque du rendu serveur, suivie du texte attendu. Sans
+# Accept-Language, SetLocaleMiddleware retient le français : la langue est donc
+# demandée explicitement pour que le texte cherché soit déterministe.
+page=$(curl --fail --silent --show-error --header 'Accept-Language: en' http://127.0.0.1:8080/login)
 markup=${page#*data-server-rendered=\"true\"}
 
-if [[ "$markup" == "$page" || "$markup" != *'Remember me'* ]]; then
+if [[ "$markup" == "$page" ]]; then
     docker logs "$ssr_container_id" >&2
     docker logs "$container_id" >&2
-    echo 'La page /login ne sort pas du rendu SSR ou ne contient pas « Remember me ».' >&2
+    echo 'La page /login ne porte pas la marque du rendu SSR (data-server-rendered).' >&2
+    exit 1
+fi
+
+if [[ "$markup" != *'Remember me'* ]]; then
+    docker logs "$ssr_container_id" >&2
+    docker logs "$container_id" >&2
+    echo 'Le rendu SSR de /login ne contient pas « Remember me ».' >&2
     exit 1
 fi
