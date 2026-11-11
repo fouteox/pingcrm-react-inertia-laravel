@@ -10,7 +10,8 @@ updates:
     schedule:
       interval: weekly
     open-pull-requests-limit: 0
-    # Carence de trois jours, comme Renovate et bunfig.toml. Elle ne vaut que
-    # pour les mises à jour de version, coupées ici.
+    # Ne vaut que pour les mises à jour de version, coupées ici. zizmor exige
+    # au moins sept jours ; c'est plus strict que la carence de trois jours de
+    # Renovate et de bunfig.toml.
     cooldown:
-      default-days: 3
+      default-days: 7
