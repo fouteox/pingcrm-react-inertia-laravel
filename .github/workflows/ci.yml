@@ -36,40 +36,21 @@ jobs:
                   GH_TOKEN: ${{ github.token }}
               run: .github/scripts/verify-serversideup-base.sh
 
-            - name: Install checksum-verified Trivy
-              env:
-                  TRIVY_VERSION: 0.76.2
+            - name: Verify pinned Trivy runtime
               run: |
-                  case "$RUNNER_ARCH" in
-                    X64)
-                      archive="trivy_${TRIVY_VERSION}_Linux-64bit.tar.gz"
-                      checksum=bc0fc726e017b8927a62b2d3531d7a84ee01769daf5c99ed866dced54089fdbf
-                      ;;
-                    ARM64)
-                      archive="trivy_${TRIVY_VERSION}_Linux-ARM64.tar.gz"
-                      checksum=ab9d51f86e6a5fb936f605faff6b593ac51bc378fff4d3e8b9d58358b9c367c3
-                      ;;
-                    *)
-                      echo "Unsupported runner architecture: $RUNNER_ARCH" >&2
-                      exit 1
-                      ;;
-                  esac
-
-                  archive_path="$RUNNER_TEMP/$archive"
-                  curl --fail --silent --show-error --location \
-                    --retry 3 --retry-all-errors \
-                    "https://github.com/aquasecurity/trivy/releases/download/v${TRIVY_VERSION}/${archive}" \
-                    --output "$archive_path"
-                  printf '%s  %s\n' "$checksum" "$archive_path" | sha256sum --check -
-                  tar -xzf "$archive_path" -C "$RUNNER_TEMP" trivy
-                  echo "$RUNNER_TEMP" >> "$GITHUB_PATH"
-                  "$RUNNER_TEMP/trivy" --version
+                  # renovate: datasource=docker depName=ghcr.io/aquasecurity/trivy
+                  image_ref="ghcr.io/aquasecurity/trivy:0.76.2@sha256:8f6bb947dbc528902e11f2f5be52f7b519f6a39d5d148f41166f2040499768fb"
+                  docker run --rm --read-only --cap-drop ALL \
+                    --security-opt no-new-privileges:true \
+                    "$image_ref" --version
+                  echo "TRIVY_IMAGE_REF=$image_ref" >> "$GITHUB_ENV"
 
             - name: Reject newly introduced fixable HIGH/CRITICAL vulnerabilities
               env:
                   BASE_SHA: ${{ github.event.pull_request.base.sha }}
                   GH_TOKEN: ${{ github.token }}
                   TRIVY_CACHE_DIR: ${{ runner.temp }}/trivy-cache
+                  TRIVY_IMAGE_REF: ${{ env.TRIVY_IMAGE_REF }}
               run: .github/scripts/compare-base-vulnerabilities.sh
 
     php:

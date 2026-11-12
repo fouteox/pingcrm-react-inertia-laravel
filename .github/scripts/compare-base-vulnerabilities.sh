@@ -23,6 +23,24 @@ previous_ref=${PREVIOUS_IMAGE_REF:-}
 work_dir=$(mktemp -d)
 cache_dir=${TRIVY_CACHE_DIR:-"$work_dir/trivy-cache"}
 
+run_trivy() {
+    if [[ -z "${TRIVY_IMAGE_REF:-}" ]]; then
+        trivy "$@"
+        return
+    fi
+
+    mkdir -p "$cache_dir"
+    docker run --rm \
+        --read-only \
+        --tmpfs /tmp:rw,nosuid,nodev,noexec \
+        --cap-drop ALL \
+        --security-opt no-new-privileges:true \
+        --user "$(id -u):$(id -g)" \
+        --volume "$work_dir:$work_dir" \
+        --volume "$cache_dir:$cache_dir" \
+        "$TRIVY_IMAGE_REF" "$@"
+}
+
 cleanup() {
     rm -rf "$work_dir"
 }
@@ -58,7 +76,7 @@ for architecture in amd64 arm64; do
     current_report="$work_dir/current-$architecture.json"
     introduced_report="$work_dir/introduced-$architecture.json"
 
-    trivy image \
+    run_trivy image \
         --cache-dir "$cache_dir" \
         --quiet \
         --scanners vuln \
@@ -69,7 +87,7 @@ for architecture in amd64 arm64; do
         --platform "linux/$architecture" \
         "$previous_ref"
 
-    trivy image \
+    run_trivy image \
         --cache-dir "$cache_dir" \
         --quiet \
         --scanners vuln \
