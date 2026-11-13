@@ -44,7 +44,7 @@ USER www-data
 
 ############################################
 # Builder Stage (vendor only — JS assets are pre-built on the CI runner
-# against a real MariaDB so Wayfinder generates types that match production)
+# against a real PostgreSQL so Wayfinder generates types that match production)
 ############################################
 FROM base AS builder
 
