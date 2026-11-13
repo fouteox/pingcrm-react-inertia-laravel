@@ -45,7 +45,7 @@ final class ContactsController extends Controller
             'organizations' => $authenticatedUser->account()->firstOrFail()
                 ->organizations()
                 ->orderBy('name')
-                ->get()
+                ->get(['id', 'name'])
                 ->map
                 ->only('id', 'name'),
         ]);
@@ -71,7 +71,7 @@ final class ContactsController extends Controller
             'organizations' => new UserOrganizationCollection(
                 $authenticatedUser->account()->firstOrFail()->organizations()
                     ->orderBy('name')
-                    ->get()
+                    ->get(['id', 'name'])
             ),
         ]);
     }

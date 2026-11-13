@@ -8,10 +8,12 @@ use Database\Factories\ContactFactory;
 use Illuminate\Database\Eloquent\Attributes\Fillable;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Casts\Attribute;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Collection as BaseCollection;
 use Illuminate\Support\Facades\Auth;
 use Laravel\Scout\Searchable;
 
@@ -72,6 +74,22 @@ final class Contact extends Model
             'organization_name' => $this->organization->name ?? '',
             'created_at' => $this->created_at->timestamp ?? 0,
         ];
+    }
+
+    /**
+     * toSearchableArray lit l'organisation : elle est chargée en une requête
+     * pour tout le lot au lieu d'une par contact.
+     *
+     * @param  BaseCollection<int, static>  $models
+     * @return BaseCollection<int, static>
+     */
+    public function makeSearchableUsing(BaseCollection $models): BaseCollection
+    {
+        if ($models instanceof EloquentCollection) {
+            $models->loadMissing('organization');
+        }
+
+        return $models;
     }
 
     /** @return Attribute<string, never> */

@@ -6,6 +6,7 @@ namespace App\Providers;
 
 use GuzzleHttp\Client as HttpClient;
 use Illuminate\Contracts\Container\Container;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Http\Resources\Json\JsonResource;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Vite;
@@ -50,6 +51,14 @@ final class AppServiceProvider extends ServiceProvider
             $app->make(Client::class),
             (int) Config::get('scout.typesense.max_total_results', 1000),
         ));
+
+        // Hors production, un chargement paresseux (N+1) ou un attribut non
+        // « fillable » silencieusement ignoré lèvent une exception au lieu de
+        // n'apparaître qu'en production. L'accès aux attributs manquants reste
+        // toléré : un modèle tout juste créé ne porte pas ses colonnes à
+        // valeur par défaut (deleted_at) tant qu'il n'est pas relu.
+        Model::preventLazyLoading(! $this->app->isProduction());
+        Model::preventSilentlyDiscardingAttributes(! $this->app->isProduction());
 
         Vite::prefetch(concurrency: 3);
     }
