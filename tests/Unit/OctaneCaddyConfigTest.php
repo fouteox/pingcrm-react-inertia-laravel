@@ -61,3 +61,21 @@ it('leaves the native Octane Caddy defaults untouched without explicit overrides
         }
     }
 });
+
+it('starts the FrankenPHP server shipped in the image when none is named', function () {
+    expect(Env::getRepository()->get('OCTANE_SERVER'))->toBeNull()
+        ->and((require config_path('octane.php'))['server'])->toBe('frankenphp')
+        ->and((require config_path('octane.php'))['tables'])->toBe([]);
+});
+
+it('keeps the production template on stderr logging, secure cookies and FrankenPHP', function () {
+    $environment = Dotenv\Dotenv::parse((string) file_get_contents(base_path('.env.production.dist')));
+
+    expect($environment)
+        ->toMatchArray([
+            'LOG_CHANNEL' => 'stderr',
+            'LOG_LEVEL' => 'info',
+            'SESSION_SECURE_COOKIE' => 'true',
+            'OCTANE_SERVER' => 'frankenphp',
+        ]);
+});

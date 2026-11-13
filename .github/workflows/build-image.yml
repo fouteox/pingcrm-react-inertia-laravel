@@ -14,6 +14,7 @@ env:
 jobs:
   build:
     runs-on: ${{ vars.SYSTEM_ARCH == 'aarch64' && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
+    timeout-minutes: 45
     permissions:
       artifact-metadata: write
       attestations: write

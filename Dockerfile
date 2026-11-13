@@ -5,7 +5,7 @@
 # rebuild of the tag lands as a reviewable Renovate PR (tag + digest kept
 # in sync). Renovate moves this base, the exact CI parity container and
 # Composer's constraints/lock together; setup-php tracks the same minor line.
-FROM serversideup/php:8.5.12-frankenphp@sha256:12c33b31b5b06d06772c21123fc7b0a72d94d23c067eaba990666adcb5f6676e AS base
+FROM serversideup/php:8.5.12-frankenphp@sha256:30c8e35c99dcc02e1ce4b69a1de9cb5e8257aa130a04b68a913f2eab96dea2d5 AS base
 
 USER root
 
@@ -44,7 +44,7 @@ USER www-data
 
 ############################################
 # Builder Stage (vendor only — JS assets are pre-built on the CI runner
-# against a real MariaDB so Wayfinder generates types that match production)
+# against a real PostgreSQL so Wayfinder generates types that match production)
 ############################################
 FROM base AS builder
 

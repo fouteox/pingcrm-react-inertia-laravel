@@ -56,6 +56,7 @@ jobs:
     php:
         name: PHP (Pint + Larastan + Pest)
         runs-on: ubuntu-26.04
+        timeout-minutes: 20
         services:
             postgres:
                 image: postgres:18@sha256:e3d24f6906d0760bf4da0dae872415391ededefad23fd471c47dc53b0ddf3c42
@@ -69,7 +70,7 @@ jobs:
                     --health-retries=10
 
         container:
-            image: serversideup/php:8.5.12-frankenphp@sha256:12c33b31b5b06d06772c21123fc7b0a72d94d23c067eaba990666adcb5f6676e
+            image: serversideup/php:8.5.12-frankenphp@sha256:30c8e35c99dcc02e1ce4b69a1de9cb5e8257aa130a04b68a913f2eab96dea2d5
             options: --user root
 
         defaults:
@@ -220,6 +221,7 @@ jobs:
     browser:
         name: Browser (Pest 5)
         runs-on: ubuntu-26.04
+        timeout-minutes: 20
 
         steps:
             - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -262,6 +264,7 @@ jobs:
     frontend:
         name: Frontend (Types + Lint + Format + Tests + Knip)
         runs-on: ubuntu-26.04
+        timeout-minutes: 15
 
         steps:
             - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -329,6 +332,7 @@ jobs:
     build:
         name: Build (Vite production bundle)
         runs-on: ubuntu-26.04
+        timeout-minutes: 15
 
         steps:
             - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -450,6 +454,7 @@ jobs:
     zizmor:
         name: zizmor (audit workflows)
         runs-on: ubuntu-26.04
+        timeout-minutes: 10
 
         steps:
             - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1

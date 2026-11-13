@@ -46,8 +46,7 @@
         "tailwind-merge": "3.7.0",
         "tailwindcss": "4.3.3",
         "tailwindcss-animate": "1.0.7",
-        "typescript": "7.0.2",
-        "uuid": "14.0.3"
+        "typescript": "7.0.2"
     },
     "overrides": {
         "vite": "npm:@voidzero-dev/vite-plus-core@1.4.0",

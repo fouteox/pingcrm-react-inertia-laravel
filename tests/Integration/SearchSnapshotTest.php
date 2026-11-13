@@ -113,9 +113,15 @@ it('returns 503 on a real transport failure without holding a SQL write lock', f
 it('serves an HTTP search when its account revision changes during the engine response', function (bool $changeMatch, bool $acknowledged) {
     $account = Account::factory()->create();
     $search = app(SearchIndex::class);
-    $actor = $search->mutate($account->id, fn () => User::factory()->for($account)->create(['first_name' => 'Administrator', 'owner' => true]));
-    $match = $search->mutate($account->id, fn () => User::factory()->for($account)->create(['first_name' => 'Ada', 'owner' => false]));
-    $outside = $search->mutate($account->id, fn () => User::factory()->for($account)->create(['first_name' => 'Grace', 'owner' => false]));
+    $actor = $search->mutate($account->id, fn () => User::factory()->for($account)->create([
+        'first_name' => 'Administrator', 'last_name' => 'Viewer', 'email' => 'viewer@snapshot.test', 'owner' => true,
+    ]));
+    $match = $search->mutate($account->id, fn () => User::factory()->for($account)->create([
+        'first_name' => 'Ada', 'last_name' => 'Lovelace', 'email' => 'match@snapshot.test', 'owner' => false,
+    ]));
+    $outside = $search->mutate($account->id, fn () => User::factory()->for($account)->create([
+        'first_name' => 'Grace', 'last_name' => 'Hopper', 'email' => 'outside@snapshot.test', 'owner' => false,
+    ]));
     $revision = $search->assertReady($account->id);
     $writer = DB::build(config('database.connections.pgsql'));
     $changedId = $changeMatch ? $match->id : $outside->id;
@@ -152,8 +158,12 @@ it('serves an HTTP search when its account revision changes during the engine re
 it('reads the committed revision while another connection holds an uncommitted mutation', function () {
     $account = Account::factory()->create();
     $search = app(SearchIndex::class);
-    $actor = $search->mutate($account->id, fn () => User::factory()->for($account)->create(['first_name' => 'Administrator', 'owner' => true]));
-    $match = $search->mutate($account->id, fn () => User::factory()->for($account)->create(['first_name' => 'Ada', 'last_name' => 'Lovelace', 'owner' => false]));
+    $actor = $search->mutate($account->id, fn () => User::factory()->for($account)->create([
+        'first_name' => 'Administrator', 'last_name' => 'Viewer', 'email' => 'viewer@snapshot.test', 'owner' => true,
+    ]));
+    $match = $search->mutate($account->id, fn () => User::factory()->for($account)->create([
+        'first_name' => 'Ada', 'last_name' => 'Lovelace', 'email' => 'match@snapshot.test', 'owner' => false,
+    ]));
     $revision = $search->assertReady($account->id);
     $writer = DB::build(config('database.connections.pgsql'));
     $writer->beginTransaction();
