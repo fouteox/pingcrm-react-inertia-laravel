@@ -66,8 +66,8 @@ RUN composer dump-autoload --classmap-authoritative --no-dev
 
 ############################################
 # Bun Stage (alias only — the binary is copied into the app image below).
-# Declared as a FROM so Dependabot sees and bumps it: images referenced only
-# in a COPY --from are invisible to its docker ecosystem.
+# Renovate keeps the tag and digest current. The stage dates from Dependabot,
+# whose docker ecosystem cannot see an image referenced only in a COPY --from.
 ############################################
 FROM oven/bun:1.4-debian@sha256:93d5032fe06d163427822dc1598f420363759bb18155c9cc90eb1be05a64a19e AS bun
 
