@@ -143,19 +143,65 @@ curl --fail --silent --show-error http://127.0.0.1:8080/up >/dev/null
 # doit donc porter la marque du rendu serveur, suivie du texte attendu. Sans
 # Accept-Language, SetLocaleMiddleware retient le français : la langue est donc
 # demandée explicitement pour que le texte cherché soit déterministe.
-page=$(curl --fail --silent --show-error --header 'Accept-Language: en' http://127.0.0.1:8080/login)
-markup=${page#*data-server-rendered=\"true\"}
+assert_ssr_login() {
+    local base_url=$1
+    local app_container_id=$2
+    local page markup
 
-if [[ "$markup" == "$page" ]]; then
-    docker logs "$ssr_container_id" >&2
-    docker logs "$container_id" >&2
-    echo 'La page /login ne porte pas la marque du rendu SSR (data-server-rendered).' >&2
+    page=$(curl --fail --silent --show-error --header 'Accept-Language: en' "$base_url/login")
+    markup=${page#*data-server-rendered=\"true\"}
+
+    if [[ "$markup" == "$page" ]]; then
+        docker logs "$ssr_container_id" >&2
+        docker logs "$app_container_id" >&2
+        echo "La page $base_url/login ne porte pas la marque du rendu SSR (data-server-rendered)." >&2
+        exit 1
+    fi
+
+    if [[ "$markup" != *'Remember me'* ]]; then
+        docker logs "$ssr_container_id" >&2
+        docker logs "$app_container_id" >&2
+        echo "Le rendu SSR de $base_url/login ne contient pas « Remember me »." >&2
+        exit 1
+    fi
+}
+
+assert_ssr_login http://127.0.0.1:8080 "$container_id"
+
+# La production ne lance pas la commande par défaut de l'image : gitops démarre
+# Octane en mode worker sur 8000. Le HEALTHCHECK de l'image vise le serveur
+# classique, donc /up est sondé ici directement. Chaque route est demandée deux
+# fois : la seconde réponse vient d'un worker qui a déjà servi une requête, ce
+# qui attrape un état conservé entre deux requêtes.
+start_container php /var/www/html/artisan octane:start --server=frankenphp --port=8000
+octane_container_id=$container_id
+octane_ready=false
+
+for _ in {1..30}; do
+    if [[ $(docker inspect --format '{{.State.Running}}' "$octane_container_id") != true ]]; then
+        break
+    fi
+
+    if curl --fail --silent http://127.0.0.1:8000/up >/dev/null; then
+        octane_ready=true
+        break
+    fi
+
+    sleep 2
+done
+
+if [[ "$octane_ready" != true ]]; then
+    docker logs "$octane_container_id" >&2
+    echo 'Octane (FrankenPHP, mode worker) n'"'"'a pas répondu sur /up en 60 secondes.' >&2
     exit 1
 fi
 
-if [[ "$markup" != *'Remember me'* ]]; then
-    docker logs "$ssr_container_id" >&2
-    docker logs "$container_id" >&2
-    echo 'Le rendu SSR de /login ne contient pas « Remember me ».' >&2
-    exit 1
-fi
+for _ in 1 2; do
+    if ! curl --fail --silent --show-error http://127.0.0.1:8000/up >/dev/null; then
+        docker logs "$octane_container_id" >&2
+        echo 'Octane a cessé de répondre sur /up après sa première requête.' >&2
+        exit 1
+    fi
+
+    assert_ssr_login http://127.0.0.1:8000 "$octane_container_id"
+done

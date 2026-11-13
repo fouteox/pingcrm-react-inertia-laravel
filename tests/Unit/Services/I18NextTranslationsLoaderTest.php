@@ -8,26 +8,21 @@ use Illuminate\Translation\FileLoader;
 
 uses(Tests\TestCase::class);
 
-it('converts nested Laravel translations to flat i18next keys without empty groups', function () {
+it('converts the JSON catalogue to flat i18next keys and leaves the PHP groups on the server', function () {
     $files = Mockery::mock(Filesystem::class);
     $files->shouldReceive('exists')->with('/translations/en')->andReturnTrue();
-    $files->shouldReceive('files')->with('/translations/en')->andReturn([new SplFileInfo('/translations/en/validation.php')]);
 
     $loader = Mockery::mock(FileLoader::class);
     $loader->shouldReceive('load')->with('en', '*', '*')->andReturn([
         'Welcome :name' => 'Hello :name',
         'Contact' => 'Contact|Contacts',
     ]);
-    $loader->shouldReceive('load')->with('en', 'validation')->andReturn([
-        'nested' => ['required' => 'The :attribute field is required.'],
-        'empty' => [],
-    ]);
+    $loader->shouldNotReceive('load')->with('en', 'validation');
 
     expect((new I18NextTranslationsLoader($files, $loader, '/translations'))->loadTranslations('en'))->toBe([
         'Welcome {{name}}' => 'Hello {{name}}',
         'Contact_one' => 'Contact',
         'Contact_other' => 'Contacts',
-        'validation.nested.required' => 'The {{attribute}} field is required.',
     ]);
 });
 
@@ -35,8 +30,6 @@ it('converts each locale only once for the lifetime of the service', function ()
     $files = Mockery::mock(Filesystem::class);
     $files->shouldReceive('exists')->with('/translations/en')->andReturnTrue();
     $files->shouldReceive('exists')->with('/translations/fr')->andReturnTrue();
-    $files->shouldReceive('files')->with('/translations/en')->once()->andReturn([]);
-    $files->shouldReceive('files')->with('/translations/fr')->once()->andReturn([]);
 
     $loader = Mockery::mock(FileLoader::class);
     $loader->shouldReceive('load')->with('en', '*', '*')->once()->andReturn(['Contact' => 'Contact']);
@@ -56,7 +49,6 @@ it('memoises the fallback locale separately from a missing one', function () {
     $files = Mockery::mock(Filesystem::class);
     $files->shouldReceive('exists')->with('/translations/zz')->andReturnFalse();
     $files->shouldReceive('exists')->with('/translations/en')->andReturnTrue();
-    $files->shouldReceive('files')->with('/translations/en')->once()->andReturn([]);
 
     $loader = Mockery::mock(FileLoader::class);
     $loader->shouldReceive('load')->with('en', '*', '*')->once()->andReturn(['Contact' => 'Contact']);

@@ -15,7 +15,6 @@
         "laravel/framework": "^13.40.0",
         "laravel/octane": "^2.23.0",
         "laravel/reverb": "^1.12.0",
-        "laravel/sanctum": "^4.3.3",
         "laravel/scout": "^11.9.0",
         "laravel/tinker": "^3.0.2",
         "laravel/wayfinder": "dev-next",
@@ -24,10 +23,8 @@
     "require-dev": {
         "larastan/larastan": "^3.12",
         "laravel/boost": "^2.10.4",
-        "laravel/breeze": "^2.4.2",
         "laravel/pao": "^1.1.5",
         "laravel/pint": "^1.32.1",
-        "laravel/sail": "^1.69.0",
         "mockery/mockery": "^1.6.15",
         "nunomaduro/collision": "^8.9.5",
         "pestphp/pest": "^5.3.5",
