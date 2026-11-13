@@ -8,7 +8,6 @@ use Illuminate\Filesystem\Filesystem;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
 use Illuminate\Translation\FileLoader;
-use SplFileInfo;
 
 final class I18NextTranslationsLoader
 {
@@ -40,25 +39,17 @@ final class I18NextTranslationsLoader
         return $this->translationsByLocale[$useLocale] ??= $this->convert($useLocale);
     }
 
-    /** @return array<string, string> */
+    /**
+     * Le client ne lit que le catalogue JSON : aucune clé de groupe PHP
+     * (validation, passwords, http-statuses…) n'est appelée depuis
+     * resources/js, ces messages étant traduits côté serveur. Les embarquer
+     * doublait le poids des traductions de chaque page complète.
+     *
+     * @return array<string, string>
+     */
     private function convert(string $useLocale): array
     {
-        $translations = $this->loader->load($useLocale, '*', '*');
-        $groups = array_map(
-            fn (SplFileInfo $file) => $file->getBasename('.php'),
-            $this->fs->files($this->langPath.'/'.$useLocale),
-        );
-
-        foreach ($groups as $group) {
-            $nonPrefixedGroupTranslations = $this->loader->load($useLocale, $group);
-            $groupTranslations = [];
-            foreach ($nonPrefixedGroupTranslations as $key => $translation) {
-                $groupTranslations[$group.'.'.$key] = $translation;
-            }
-            $translations = array_merge($translations, $groupTranslations);
-        }
-
-        return $this->prepare($translations);
+        return $this->prepare($this->loader->load($useLocale, '*', '*'));
     }
 
     private function localeExists(string $locale): bool
