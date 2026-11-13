@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Exceptions\SearchIndexUnavailable;
 use App\Http\Middleware\HandleAppearanceMiddleware;
+use App\Http\Middleware\SecurityHeadersMiddleware;
 use App\Http\Middleware\SetLocaleMiddleware;
 use App\Providers\AppServiceProvider;
 use Illuminate\Foundation\Application;
@@ -24,6 +25,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->redirectGuestsTo(fn () => route('login'));
         $middleware->redirectUsersTo(AppServiceProvider::HOME);
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
+        $middleware->append(SecurityHeadersMiddleware::class);
 
         $middleware->web(append: [
             HandleAppearanceMiddleware::class,
