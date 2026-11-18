@@ -70,7 +70,7 @@ jobs:
                     --health-retries=10
 
         container:
-            image: serversideup/php:8.5.12-frankenphp@sha256:30c8e35c99dcc02e1ce4b69a1de9cb5e8257aa130a04b68a913f2eab96dea2d5
+            image: serversideup/php:8.5.12-frankenphp@sha256:e679ccfc3832c3958b76f86d85e6d4e62a98292482b771f436e11884454f3ac9
             options: --user root
 
         defaults:
