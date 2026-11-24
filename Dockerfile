@@ -69,7 +69,7 @@ RUN composer dump-autoload --classmap-authoritative --no-dev
 # Renovate keeps the tag and digest current. The stage dates from Dependabot,
 # whose docker ecosystem cannot see an image referenced only in a COPY --from.
 ############################################
-FROM oven/bun:1.4-debian@sha256:93d5032fe06d163427822dc1598f420363759bb18155c9cc90eb1be05a64a19e AS bun
+FROM oven/bun:1.4-debian@sha256:3dddea58e1f8f2240eca906b023fedb944f9a8352515a35309fd0c879fe00aaa AS bun
 
 ############################################
 # App Image (also runs SSR via `php artisan inertia:start-ssr --runtime=bun`)
