@@ -5,7 +5,7 @@
 # rebuild of the tag lands as a reviewable Renovate PR (tag + digest kept
 # in sync). Renovate moves this base, the exact CI parity container and
 # Composer's constraints/lock together; setup-php tracks the same minor line.
-FROM serversideup/php:8.6.0-frankenphp@sha256:69aca7f2c66fcd52a9d1787d428101d1ccb3988711057aad60d8d513ef802be1 AS base
+FROM serversideup/php:8.6.0-frankenphp@sha256:05e4f673d76f9fa5a9f4540e39258ffdefb742fc26a58581b7113566f134c9ce AS base
 
 USER root
 
