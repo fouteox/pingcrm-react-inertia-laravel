@@ -18,7 +18,7 @@ PingCRM is a demo application built with Laravel 13, Inertia.js v3, React 19, an
 ## Backend Infrastructure
 - **[PostgreSQL](https://www.postgresql.org/)**
 - **[Valkey](https://valkey.io/)**: Redis-compatible key-value store
-- **[FrankenPHP](https://frankenphp.dev/)**: PHP 8.5
+- **[FrankenPHP](https://frankenphp.dev/)**: PHP 8.6
 
 ## Getting Started
 

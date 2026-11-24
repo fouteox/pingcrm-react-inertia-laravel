@@ -70,7 +70,7 @@ jobs:
                     --health-retries=10
 
         container:
-            image: serversideup/php:8.5.12-frankenphp@sha256:e679ccfc3832c3958b76f86d85e6d4e62a98292482b771f436e11884454f3ac9
+            image: serversideup/php:8.6.0-frankenphp@sha256:69aca7f2c66fcd52a9d1787d428101d1ccb3988711057aad60d8d513ef802be1
             options: --user root
 
         defaults:
@@ -180,7 +180,7 @@ jobs:
             - name: Setup PHP
               uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
               with:
-                  php-version: '8.5'
+                  php-version: '8.6'
                   extensions: dom, curl, libxml, mbstring, zip, pdo, pdo_pgsql, bcmath, intl
                   coverage: none
                   tools: composer:v2
@@ -231,7 +231,7 @@ jobs:
             - name: Setup PHP
               uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
               with:
-                  php-version: '8.5'
+                  php-version: '8.6'
                   extensions: dom, curl, libxml, mbstring, zip, pdo, pdo_sqlite, sqlite3, bcmath, intl
                   coverage: none
                   tools: composer:v2
@@ -274,7 +274,7 @@ jobs:
             - name: Setup PHP
               uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
               with:
-                  php-version: '8.5'
+                  php-version: '8.6'
                   extensions: dom, curl, libxml, mbstring, zip, pdo, pdo_sqlite, sqlite3, bcmath, intl
                   coverage: none
                   tools: composer:v2
@@ -342,7 +342,7 @@ jobs:
             - name: Setup PHP
               uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
               with:
-                  php-version: '8.5'
+                  php-version: '8.6'
                   extensions: dom, curl, libxml, mbstring, zip, pdo, pdo_sqlite, sqlite3, bcmath, intl
                   coverage: none
                   tools: composer:v2
@@ -402,7 +402,7 @@ jobs:
             - name: Setup PHP
               uses: shivammathur/setup-php@eb7c497e18156a6bbabfef1d3a82760b9eda3962 # 2.40.0
               with:
-                  php-version: '8.5'
+                  php-version: '8.6'
                   extensions: dom, curl, libxml, mbstring, zip, pdo, pdo_pgsql, bcmath, intl
                   coverage: none
                   tools: composer:v2
